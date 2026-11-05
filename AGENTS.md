@@ -39,3 +39,47 @@ Docs: https://docs.expo.dev/eas/index.md
 - If `ios/` and `android/` directories do not exist, they are generated (Continuous Native Generation). Never create or edit them by hand — configure native behavior in `app.json` and config plugins.
 - Expo Go only includes its bundled native modules. After adding a library with native code, the app needs a development build: `npx expo run:ios|android` locally, or `eas build --profile development`.
 - Prefer recommended Expo modules over third-party libraries, and check your available skills before adding dependencies. Docs: https://docs.expo.dev/versions/latest/index.md
+
+## Project
+
+Pokédex on [PokeAPI](https://pokeapi.co/docs/v2), following the [Figma design](https://www.figma.com/design/dsgGXcu5WELIvRW90m5308/Pok%C3%A9mon-Code-Challenge?node-id=1-2), plus a self-designed Compare feature. Must run in **Expo Go** — no native modules outside Expo Go.
+
+## Spec-driven workflow
+
+Specs are the source of truth. Don't build anything that isn't in a spec; if a spec is unclear, ask instead of guessing.
+
+- `specs/product.md` — what the app is, plus the technical choices (SQLite, native feature).
+- `specs/features/<name>.md` — one per feature, with testable acceptance criteria. Template: `specs/features/_template.md`.
+- `docs/explanation.md` — the three hand-in questions.
+- `chat-history/` — exported chats, named with the issue number.
+
+One issue per chat. Steps, each with a slash command:
+
+| Step | Command |
+|---|---|
+| Write / sharpen the product spec | `/spec-product` |
+| Write a feature spec | `/spec-feature <name>` |
+| Create the GitHub issue | `/create-issue <name>` |
+| Plan: post plan + `- [ ]` tasks as issue comment, then wait for "go" | `/plan-issue <N>` |
+| Build, ticking off tasks | `/build-issue <N>` |
+| Review diff against the spec | `/review-issue <N>` |
+| Turn a correction into a rule below | `/learn <what went wrong>` |
+| Commit with `closes #N` | `/commit-issue <N>` |
+
+Never write code before the plan is approved. Never commit or push unless asked.
+
+## Code structure
+
+- `src/app/` — routes only (screens stay thin).
+- `src/components/` — UI.
+- `src/api/` — fetch functions and response types.
+- `src/hooks/` — TanStack Query hooks and other hooks.
+- `src/db/` — SQLite.
+- `src/lib/` — pure logic (testable without React).
+- `src/theme/` — colours (incl. type colours), fonts, spacing.
+
+Every load has a loading and an error state. No `any`, no `as` casts (`as const` is fine), no `@ts-ignore`, no `console.log`.
+
+## Learned rules
+
+Corrections from review, added with `/learn`.
