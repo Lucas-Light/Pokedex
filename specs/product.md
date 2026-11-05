@@ -1,23 +1,30 @@
-# Product: <app name>
+# Product: Pokédex
 
-> Status: draft — run `/spec-product` to get grilled until every section is sharp.
+> Status: complete — sharpened with `/spec-product`.
 
 ## One-liner
 
-<What the app is, in one sentence.>
+A Pokémon mobile app on live data from an API, based on showing a list of Pokémon.
 
 ## Who it is for
 
-<Who uses it and when.>
+School project and a learning experience.
 
 ## Core action
 
-<The one thing a user comes to do.>
+Showing a live list of all Pokémon.
 
 ## Data source
 
 - API: [PokeAPI](https://pokeapi.co/docs/v2) — no key needed.
-- Endpoints used: <list, per feature>
+- Endpoints used:
+  - **List:** `https://pokeapi.co/api/v2/pokemon?limit=20&offset=0`, page by page. The Pokémon ID comes from each result's `url`.
+  - **Search:** `https://pokeapi.co/api/v2/pokemon?limit=100000`
+  - **Detail:** `https://pokeapi.co/api/v2/pokemon/{id or name}/`
+  - **Evolution chain (Detail):** `https://pokeapi.co/api/v2/pokemon-species/{id}/`, then follow `evolution_chain.url` from that response.
+  - **Favorites:** `https://pokeapi.co/api/v2/pokemon/{id or name}/`
+  - **Compare:** `https://pokeapi.co/api/v2/pokemon/{id or name}/`
+- Images, everywhere in the app: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/{id}.png`
 
 ## Features
 
@@ -37,15 +44,16 @@ Decide these **before** building. Each with the alternative and why.
 
 ### 1. What is stored in SQLite
 
-- **Choice:** <...>
-- **Alternative:** <...>
-- **Why this one:** <...>
+- **Choice:** Only favorites, stored as the Pokémon ID.
+- **Alternative:** Store all the data related to that Pokémon.
+- **Why this one:** Data about a Pokémon could change, so retrieving it from the API keeps everything simple and up to date.
+- **Downside I accept:** Without internet, Favorites shows the favorites loaded into the cache. After a restart in airplane mode, it only shows an error state.
 
 ### 2. Native feature
 
-- **Choice:** <e.g. haptics / Share / ...>
-- **Alternative:** <...>
-- **Why this one:** <...>
+- **Choice:** Share. Each grid tile in the list and in Favorites has an options button, as in the Figma design. Its menu has Open Pokémon, Add to favorites and Share. Share sends "Check out this Pokémon!" with the Pokémon's name and a link to its image.
+- **Alternative:** Haptics.
+- **Why this one:** Haptics would not really fit a Pokédex and is better suited for something like a battle simulator.
 
 ## Constraints (apply to every feature)
 
@@ -59,8 +67,19 @@ Decide these **before** building. Each with the alternative and why.
 
 ## Optional extras I go for
 
-- [ ] <e.g. dark mode, infinite scroll, clean TypeScript, tests, CI, ...>
+- [ ] Pagination
+- [ ] Tests
+- [ ] CI
+- [ ] Accessibility
+- [ ] Optimistic update
+- [ ] Clean TypeScript
+- [ ] No warnings
 
 ## Out of scope
 
-- <...>
+- Reanimated
+- Dark mode
+- Localization
+- Offline
+- Accounts
+- Filtering/Sorting
