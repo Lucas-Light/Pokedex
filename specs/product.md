@@ -68,13 +68,13 @@ Decide these **before** building. Each with the alternative and why.
 
 ## Optional extras I go for
 
-- [ ] Pagination
-- [ ] Tests
+- [x] Pagination
+- [x] Tests
 - [ ] CI
 - [ ] Accessibility
 - [ ] Optimistic update
-- [ ] Clean TypeScript
-- [ ] No warnings
+- [x] Clean TypeScript
+- [x] No warnings
 
 ## Out of scope
 

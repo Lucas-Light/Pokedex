@@ -1,6 +1,6 @@
 # Feature: search
 
-> Issue: #3 · Status: draft
+> Issue: #3 · Status: complete
 
 ## Goal
 
@@ -12,65 +12,65 @@ Each one testable on the phone (and, where possible, in a unit test on the hook 
 
 **Starting a search**
 
-- [ ] Tapping anywhere on the search bar, including its padding and icon, opens the keyboard. The full list, the "All Pokémon" title and the search icon stay as they are.
-- [ ] After the Android back button closed the keyboard, tapping the search bar's padding or icon opens it again.
-- [ ] The first tap on the search bar requests the full list (`limit=100000`). Opening the app without tapping the search bar does not request it.
-- [ ] Typing the first letter starts search mode: the title is hidden, the search icon becomes the back icon, and the results replace the grid tiles.
-- [ ] Results update with every letter typed or deleted, without a search button and without a minimum length.
-- [ ] Typing does not send a request per letter: the full list is requested once and filtered on the phone.
+- [x] Tapping anywhere on the search bar, including its padding and icon, opens the keyboard. The full list, the "All Pokémon" title and the search icon stay as they are.
+- [x] After the Android back button closed the keyboard, tapping the search bar's padding or icon opens it again.
+- [x] The first tap on the search bar requests the full list (`limit=100000`). Opening the app without tapping the search bar does not request it.
+- [x] Typing the first letter starts search mode: the title is hidden, the search icon becomes the back icon, and the results replace the grid tiles.
+- [x] Results update with every letter typed or deleted, without a search button and without a minimum length.
+- [x] Typing does not send a request per letter: the full list is requested once and filtered on the phone.
 
 **Matching** *(unit test)*
 
-- [ ] A Pokémon matches when the query appears anywhere in its name: `char` returns 10 results, including `chimchar` and `pecharunt`.
-- [ ] Upper and lower case are ignored: `CHAR` gives the same results as `char`.
-- [ ] Spaces count as hyphens: `mr mime`, `MR MIME` and `mr-mime` all return `mr-mime` and `mr-mime-galar`.
-- [ ] Spaces at the start and end of the query are ignored: `mr ` searches for `mr` and returns 3 results.
-- [ ] A query of only spaces counts as empty and does not start search mode.
-- [ ] Accents are ignored: `flabébé` returns `flabebe`.
-- [ ] IDs are not searched: `25` does not return Pikachu.
+- [x] A Pokémon matches when the query appears anywhere in its name: `char` returns 10 results, including `chimchar` and `pecharunt`.
+- [x] Upper and lower case are ignored: `CHAR` gives the same results as `char`.
+- [x] Spaces count as hyphens: `mr mime`, `MR MIME` and `mr-mime` all return `mr-mime` and `mr-mime-galar`.
+- [x] Spaces at the start and end of the query are ignored: `mr ` searches for `mr` and returns 3 results.
+- [x] A query of only spaces counts as empty and does not start search mode.
+- [x] Accents are ignored: `flabébé` returns `flabebe`.
+- [x] IDs are not searched: `25` does not return Pikachu.
 
 **Results**
 
-- [ ] Results use the same 2-column grid and cards as the homepage, including the ID badge, name, image and image placeholder.
-- [ ] Results are in API order: for `char`, `charmander` comes first and `charizard-gmax` comes last.
-- [ ] All matches are in one list without paging, and the list only renders what is on screen.
-- [ ] Alternate forms are included: `pika` returns 17 results.
-- [ ] When the text changes, the results jump back to the top.
-- [ ] With the keyboard closed, tapping a result opens the Detail route for that Pokémon's ID.
-- [ ] Tapping a result's ⋮ button does the same as on the homepage.
+- [x] Results use the same 2-column grid and cards as the homepage, including the ID badge, name, image and image placeholder.
+- [x] Results are in API order: for `char`, `charmander` comes first and `charizard-gmax` comes last.
+- [x] All matches are in one list without paging, and the list only renders what is on screen.
+- [x] Alternate forms are included: `pika` returns 17 results.
+- [x] When the text changes, the results jump back to the top.
+- [x] With the keyboard closed, tapping a result opens the Detail route for that Pokémon's ID.
+- [x] Tapping a result's ⋮ button does the same as on the homepage.
 
 **Ending a search**
 
-- [ ] Tapping the back icon clears the text, closes the keyboard and shows the full list, the title and the search icon.
-- [ ] Deleting every letter by hand shows the full list, the title and the search icon, and the keyboard stays open.
-- [ ] After either way of ending a search, the full list is at the scroll position it had before the search.
+- [x] Tapping the back icon clears the text, closes the keyboard and shows the full list, the title and the search icon.
+- [x] Deleting every letter by hand shows the full list, the title and the search icon, and the keyboard stays open.
+- [x] After either way of ending a search, the full list is at the scroll position it had before the search.
 
 **Keyboard**
 
-- [ ] Scrolling the results closes the keyboard.
-- [ ] Tapping outside the search bar closes the keyboard, and the text and results stay.
-- [ ] While the keyboard is open, tapping a result or its ⋮ button only closes the keyboard: Detail does not open.
-- [ ] While the keyboard is open, the tab bar is hidden. It comes back when the keyboard closes.
-- [ ] While the keyboard is open, the Android back button only closes it, and the text and results stay.
-- [ ] During a search with the keyboard closed, the Android back button keeps its normal behaviour and does not end the search first.
+- [x] Scrolling the results closes the keyboard.
+- [x] Tapping outside the search bar closes the keyboard, and the text and results stay.
+- [x] While the keyboard is open, tapping a result or its ⋮ button only closes the keyboard: Detail does not open.
+- [x] While the keyboard is open, the tab bar is hidden. It comes back when the keyboard closes.
+- [x] While the keyboard is open, the Android back button only closes it, and the text and results stay.
+- [x] During a search with the keyboard closed, the Android back button keeps its normal behaviour and does not end the search first.
 
 **Leaving and returning**
 
-- [ ] Opening Detail from a result and going back shows the same text and results.
-- [ ] Switching to Favorites and back shows the same text and results.
+- [x] Opening Detail from a result and going back shows the same text and results.
+- [x] Switching to Favorites and back shows the same text and results.
 
 **States**
 
-- [ ] If the full list is still loading when a letter is typed, one centered spinner shows in the grid area. When it has loaded, the results for the text in the bar at that moment appear without further input.
-- [ ] If the full list fails to load, typing shows "Could not load Pokémon" and a Retry button in the grid area, and the typed text stays.
-- [ ] If the request failed before anything was typed, nothing changes on screen until the first letter is typed.
-- [ ] Tapping Retry shows the spinner and requests the full list again. On success, the results for the text in the bar appear.
-- [ ] If nothing matches (e.g. `zzzz`), the grid area shows "No Pokémon found" with no button. The title stays hidden and the back icon stays visible.
+- [x] If the full list is still loading when a letter is typed, one centered spinner shows in the grid area. When it has loaded, the results for the text in the bar at that moment appear without further input.
+- [x] If the full list fails to load, typing shows "Could not load Pokémon" and a Retry button in the grid area, and the typed text stays.
+- [x] If the request failed before anything was typed, nothing changes on screen until the first letter is typed.
+- [x] Tapping Retry shows the spinner and requests the full list again. On success, the results for the text in the bar appear.
+- [x] If nothing matches (e.g. `zzzz`), the grid area shows "No Pokémon found" with no button. The title stays hidden and the back icon stays visible.
 
 **Accessibility**
 
-- [ ] A screen reader announces the back icon as a button labelled "Stop searching".
-- [ ] During a search, a screen reader skips the full list under the results.
+- [x] A screen reader announces the back icon as a button labelled "Stop searching".
+- [x] During a search, a screen reader skips the full list under the results.
 
 ## Screens & UI
 
