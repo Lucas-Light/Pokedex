@@ -13,7 +13,8 @@ type PokemonCardItem = {
 type PokemonCardListProps<Item extends PokemonCardItem> = {
   data: Item[];
   ref?: Ref<FlatList<Item>>;
-  onOptions: (pokemon: PokemonListItem) => void;
+  onOptions?: (pokemon: PokemonListItem) => void;
+  onPick?: (id: number) => void;
   onEndReached?: () => void;
   footer?: ReactElement;
 };
@@ -22,6 +23,7 @@ export function PokemonCardList<Item extends PokemonCardItem>({
   data,
   ref,
   onOptions,
+  onPick,
   onEndReached,
   footer,
 }: PokemonCardListProps<Item>) {
@@ -35,7 +37,13 @@ export function PokemonCardList<Item extends PokemonCardItem>({
       numColumns={2}
       keyExtractor={(item) => String(item.id)}
       renderItem={({ item }) => (
-        <PokemonCard id={item.id} name={item.name} width={cardWidth} onOptions={onOptions} />
+        <PokemonCard
+          id={item.id}
+          name={item.name}
+          width={cardWidth}
+          onOptions={onOptions}
+          onPick={onPick}
+        />
       )}
       columnWrapperStyle={styles.row}
       contentContainerStyle={styles.content}

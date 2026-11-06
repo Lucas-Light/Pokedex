@@ -41,6 +41,13 @@ export default function TabsLayout() {
           tabBarIcon: ({ focused }) => <TabIcon name="favorites" focused={focused} />,
         }}
       />
+      <Tabs.Screen
+        name="compare"
+        options={{
+          title: "Compare",
+          tabBarIcon: ({ focused }) => <TabIcon name="compare" focused={focused} />,
+        }}
+      />
     </Tabs>
   );
 }

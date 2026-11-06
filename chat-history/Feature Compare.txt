@@ -1,0 +1,1728 @@
+
+> /spec-feature compare
+
+  Listed 1 directory, ran 1 shell command (ctrl+o to expand)
+
+● I've got the API data. Before I ask you anything, I'll check how the existing
+  specs and screens work, so the questions fit what's already built.
+
+  Ran 3 shell commands (ctrl+o to expand)
+
+● I read the specs and checked the API. There's no Compare code yet, and
+  specs/features/compare.md doesn't exist.
+
+  What the API returns
+
+  - Endpoint: PokeAPI has no compare endpoint, so Compare needs one GET
+    /pokemon/{id} per Pokémon. That matches product.md. Reusing the ['pokemon',
+    'detail', id] query key means a Pokémon that's already loaded needs no new
+    request.
+  - Stats: stats[] had 6 entries in the same order (HP, Attack, Defense, Special
+    Attack, Special Defense, Speed) in all three Pokémon I checked: Charizard,
+    pikachu-phd and koraidon-limited-build. Charizard's are 78, 84, 78, 109, 85
+    and 100.
+  - Stat total: the API doesn't return one, so we'd calculate it
+    (Charizard: 534).
+  - Other fields: types, height, weight, base_experience and abilities are also
+    available, and the About tab already has formatting for them.
+  - Gaps in the data:
+    - base_experience can be null (clefable-mega).
+    - abilities can be empty (zygarde-mega).
+    - Weight can be 0 (eternatus-eternamax).
+    - Some forms have no HOME image (10083, 10264), but they do have stats, and
+      the Pokéball placeholder already covers the image.
+  - Pokémon count: the list has 1351 entries, including alternate forms, so the
+    picker needs a way to search. The existing search can already do that.
+  - Type matchups: /type/{name} has damage_relations, so "fire beats grass" is
+    possible. It would be a new endpoint that product.md doesn't list for
+    Compare.
+
+  What this affects in the existing specs
+
+  - The app has two tabs, and the Tab Bar in Figma shows only those two. Compare
+    is self-designed, so it has no Figma frame.
+  - options menu.md lists Compare in the ⋮ menu as out of scope, so adding it
+    there means changing that spec.
+
+  Questions
+
+  1. Where do users start a comparison?
+  - a. A third "Compare" tab: it always shows two empty slots, and you pick a
+    Pokémon for each.
+  - b. A "Compare" row in the ⋮ menu: this fills the first slot, then you pick
+    the second.
+  - c. Both: the row fills slot 1 and takes you to the tab.
+
+  I recommend c, because it's easy to find and quick to use from a card. If you
+  want it smaller, go with a, which leaves the options menu spec unchanged.
+
+  2. How many Pokémon, and how do you pick them?
+  I recommend exactly two, picked on a full-screen page with the existing search
+  bar and result cards. Tapping a filled slot would let you swap that Pokémon.
+  Is that what you want, or do you want more than two, or a different way of
+  picking (for example, from your favorites)?
+
+  Also, can a Pokémon be compared with itself, and should alternate forms be
+  selectable? I'd allow forms, since they have stats, and block picking the same
+  Pokémon twice.
+
+  3. What does the comparison show?
+  I recommend these, top to bottom:
+  - Image, name, ID and type pills for both Pokémon
+  - The 6 stats side by side, with the higher value highlighted
+  - A calculated Total row, also highlighted
+
+  Should it also include height, weight and base XP? What should a tie look
+  like: both highlighted, or neither? I'd leave out type matchups, so Compare
+  stays on the one endpoint already listed in product.md.
+
+> 1. C. 2. Exactly 2, where clicking on an empty pokémon spot opens a searchbar
+  with list. A pokémon cannot be compared to itself. 3. Image, name, ID and
+  type pills for both Pokémon. The 6 stats side by side, with the higher value
+  highlighted in green. Aso include height, weight.
+
+● Noted: Compare is the ⋮ row plus a third tab, with exactly two Pokémon, and a
+  Pokémon can't be compared with itself. It shows image, name, ID and type
+  pills, then the 6 stats with the higher value in green, plus height and
+  weight. You didn't mention the Total row or base XP, so I'm leaving both out.
+  Tell me if you do want them.
+
+  1. What should the green highlight do in these cases?
+  - Ties: when both have Attack 84, I recommend no green on either side, because
+    neither is higher.
+  - Height and weight: I recommend showing them without green, because taller or
+    heavier isn't really better. Or should the higher value turn green here
+    too?
+
+  2. What does the ⋮ "Compare" row do in each situation?
+
+  I recommend:
+  - Slot 1 is empty: the Pokémon goes into slot 1 and the Compare tab opens.
+  - Slot 1 is filled, slot 2 is empty: it goes into slot 2 and the tab opens.
+  - Both slots are filled: it replaces slot 2 and the tab opens.
+  - The Pokémon is already in a slot: nothing changes and the tab just opens.
+  - "Unknown" cards: no Compare row, the same as Share.
+
+  Does that work, or should a full Compare page ask which one to replace?
+
+  3. How do filled slots and the picker behave?
+
+  I recommend:
+  - Changing a Pokémon: tapping a filled slot opens the picker again to swap it,
+    and a small ✕ on the slot empties it.
+  - Remembering the selection: the slots survive switching tabs but are cleared
+    when the app restarts, so SQLite keeps storing favorites only, as product.md
+    says.
+  - The picker: a full-screen page with the search bar above the same paginated
+    list as the homepage, including alternate forms. Tapping a card fills the
+    slot and goes back to Compare.
+  - The Pokémon in the other slot: it stays out of the picker list, so it can't
+    be picked twice.
+
+  Is this right, or would you change any of it?
+
+> 1. No highlight when tie. Height and weight should be displayed somewhere
+  seperate that you think looks good. 2. Recommendation are approved. 3.
+  Recommendation are approved.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Everything so far is locked in, including no highlight on a tie. This should
+  be the last round, and it covers the layout, the states and the picker
+  details. Compare has no Figma frame, so I'm proposing a layout using your
+  existing fonts and spacing.
+
+  1. Does this layout work?
+
+  Compare                          <- title, same style as "My favorites"
+
+  ┌───────────────┐ ┌───────────────┐
+  │ 006         ✕ │ │ 009         ✕ │
+  │    [image]    │ │    [image]    │
+  │   Charizard   │ │   Blastoise   │
+  │ ● Fire ● Fly  │ │   ● Water     │
+  │ 1.7 m  90.5 kg│ │ 1.6 m  85.5 kg│  <- height and weight, inside each card
+  └───────────────┘ └───────────────┘
+
+  ┌───────────────────────────────────┐
+  │   78       HP               79    │
+  │   84     Attack             83    │
+  │   78     Defense           100    │  <- higher value in green
+  │  109   Special Attack       85    │
+  │   85   Special Defense     105    │
+  │  100      Speed             78    │
+  └───────────────────────────────────┘
+
+  - Height and weight: they sit in each Pokémon's card, away from the stats, so
+    they don't read as a contest. They use the same format as the About tab.
+  - Green: #15803D plus a semibold font, so the higher value doesn't rely on
+    colour alone.
+  - Empty slot: a card with a "+" and "Add Pokémon".
+  - New icons: the repo has no Compare tab icon, "+" or ✕. I'd add simple SVGs
+    in the same line style. Do you have your own icons you'd rather use?
+
+  2. What should each state show?
+
+  I recommend:
+  - Both slots empty: two "Add Pokémon" cards, and the stats card replaced by
+    the text "Pick two Pokémon to compare".
+  - One slot filled: that Pokémon's card and the empty slot, with the same text.
+    The stats appear only once both are filled, because one column has nothing
+    to compare against.
+  - Loading: a filled slot shows its ID badge and a spinner, and the stats card
+    shows one spinner until both have loaded.
+  - Error: the failed slot shows "Could not load Pokémon" and a Retry button
+    that requests only that Pokémon. Its ✕ stays, so it can be removed. The
+    other slot stays visible, and the stats card shows the "Pick two" text's
+    place as empty until both have loaded.
+  - Removing with ✕: the other Pokémon stays in its own slot and doesn't shift
+    over.
+
+  3. Are these picker and ⋮ menu details right?
+
+  I recommend:
+  - Route: the picker is its own page, src/app/compare/pick.tsx, with a back
+    button, the title "Pick a Pokémon" and no tab bar.
+  - Cards in the picker: they have no ⋮ button, so tapping a card can only pick
+    that Pokémon.
+  - Search: it behaves the same as the homepage (matching, keyboard rules,
+    loading, error and "No Pokémon found"). While the keyboard is open, tapping
+    a card only closes the keyboard.
+  - Backing out: leaving the picker without picking changes nothing.
+  - The ⋮ row: "Compare" goes between the favorite row and Share. Tapping it
+    closes the sheet, and the Compare tab opens once the closing animation has
+    finished, the same as Open Pokémon.
+
+> 1. Layout is good. 2. Approved. 3. Approved.
+
+● I have what I need. Before writing, I'm checking the exact example values and
+  how the existing code is named, so the criteria can be tested as written.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Write(specs\features\compare.md)
+  ⎿  Wrote 197 lines to specs\features\compare.md
+      1 # Feature: compare
+      2
+      3 > Issue: #? · Status: draft
+      4
+      5 ## Goal
+      6
+      7 As a Pokédex user, I want to put two Pokémon side by side, so tha
+        t I can see which one has the higher stats.
+      8
+      9 ## Acceptance criteria
+     … +188 lines (ctrl+o to expand)
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● I've written the spec to specs/features/compare.md, with status draft and no
+  open questions. The feature table in specs/product.md didn't need changing:
+  Compare is already row 5, and its #? gets filled in by /create-issue compare.
+  Nothing is committed.
+
+  Please check these:
+  - Error state: my wording in the last round was garbled. The spec now says
+    that while a slot has failed, nothing shows below the slots: no stats,
+    spinner or text.
+  - Details I added that we didn't discuss:
+    - The picker's search starts empty each time and is separate from the
+      homepage search.
+    - ✕ also works on loading and failed slots.
+    - The Compare tab scrolls if its content doesn't fit.
+    - Screen reader labels are "Add Pokémon", "Change {name}" and "Remove
+      {name}".
+  - Icons: you didn't name your own, so the spec adds Compare.svg, Plus.svg and
+    Close.svg in the existing line style.
+  - Slot state: the two slots live in a React context, because the ⋮ menu, the
+    tab and the picker all need them. No new package is needed.
+
+  One thing is now out of date: the Native feature section in specs/product.md
+  still says the menu has Open Pokémon, Add to favorites and Share. The options
+  menu spec also lists Compare as out of scope. compare.md notes that it
+  replaces that part of the options menu spec, the same way earlier specs did,
+  but I left product.md alone because this step only covers the feature table.
+
+  Should I add Compare to that product.md sentence? If the spec looks right, the
+  next step is /create-issue compare.
+
+> Update product.md with the new compare details
+
+● Update(specs\product.md)
+  ⎿  Added 1 line, removed 1 line
+      53  
+      54  ### 2. Native feature
+      55  
+      56 -- **Choice:** Share. Each grid tile in the list and in Favorite
+         -s has an options button, as in the Figma design. Its menu has O
+         -pen Pokémon, Add to favorites and Share. Share sends "Check out
+         - this Pokémon!" with the Pokémon's name and a link to its image
+         -.                                                              
+      56 +- **Choice:** Share. Each grid tile in the list and in Favorite
+         +s has an options button, as in the Figma design. Its menu has O
+         +pen Pokémon, Add to favorites, Compare and Share. Share sends "
+         +Check out this Pokémon!" with the Pokémon's name and a link to 
+         +its image.                                                     
+      57  - **Alternative:** Haptics.
+      58  - **Why this one:** Haptics would not really fit a Pokédex and 
+          is better suited for something like a battle simulator.
+      59  
+
+● Update(specs\product.md)
+  ⎿  Added 1 line, removed 1 line
+      23    - **Detail:** `https://pokeapi.co/api/v2/pokemon/{id or name}
+          /`
+      24    - **Evolution chain (Detail):** follow `species.url` from the
+           Detail response, then `evolution_chain.url` from that response
+          . `pokemon-species/{id}` returns 404 for alternate forms.
+      25    - **Favorites:** `https://pokeapi.co/api/v2/pokemon/{id or na
+          me}/`
+      26 -  - **Compare:** `https://pokeapi.co/api/v2/pokemon/{id or name
+         -}/`                                                            
+      26 +  - **Compare:** `https://pokeapi.co/api/v2/pokemon/{id or name
+         +}/`, one request per Pokémon, for exactly two Pokémon. The pick
+         +er uses the List and Search endpoints.                         
+      27  - Images, everywhere in the app: `https://raw.githubusercontent
+          .com/PokeAPI/sprites/master/sprites/pokemon/other/home/{id}.png
+          `
+      28  
+      29  ## Features
+
+● Update(specs\product.md)
+  ⎿  Added 1 line, removed 1 line
+      46  
+      47  ### 1. What is stored in SQLite
+      48  
+      49 -- **Choice:** Only favorites, stored as the Pokémon ID.        
+      49 +- **Choice:** Only favorites, stored as the Pokémon ID. The two
+         + Compare slots are not stored, so they are empty again after a 
+         +restart.                                                       
+      50  - **Alternative:** Store all the data related to that Pokémon.
+      51  - **Why this one:** Data about a Pokémon could change, so retri
+          eving it from the API keeps everything simple and up to date.
+      52  - **Downside I accept:** Without internet, Favorites shows the 
+          favorites loaded into the cache. After a restart in airplane mo
+          de, it only shows an error state.
+
+● I've updated specs/product.md with three changes:
+
+  - Native feature: the menu now lists Open Pokémon, Add to favorites, Compare
+    and Share.
+  - Data source: the Compare endpoint now says it makes one request per Pokémon
+    for exactly two Pokémon, and that the picker uses the List and Search
+    endpoints.
+  - SQLite: this now says the two Compare slots aren't stored, so they're empty
+    again after a restart.
+
+  The options menu spec still lists Compare as out of scope, but compare.md
+  notes that it replaces that line. Nothing is committed. The next step is
+  /create-issue compare.
+
+> /create-issue compare
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Bash(D="$TEMP/compare-issue"; URL=$(gh issue create --title "Feature: compare"
+      --body-file "$D/body.md") && echo "$URL" && N=${URL##*/} && sed -i "s/^>
+      Issue: #? · S…)
+  ⎿  Updated specs\features\compare.md (+1 -1)
+      1  # Feature: compare
+      2  
+      3 -> Issue: #? · Status: draft                                     
+      3 +> Issue: #15 · Status: draft                                    
+      4  
+      5  ## Goal
+      6  
+  ⎿  Updated specs\product.md (+87 -87)
+       1 -# Product: Pokédex                                             
+       2 -                                                               
+       3 -> Status: complete — sharpened with `/spec-product`.           
+       4 -                                                               
+       5 -## One-liner                                                   
+       6 -                                                               
+       7 -A Pokémon mobile app on live data from an API, based on showing
+         - a list of Pokémon.                                            
+       8 -                                                               
+       9 -## Who it is for                                               
+      10 -                                                               
+      11 -School project and a learning experience.                      
+      12 -                                                               
+      13 -## Core action                                                 
+      14 -                                                               
+      15 -Showing a live list of all Pokémon.                            
+      16 -                                                               
+      17 -## Data source                                                 
+      18 -                                                               
+      19 -- API: [PokeAPI](https://pokeapi.co/docs/v2) — no key needed.  
+      20 -- Endpoints used:                                              
+      21 -  - **List:** `https://pokeapi.co/api/v2/pokemon?limit=20&offse
+         -t=0`, page by page. The Pokémon ID comes from each result's `ur
+         -l`.                                                            
+      22 -  - **Search:** `https://pokeapi.co/api/v2/pokemon?limit=100000
+         -`                                                              
+      23 -  - **Detail:** `https://pokeapi.co/api/v2/pokemon/{id or name}
+         -/`                                                             
+      24 -  - **Evolution chain (Detail):** follow `species.url` from the
+         - Detail response, then `evolution_chain.url` from that response
+         -. `pokemon-species/{id}` returns 404 for alternate forms.      
+      25 -  - **Favorites:** `https://pokeapi.co/api/v2/pokemon/{id or na
+         -me}/`                                                          
+      26 -  - **Compare:** `https://pokeapi.co/api/v2/pokemon/{id or name
+         -}/`, one request per Pokémon, for exactly two Pokémon. The pick
+         -er uses the List and Search endpoints.                         
+      27 -- Images, everywhere in the app: `https://raw.githubusercontent
+         -.com/PokeAPI/sprites/master/sprites/pokemon/other/home/{id}.png
+         -`                                                              
+      28 -                                                               
+      29 -## Features                                                    
+      30 -                                                               
+      31 -One spec file and one GitHub issue per feature.                
+      32 -                                                               
+      33 -| # | Feature | Spec | Issue |                                 
+      34 -|---|---|---|---|                                              
+      35 -| 1 | Homepage list | [specs/features/homepage list.md](feature
+         -s/homepage%20list.md) | #1 |                                   
+      36 -| 2 | Search | [specs/features/search.md](features/search.md) |
+         - #3 |                                                          
+      37 -| 3 | Detail page | [specs/features/detail page.md](features/de
+         -tail%20page.md) | #5 |                                         
+      38 -| 4 | Favorites | [specs/features/favorites.md](features/favori
+         -tes.md) | #7 |                                                 
+      39 -| 5 | Compare | [specs/features/compare.md](features/compare.md
+         -) | #? |                                                       
+      40 -| 6 | Options menu | [specs/features/options menu.md](features/
+         -options%20menu.md) | #13 |                                     
+     … 134 more lines (ctrl+o to expand)
+
+● The issue is created: https://github.com/Lucas-Light/Pokedex/issues/15
+
+  The number #15 is now in the compare.md header and in the feature table in
+  specs/product.md. Neither file is committed yet.
+
+  - Label: the repo has no feature label, so the issue has none. I didn't use
+    enhancement instead.
+  - Spec link: the link in the issue points to main, where compare.md doesn't
+    exist yet. It will give a 404 until the spec is merged.
+
+  The next step is /plan-issue 15.
+
+> /plan-issue 15
+
+  Read 1 file, ran 1 shell command (ctrl+o to expand)
+
+● Fetch(https://docs.expo.dev/versions/v58.0.0/sdk/router/)
+  ⎿  Received 127.4KB (200 OK)
+
+● Fetch(https://docs.expo.dev/llms.txt)
+  ⎿  Received 56.3KB (200 OK)
+
+● Fetch(https://docs.expo.dev/router/basics/navigation.md)
+  ⎿  Received 12.8KB (200 OK)
+● Fetch(https://docs.expo.dev/router/advanced/tabs.md)
+  ⎿  Received 13KB (200 OK)
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● I've read the code and the docs, so I'm writing the plan and posting it to the
+  issue now.
+
+  Made 1 scratchpad edit +103, ran 1 shell command (ctrl+o to expand)
+
+● The plan is posted on the issue:
+  https://github.com/Lucas-Light/Pokedex/issues/15#issuecomment-6697592793. I
+  haven't changed any code.
+
+  Approach
+
+  The two slots hold only Pokémon IDs, in a React context above the navigators,
+  so the ⋮ sheet, the Compare tab and the picker can all share them without a
+  new package. Each slot loads its Pokémon through the existing
+  usePokemonDetail, so it uses the same cache and can retry on its own. All the
+  decisions go in src/lib/compare.ts as pure, unit-tested functions. The picker
+  is a new stack screen at compare/pick, built from the homepage's search bar,
+  grid and search results.
+
+  Two choices for you
+
+  1. What shows below the slots when one slot has failed and the other is empty?
+  The spec contradicts itself here: one line says the "Pick two" text shows,
+  another says no text shows. Loading has the same gap, because a stats spinner
+  is pointless when the other slot is empty.
+
+  I recommend checking in this order, and I'd add it to the spec:
+  1. If any slot failed, nothing shows.
+  2. If any slot is empty, "Pick two Pokémon to compare" shows.
+  3. If any slot is loading, one spinner shows.
+  4. Otherwise, the stats card shows.
+
+  2. Should the picker reuse the homepage list or get its own? I recommend
+  reusing it through optional props, so paging, search and the keyboard rules
+  stay in one place. This touches more files than the spec's Code layout lists,
+  and the plan marks those.
+
+  Files
+
+  - UI:
+    - New routes: (tabs)/compare.tsx and compare/pick.tsx.
+    - New components: ComparePage, CompareSlot, CompareStats, ComparePicker and
+      TypePills, which moves the pills out of DetailHeader.
+    - New icons: Compare.svg, Plus.svg and Close.svg.
+    - Changed: both _layout.tsx files, OptionsSheet, PokemonCard,
+      PokemonCardList, PokemonGrid, SearchResults, DetailHeader and Icon.
+  - Data: a new src/hooks/useCompare.tsx; the existing hooks stay as they are.
+  - Logic:
+    - New: src/lib/compare.ts and its test file.
+    - Changed: height and weight strings in src/lib/pokemon.ts, and the green in
+      colors.ts.
+
+  Tasks
+
+  1. Create the branch feature/compare.
+  2. Add src/lib/compare.ts.
+  3. Add unit tests for every (unit test) criterion.
+  4. Add height and weight to PokemonDetailData.
+  5. Add useCompare.tsx and mount the provider.
+  6. Add the icons and the green colour.
+  7. Move the pills into TypePills.
+  8. Add the third tab and the Compare route.
+  9. Build CompareSlot in all four states.
+  10. Build CompareStats and ComparePage.
+  11. Add onPick and optional onOptions to the card, list, grid and search
+      results.
+  12. Build the picker and its route.
+  13. Add the Compare row and set MAX_ROWS to 4.
+  14. Add the accessibility labels.
+  15. Update the spec with choice 1 and tick the criteria.
+  16. Run npm test.
+  17. Run lint.
+  18. Run tsc.
+  19. Test on the phone in Expo Go.
+
+  The acceptance criteria table in the comment shows how each spec section is
+  met and whether it's checked by a unit test or on the phone.
+
+  Worth knowing
+
+  - Sheet height: MAX_ROWS in OptionsSheet has to go from 3 to 4, or the taller
+    sheet shows at the bottom before it slides up.
+  - Screen readers: ✕ and Retry sit next to the slot's Pressable, not inside it,
+    because iOS screen readers can't reach controls inside an accessible
+    parent.
+  - Tab navigation: the Expo docs I checked don't cover navigating to a tab from
+    outside it, so router.navigate("/compare") gets tested on the phone from
+    all three places.
+  - Tabs import: the docs import Tabs from expo-router, but this repo uses
+    expo-router/js-tabs. I'm leaving that as it is.
+
+  Say "go" to accept both recommendations, or tell me what to change and I'll
+  update the comment.
+
+> 1. What shows below the slots when one slot has failed and the other is
+  empty? Use you recommended.
+  2. Reuse it
+
+● Both are noted, so I'm recording the decisions in the plan comment.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● The shell swallowed the backticks, so the posted comment has a broken sentence
+  with the component names missing. I'm fixing that now.
+
+  Made 1 scratchpad edit +1 -1, read 1 file, ran 1 shell command (ctrl+o to expand)
+
+● I've updated the plan comment
+  (https://github.com/Lucas-Light/Pokedex/issues/15#issuecomment-6697592793)
+  with both decisions, under a new "Decisions" heading:
+
+  1. Below the slots: the order is failed, then empty, then loading, then stats.
+     This goes into the spec's States section in task 15.
+  2. Picker list: it reuses the homepage list through optional props.
+
+  My first update lost the component names from one sentence, so I fixed that
+  and checked the comment text on GitHub. I haven't changed any code.
+
+  Say "go" when you're ready, and I'll start with /build-issue 15.
+
+> go
+
+● Skill(build-issue)
+  ⎿  Successfully loaded skill
+
+● Starting on the build. First I'm creating the branch and looking at the last
+  few files the code depends on.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Write(src\lib\compare.ts)
+  ⎿  Wrote 121 lines to src\lib\compare.ts
+      1 import { UNKNOWN_NAME } from "@/lib/favorites";
+      2 import { formatName, type PokemonListItem, type PokemonStat } fro
+        m "@/lib/pokemon";
+      3
+      4 export type SlotIndex = 0 | 1;
+      5
+      6 /** The Pokémon ID in each slot, or null for an empty slot. */
+      7 export type CompareSlots = readonly [number | null, number | null
+        ];
+      8
+     … +113 lines (ctrl+o to expand)
+
+● Write(src\lib\__tests__\compare-test.ts)
+  ⎿  Wrote 229 lines to src\lib\__tests__\compare-test.ts
+       1 import {
+       2   addToSlots,
+       3   canCompare,
+       4   clearSlot,
+       5   EMPTY_SLOTS,
+       6   excludePokemon,
+       7   formatStatRowLabel,
+       8   getCompareArea,
+       9   getHigherSide,
+      10   getOtherSlot,
+     … +219 lines (ctrl+o to expand)
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● The 33 compare tests pass, but my shortcut for editing pokemon.ts did nothing,
+  so I'll make that change properly.
+
+  Read 1 file (ctrl+o to expand)
+
+● Update(src\lib\pokemon.ts)
+  ⎿  Added 2 lines
+      20    id: number;
+      21    name: string;
+      22    types: string[];
+      23 +  height: string;                                              
+      24 +  weight: string;                                              
+      25    about: PokemonAboutRow[];
+      26    stats: PokemonStat[];
+      27    speciesUrl: string;
+
+● Update(src\lib\pokemon.ts)
+  ⎿  Added 2 lines
+      103      id: pokemon.id,
+      104      name: pokemon.name,
+      105      types,
+      106 +    height: formatHeight(pokemon.height),                     
+      107 +    weight: formatWeight(pokemon.weight),                     
+      108      about: [
+      109        { label: "Name", value: formatName(pokemon.name) },
+      110        { label: "ID", value: formatBadge(pokemon.id) },
+
+● Write(src\hooks\useCompare.tsx)
+  ⎿  Wrote 63 lines to src\hooks\useCompare.tsx
+       1 import { useQuery } from "@tanstack/react-query";
+       2 import { createContext, type ReactNode, useContext, useMemo, use
+         State } from "react";
+       3
+       4 import { pokemonDetailQuery } from "@/hooks/usePokemonDetail";
+       5 import {
+       6   addToSlots,
+       7   clearSlot,
+       8   type CompareSlots,
+       9   EMPTY_SLOTS,
+     … +54 lines (ctrl+o to expand)
+
+● Write(assets\icons\Compare.svg)
+  ⎿  Wrote 3 lines to assets\icons\Compare.svg
+      1 <svg width="20" height="18" viewBox="0 0 20 18" fill="none" xmlns
+        ="http://www.w3.org/2000/svg">
+      2 <path d="M14 0L12.6 1.4L15.2 4H1V6H15.2L12.6 8.6L14 10L19 5L14 0Z
+        M6 8L1 13L6 18L7.4 16.6L4.8 14H19V12H4.8L7.4 9.4L6 8Z" fill="#0E0
+        940"/>
+      3 </svg>
+
+● Write(assets\icons\Plus.svg)
+  ⎿  Wrote 3 lines to assets\icons\Plus.svg
+      1 <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns
+        ="http://www.w3.org/2000/svg">
+      2 <path d="M6 14V8H0V6H6V0H8V6H14V8H8V14H6Z" fill="#0E0940"/>
+      3 </svg>
+
+● Write(assets\icons\Close.svg)
+  ⎿  Wrote 3 lines to assets\icons\Close.svg
+      1 <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns
+        ="http://www.w3.org/2000/svg">
+      2 <path d="M1.4 14L0 12.6L5.6 7L0 1.4L1.4 0L7 5.6L12.6 0L14 1.4L8.4
+         7L14 12.6L12.6 14L7 8.4L1.4 14Z" fill="#0E0940"/>
+      3 </svg>
+
+● Write(src\components\TypePills.tsx)
+  ⎿  Wrote 55 lines to src\components\TypePills.tsx
+       1 import { type StyleProp, StyleSheet, Text, View, type ViewStyle
+         } from "react-native";
+       2
+       3 import { formatName } from "@/lib/pokemon";
+       4 import { colors, typeColors } from "@/theme/colors";
+       5 import { fonts } from "@/theme/fonts";
+       6 import { spacing } from "@/theme/spacing";
+       7
+       8 type TypePillsProps = {
+       9   types: string[];
+     … +46 lines (ctrl+o to expand)
+
+  Read 3 files, ran 1 shell command (ctrl+o to expand)
+
+● Write(src\components\CompareSlot.tsx)  ⎿  Wrote 170 lines to src\components\CompareSlot.tsx
+       1 import { ActivityIndicator, Pressable, StyleSheet, Text, View }
+         from "react-native";
+       2
+       3 import { Icon } from "@/components/Icon";
+       4 import { ErrorMessage } from "@/components/ListStates";
+       5 import { PokemonBadge } from "@/components/PokemonCard";
+       6 import { PokemonImage } from "@/components/PokemonImage";
+       7 import { TypePills } from "@/components/TypePills";
+       8 import type { SlotStatus } from "@/lib/compare";
+       9 import { formatBadge, formatName, type PokemonDetailData } from
+     … +162 lines (~4 KB) (ctrl+o to expand)
+
+● Write(src\components\CompareStats.tsx)
+  ⎿  Wrote 92 lines to src\components\CompareStats.tsx
+       1 import { ActivityIndicator, StyleSheet, Text, View } from "react
+         -native";
+       2
+       3 import { formatStatRowLabel, toCompareRows } from "@/lib/compare
+         ";
+       4 import type { PokemonDetailData } from "@/lib/pokemon";
+       5 import { colors, shadows } from "@/theme/colors";
+       6 import { fonts } from "@/theme/fonts";
+       7 import { spacing } from "@/theme/spacing";
+       8
+     … +84 lines (ctrl+o to expand)
+
+● Write(src\components\ComparePage.tsx)
+  ⎿  Wrote 72 lines to src\components\ComparePage.tsx
+       1 import { router } from "expo-router";
+       2 import { ScrollView, StyleSheet, View } from "react-native";
+       3 import { useSafeAreaInsets } from "react-native-safe-area-contex
+         t";
+       4
+       5 import { CompareSlot } from "@/components/CompareSlot";
+       6 import { CompareStats, CompareStatsLoading } from "@/components/
+         CompareStats";
+       7 import { CenteredMessage } from "@/components/ListStates";
+       8 import { ScreenTitle } from "@/components/ScreenTitle";
+     … +64 lines (ctrl+o to expand)
+
+● Write(src\components\ComparePicker.tsx)
+  ⎿  Wrote 79 lines to src\components\ComparePicker.tsx
+       1 import { router } from "expo-router";
+       2 import { Keyboard, Pressable, StyleSheet, View } from "react-nat
+         ive";
+       3
+       4 import { DetailBar } from "@/components/DetailBar";
+       5 import { PokemonGrid } from "@/components/PokemonGrid";
+       6 import { SearchBar } from "@/components/SearchBar";
+       7 import { SearchResults } from "@/components/SearchResults";
+       8 import { useCompare } from "@/hooks/useCompare";
+       9 import { usePokemonSearch } from "@/hooks/usePokemonSearch";
+     … +70 lines (ctrl+o to expand)
+
+● Write(src\app\(tabs)\compare.tsx)
+  ⎿  Wrote 5 lines to src\app\(tabs)\compare.tsx
+      1 import { ComparePage } from "@/components/ComparePage";
+      2
+      3 export default function CompareScreen() {
+      4   return <ComparePage />;
+      5 }
+
+● Write(src\app\compare\pick.tsx)
+  ⎿  Wrote 10 lines to src\app\compare\pick.tsx
+       1 import { useLocalSearchParams } from "expo-router";
+       2
+       3 import { ComparePicker } from "@/components/ComparePicker";
+       4 import { getSlotFromParam } from "@/lib/compare";
+       5
+       6 export default function ComparePickScreen() {
+       7   const { slot } = useLocalSearchParams<{ slot: string }>();
+       8
+       9   return <ComparePicker slot={getSlotFromParam(slot)} />;
+      10 }
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● The shell rejected the batch edits to existing files, so none applied and that
+  explains the type errors; the new files are fine. I'm putting the same edits
+  into a script file next.
+
+  Made 1 scratchpad edit +399 (ctrl+o to expand)
+
+● Bash(node "C:/Users/Gebruiker/AppData/Local/Temp/claude/23d15d677ba5a18b/6829b
+      064-d121-40ec-9a2d-be62e149f101/scratchpad/edits.js" && git status --short
+      && ls .expo/…)
+  ⎿  Updated src\app\(tabs)\_layout.tsx (+7 -0)
+      41            tabBarIcon: ({ focused }) => <TabIcon name="favorites
+          " focused={focused} />,
+      42          }}
+      43        />
+      44 +      <Tabs.Screen                                             
+      45 +        name="compare"                                         
+      46 +        options={{                                             
+      47 +          title: "Compare",                                    
+      48 +          tabBarIcon: ({ focused }) => <TabIcon name="compare" 
+         +focused={focused} />,                                          
+      49 +        }}                                                     
+      50 +      />                                                       
+      51      </Tabs>
+      52    );
+      53  }
+  ⎿  Updated src\app\_layout.tsx (+19 -15)
+      13  import { useEffect } from "react";
+      14  
+      15  import { queryClient } from "@/api/queryClient";
+      16 +import { CompareProvider } from "@/hooks/useCompare";          
+      17  import { colors } from "@/theme/colors";
+      18  import { fonts } from "@/theme/fonts";
+      19  
+     ...
+      42  
+      43    return (
+      44      <QueryClientProvider client={queryClient}>
+      44 -      <StatusBar style="dark" />                               
+      45 -      <Stack                                                   
+      46 -        screenOptions={{                                       
+      47 -          contentStyle: { backgroundColor: colors.background },
+      48 -          headerStyle: { backgroundColor: colors.background }, 
+      49 -          headerTintColor: colors.text,                        
+      50 -          headerShadowVisible: false,                          
+      51 -        }}                                                     
+      52 -      >                                                        
+      53 -        <Stack.Screen name="(tabs)" options={{ headerShown: fal
+         -se }} />                                                       
+      54 -        <Stack.Screen                                          
+      55 -          name="pokemon/[id]"                                  
+      56 -          options={{ headerShown: false, animationTypeForReplac
+         -e: "push" }}                                                   
+      57 -        />                                                     
+      58 -      </Stack>                                                 
+      45 +      <CompareProvider>                                        
+      46 +        <StatusBar style="dark" />                             
+      47 +        <Stack                                                 
+      48 +          screenOptions={{                                     
+      49 +            contentStyle: { backgroundColor: colors.background 
+         +},                                                             
+      50 +            headerStyle: { backgroundColor: colors.background }
+         +,                                                              
+      51 +            headerTintColor: colors.text,                      
+      52 +            headerShadowVisible: false,                        
+      53 +          }}                                                   
+      54 +        >                                                      
+      55 +          <Stack.Screen name="(tabs)" options={{ headerShown: f
+         +alse }} />                                                     
+      56 +          <Stack.Screen                                        
+      57 +            name="pokemon/[id]"                                
+      58 +            options={{ headerShown: false, animationTypeForRepl
+         +ace: "push" }}                                                 
+      59 +          />                                                   
+     … 6 more lines (ctrl+o to expand)
+  ⎿  Updated src\components\DetailHeader.tsx (+3 -35)
+      1  import { type LayoutChangeEvent, StyleSheet, Text, View } from "
+         react-native";
+      2  
+      3  import { PokemonImage } from "@/components/PokemonImage";
+      4 +import { TypePills } from "@/components/TypePills";             
+      5  import { formatBadge, formatName, type PokemonDetailData } from 
+         "@/lib/pokemon";
+      5 -import { colors, typeColors } from "@/theme/colors";            
+      6 +import { colors } from "@/theme/colors";                        
+      7  import { fonts } from "@/theme/fonts";
+      8  import { spacing } from "@/theme/spacing";
+      9  
+     ...
+      28            <Text style={styles.name}>{formatName(pokemon.name)}<
+          /Text>
+      29            <Text style={styles.id}>{formatBadge(pokemon.id)}</Te
+          xt>
+      30          </View>
+      30 -        <View style={styles.types}>                            
+      31 -          {pokemon.types.map((type) => (                       
+      32 -            <View key={type} style={styles.pill}>              
+      33 -              <View style={[styles.dot, { backgroundColor: type
+         -Colors[type] }]} />                                            
+      34 -              <Text style={styles.typeName}>{formatName(type)}<
+         -/Text>                                                         
+      35 -            </View>                                            
+      36 -          ))}                                                  
+      37 -        </View>                                                
+      31 +        <TypePills types={pokemon.types} style={styles.types} /
+         +>                                                              
+      32        </View>
+      33        <View style={styles.imageRow}>
+      34          {/* The top of the page colour stops behind the image, 
+          so the image overlaps the edge. */}
+     ...
+       70    },
+       71    types: {
+       72      marginTop: 12,
+       79 -    flexDirection: "row",                                     
+       80 -    flexWrap: "wrap",                                         
+       81 -    gap: 8,                                                   
+       82 -  },                                                          
+       83 -  pill: {                                                     
+       84 -    height: 32,                                               
+       85 -    paddingTop: 4,                                            
+       86 -    paddingRight: 14,                                         
+       87 -    paddingBottom: 4,                                         
+       88 -    paddingLeft: 12,                                          
+       89 -    flexDirection: "row",                                     
+       90 -    alignItems: "center",                                     
+     … 17 more lines (ctrl+o to expand)
+  ⎿  Updated src\components\Icon.tsx (+3 -0)
+      17    options: { source: require("@/assets/icons/Options.svg"), wid
+          th: 3, height: 15 },
+      18    open: { source: require("@/assets/icons/Open.svg"), width: 18
+          , height: 18 },
+      19    share: { source: require("@/assets/icons/Share.svg"), width: 
+          18, height: 20 },
+      20 +  compare: { source: require("@/assets/icons/Compare.svg"), wid
+         +th: 20, height: 18 },                                          
+      21 +  plus: { source: require("@/assets/icons/Plus.svg"), width: 14
+         +, height: 14 },                                                
+      22 +  close: { source: require("@/assets/icons/Close.svg"), width: 
+         +14, height: 14 },                                              
+      23  } as const;
+      24  
+      25  export type IconName = keyof typeof icons;
+  ⎿  Updated src\components\OptionsSheet.tsx (+17 -1)
+      13  import { SafeAreaProvider, useSafeAreaInsets } from "react-nati
+          ve-safe-area-context";
+      14  
+      15  import { Icon, type IconName } from "@/components/Icon";
+      16 +import { useCompare } from "@/hooks/useCompare";               
+      17  import { useFavorite } from "@/hooks/useFavorites";
+      18 +import { canCompare } from "@/lib/compare";                    
+      19  import type { PokemonListItem } from "@/lib/pokemon";
+      20  import { canShare, formatShareMessage } from "@/lib/share";
+      21  import { colors } from "@/theme/colors";
+     ...
+      23  import { spacing } from "@/theme/spacing";
+      24  
+      25  const ANIMATION_DURATION = 250;
+      24 -const MAX_ROWS = 3;                                            
+      26 +const MAX_ROWS = 4;                                            
+      27  
+      28  type OptionsSheetProps = {
+      29    /** The Pokémon the sheet is open for, or null while it is cl
+          osed. */
+     ...
+      62  function OpenSheet({ pokemon, onClose }: { pokemon: PokemonList
+          Item; onClose: () => void }) {
+      63    const progress = useAnimatedValue(0);
+      64    const [isClosing, setIsClosing] = useState(false);
+      65 +  const { add } = useCompare();                                
+      66  
+      67    useEffect(() => {
+      68      animateTo(progress, 1).start();
+     ...
+      80      });
+      81    }
+      82  
+      83 +  function openCompare() {                                     
+      84 +    add(pokemon.id);                                           
+      85 +    router.navigate("/compare");                               
+      86 +  }                                                            
+      87 +                                                               
+      88    return (
+      89      <Modal
+      90        transparent
+     ...
+      113              onPress={() => close(() => router.push(`/pokemon/$
+           {pokemon.id}`))}
+      114            />
+      115            <FavoriteRow id={pokemon.id} disabled={isClosing} />
+      116 +          {canCompare(pokemon.name) && (                      
+      117 +            <SheetRow                                         
+     … 9 more lines (ctrl+o to expand)
+  ⎿  … 5 more files changed
+
+● Two type errors remain, both from stale route types in the gitignored
+  .expo/types, which starting the dev server will regenerate. I'm then running a
+  real Android bundle to catch issues like icon paths that tsc misses.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Typecheck, lint, all 106 tests and the Android bundle pass. Next I'll add the
+  below-the-slots decision to task 15 and tick only the criteria a unit test
+  proves, leaving the rest open until they're checked on a phone.
+
+  Read 1 file (ctrl+o to expand)
+
+● Update(specs\features\compare.md)
+  ⎿  Added 1 line, removed 1 line
+      15  - [ ] The tab bar shows Pokémons, Favorites and Compare, in tha
+          t order. Compare uses `assets/icons/Compare.svg`.
+      16  - [ ] The Compare tab shows the title "Compare" in the same sty
+          le as "My favorites", with two slots side by side below it.
+      17  - [ ] Both slots empty: each slot shows "+" and "Add Pokémon", 
+          and the text "Pick two Pokémon to compare" shows below the slot
+          s.
+      18 -- [ ] One slot filled: that slot shows its Pokémon, the other s
+         -hows "+" and "Add Pokémon", and the text "Pick two Pokémon to c
+         -ompare" still shows. No stats show.                            
+      18 +- [ ] One slot filled: that slot shows its Pokémon, the other s
+         +hows "+" and "Add Pokémon", and the text "Pick two Pokémon to c
+         +ompare" still shows, unless that Pokémon failed to load. No sta
+         +ts show.                                                       
+      19  - [ ] Tapping an empty slot opens the picker for that slot.
+      20  - [ ] Tapping a filled slot opens the picker for that slot, to 
+          swap its Pokémon.
+      21  
+
+● Update(specs\features\compare.md)
+  ⎿  Added 1 line, removed 1 line
+      82  **States**
+      83  
+      84  - [ ] While a Pokémon loads, its slot shows the ID badge and a 
+          spinner, and its ✕ works.
+      85 -- [ ] While either Pokémon loads and neither has failed, the st
+         -ats card shows one centered spinner.                           
+      85 +- [ ] What shows below the slots is decided in this order: any 
+         +slot failed shows nothing, any slot empty shows "Pick two Pokém
+         +on to compare", any slot loading shows the stats card with one 
+         +centered spinner, and otherwise the stats card shows. *(unit te
+         +st)*                                                           
+      86  - [ ] If a Pokémon fails to load, its slot shows "Could not loa
+          d Pokémon" and a Retry button, and its ✕ works.
+      87  - [ ] Tapping that Retry shows the slot's spinner and requests 
+          only that Pokémon again.
+      88  - [ ] If one Pokémon fails, the other slot stays visible and wo
+          rking, and no stats card, spinner or text shows below the slots
+          .
+
+● Update(specs\features\compare.md)
+  ⎿  Added 1 line, removed 1 line
+      154  
+      155  ## States
+      156  
+      157 -- **Loading:** Slot: ID badge and a spinner. Stats card: one c
+          -entered spinner until both Pokémon have loaded. Picker: as on 
+          -the homepage list and search.                                 
+      157 +- **Loading:** Slot: ID badge and a spinner. Stats card: one c
+          +entered spinner until both Pokémon have loaded, only when both
+          + slots are filled and none has failed. Picker: as on the homep
+          +age list and search.                                          
+      158  - **Error:** Slot: "Could not load Pokémon" and a Retry button
+            for that Pokémon only, with ✕ still working. Nothing shows be
+           low the slots while a slot has failed. Picker: as on the homep
+           age list and search.
+      159  - **Empty:** One or both slots empty: "+" and "Add Pokémon" in
+            each empty slot, and "Pick two Pokémon to compare" below them
+           . Picker with no matches: "No Pokémon found".
+      160  
+
+● Bash(sed -i '/(unit test)\*$/s/^- \[ \]/- [x]/' specs/features/compare.md &&
+      grep -c '^- \[x\]' specs/features/compare.md; grep -c '^- \[ \]'
+      specs/features/compare.…)
+  ⎿  Updated specs\features\compare.md (+14 -14)
+      32  **Removing**
+      33  
+      34  - [ ] Tapping ✕ empties that slot straight away, with no confir
+          mation or undo, and does not open the picker.
+      35 -- [ ] After removing a Pokémon, the other Pokémon stays in its 
+         -own slot and does not shift over. *(unit test)*                
+      35 +- [x] After removing a Pokémon, the other Pokémon stays in its 
+         +own slot and does not shift over. *(unit test)*                
+      36  - [ ] After removing a Pokémon, the stats disappear and "Pick t
+          wo Pokémon to compare" shows.
+      37  
+      38  **Stats comparison**
+      39  
+      40  - [ ] With both slots filled and loaded, the stats card shows t
+          he rows HP, Attack, Defense, Special Attack, Special Defense an
+          d Speed, in that order, with the left slot's value on the left 
+          and the right slot's value on the right.
+      41  - [ ] Charizard (left) and Blastoise (right) show 78/79, 84/83,
+           78/100, 109/85, 85/105 and 100/78.
+      42 -- [ ] In each row, the higher value shows in green and semibold
+         -, and the lower value stays in the normal style. *(unit test)* 
+      43 -- [ ] For Charizard and Blastoise, the green values are 79, 84,
+         - 100, 109, 105 and 100. *(unit test)*                          
+      44 -- [ ] When both values in a row are equal, neither is green. Pi
+         -kachu (`25`) and `pikachu-phd` (`10083`) have no green values a
+         -t all. *(unit test)*                                           
+      45 -- [ ] Swapping the two Pokémon between slots moves the green va
+         -lues with them. *(unit test)*                                  
+      42 +- [x] In each row, the higher value shows in green and semibold
+         +, and the lower value stays in the normal style. *(unit test)* 
+      43 +- [x] For Charizard and Blastoise, the green values are 79, 84,
+         + 100, 109, 105 and 100. *(unit test)*                          
+      44 +- [x] When both values in a row are equal, neither is green. Pi
+         +kachu (`25`) and `pikachu-phd` (`10083`) have no green values a
+         +t all. *(unit test)*                                           
+      45 +- [x] Swapping the two Pokémon between slots moves the green va
+         +lues with them. *(unit test)*                                  
+      46  
+      47  **Selection**
+      48  
+     ...
+      56  - [ ] The list includes alternate forms.
+      57  - [ ] Cards in the picker have no ⋮ button.
+      58  - [ ] Tapping a card fills the slot the picker was opened for a
+          nd returns to the Compare tab.
+      59 -- [ ] Swapping a slot replaces only that slot. The other slot s
+         -tays as it was. *(unit test)*                                  
+      60 -- [ ] The Pokémon in the other slot is not in the picker list o
+         -r in its search results. *(unit test)*                         
+      59 +- [x] Swapping a slot replaces only that slot. The other slot s
+         +tays as it was. *(unit test)*                                  
+      60 +- [x] The Pokémon in the other slot is not in the picker list o
+         +r in its search results. *(unit test)*                         
+      61  - [ ] When swapping, the slot's current Pokémon is still in the
+           list. Tapping it returns to the Compare tab with nothing chang
+          ed.
+      62  - [ ] Searching in the picker follows the search spec: matching
+          , keyboard rules, loading, error and "No Pokémon found".
+      63  - [ ] While the keyboard is open, tapping a card only closes th
+          e keyboard and does not pick that Pokémon.
+     ...
+      71  - [ ] The sheet shows, top to bottom: Open Pokémon, the favorit
+          e row, Compare, Share.
+      72  - [ ] The Compare row shows `assets/icons/Compare.svg` and the 
+          label "Compare".
+      73  - [ ] Tapping Compare closes the sheet and, once the closing an
+          imation has finished, opens the Compare tab.
+      74 -- [ ] Slot 1 empty: the Pokémon goes into slot 1. *(unit test)*
+      75 -- [ ] Slot 1 filled and slot 2 empty: the Pokémon goes into slo
+         -t 2. *(unit test)*                                             
+      76 -- [ ] Slot 1 empty and slot 2 filled: the Pokémon goes into slo
+         -t 1. *(unit test)*                                             
+      77 -- [ ] Both slots filled: the Pokémon replaces slot 2. *(unit te
+         -st)*                                                           
+      78 -- [ ] The Pokémon is already in a slot: nothing changes and the
+         - Compare tab opens. *(unit test)*                              
+     … 17 more lines (ctrl+o to expand)
+
+● Compare is built on the feature/compare branch and nothing is committed, but I
+  haven't seen it running on a screen, so task 19, the phone test, is still
+  open. Tasks 1–18 are ticked in the plan comment
+  (https://github.com/Lucas-Light/Pokedex/issues/15#issuecomment-6697592793).
+
+  Checks
+
+  ┌────────────────────────────────┬────────────────────────────────────────┐
+  │             Check              │                 Result                 │
+  ├────────────────────────────────┼────────────────────────────────────────┤
+  │ npx tsc --noEmit               │ No errors                              │
+  ├────────────────────────────────┼────────────────────────────────────────┤
+  │ npx expo lint --max-warnings 0 │ No warnings                            │
+  ├────────────────────────────────┼────────────────────────────────────────┤
+  │ npm test (run with npx jest)   │ 106 tests pass, 33 of them new         │
+  ├────────────────────────────────┼────────────────────────────────────────┤
+  │ Android bundle (npx expo       │ Builds, including the new icons and    │
+  │ export)                        │ routes                                 │
+  └────────────────────────────────┴────────────────────────────────────────┘
+
+  No packages were added, so it still runs in Expo Go.
+
+  What changed
+
+  UI
+  - New routes: src/app/(tabs)/compare.tsx and src/app/compare/pick.tsx.
+  - New components: ComparePage, CompareSlot, CompareStats, ComparePicker and
+    TypePills.
+  - New icons: Compare.svg, Plus.svg and Close.svg.
+  - Changed:
+    - Both _layout.tsx files, Icon and DetailHeader, which now uses TypePills.
+    - OptionsSheet, which has the Compare row and MAX_ROWS at 4.
+    - PokemonCard, PokemonCardList, PokemonGrid and SearchResults.
+
+  Data: new src/hooks/useCompare.tsx.
+
+  Logic
+  - New: src/lib/compare.ts and src/lib/__tests__/compare-test.ts.
+  - Changed: height and weight strings in src/lib/pokemon.ts, and the green in
+    colors.ts.
+
+  Spec: compare.md now has the failed, empty, loading, stats order. The issue
+  body still has the old wording, so go by the spec.
+
+  Acceptance criteria
+
+  14 of the 57 criteria are ticked, and those are the ones a unit test proves:
+  slot placement, green values and ties, picker exclusion, the below-the-slots
+  order, and the "Unknown" rule. The other 43 are built but stay open until
+  you've checked them on a phone.
+
+  What to test on your phone
+
+  1. Look of the page: check that the slots, spacing and three new icons look
+     right, and that long names and two type pills fit. Try
+     squawkabilly-yellow-plumage, plus a Pokémon with long type names.
+  2. ⋮ → Compare from the homepage, search results and Favorites: the tab should
+     open after the sheet closes. This is the riskiest part, because the docs
+     didn't confirm navigating to a tab from outside it. Also watch that the
+     taller sheet doesn't flash before it slides up.
+  3. Slot rules: run through empty slot, slot 1 filled, both filled, and a
+     Pokémon that's already in a slot.
+  4. Green values: Charizard vs Blastoise should show 79, 84, 100, 109, 105 and
+     100 in green. Pikachu vs pikachu-phd should show no green.
+  5. Picker:
+     - The Pokémon in the other slot is missing from both the list and search.
+     - While the keyboard is open, tapping a card only closes the keyboard.
+     - Android back and the iOS swipe change nothing.
+  6. Errors in airplane mode: pick a Pokémon you haven't opened yet and check
+     that its slot shows the error with Retry and a working ✕. Nothing should
+     show below the slots.
+  7. Regressions: the Detail type pills, and homepage cards opening Detail,
+     should look and work the same.
+  8. Selection: the slots survive switching tabs and are empty after an app
+     restart.
+
+  Choices to check
+
+  - Picker title: it reuses DetailBar, so "Pick a Pokémon" is 20px and centered,
+    not the 24px page title.
+  - Failed slot: tapping it outside Retry and ✕ opens the picker. Tapping
+    exactly on the error text does nothing.
+  - Screen readers: the slot and picker controls have labels, but I haven't
+    tried them with a screen reader.
+  - Route types: the new routes needed a dev server start to regenerate
+    .expo/types. That folder is gitignored, so if tsc complains on another
+    machine, run npx expo start once.
+
+  After testing, run /review-issue 15, then /commit-issue 15.
+
+> Everything works. Check the boxes.
+
+● Bash(S="C:/Users/Gebruiker/AppData/Local/Temp/claude/23d15d677ba5a18b/6829b064
+      -d121-40ec-9a2d-be62e149f101/scratchpad"
+      sed -i 's/^- \[ \]/- [x]/' specs/features/comp…)
+  ⎿  Updated specs\features\compare.md (+43 -43)
+      12  
+      13  **Compare tab**
+      14  
+      15 -- [ ] The tab bar shows Pokémons, Favorites and Compare, in tha
+         -t order. Compare uses `assets/icons/Compare.svg`.              
+      16 -- [ ] The Compare tab shows the title "Compare" in the same sty
+         -le as "My favorites", with two slots side by side below it.    
+      17 -- [ ] Both slots empty: each slot shows "+" and "Add Pokémon", 
+         -and the text "Pick two Pokémon to compare" shows below the slot
+         -s.                                                             
+      18 -- [ ] One slot filled: that slot shows its Pokémon, the other s
+         -hows "+" and "Add Pokémon", and the text "Pick two Pokémon to c
+         -ompare" still shows, unless that Pokémon failed to load. No sta
+         -ts show.                                                       
+      19 -- [ ] Tapping an empty slot opens the picker for that slot.    
+      20 -- [ ] Tapping a filled slot opens the picker for that slot, to 
+         -swap its Pokémon.                                              
+      15 +- [x] The tab bar shows Pokémons, Favorites and Compare, in tha
+         +t order. Compare uses `assets/icons/Compare.svg`.              
+      16 +- [x] The Compare tab shows the title "Compare" in the same sty
+         +le as "My favorites", with two slots side by side below it.    
+      17 +- [x] Both slots empty: each slot shows "+" and "Add Pokémon", 
+         +and the text "Pick two Pokémon to compare" shows below the slot
+         +s.                                                             
+      18 +- [x] One slot filled: that slot shows its Pokémon, the other s
+         +hows "+" and "Add Pokémon", and the text "Pick two Pokémon to c
+         +ompare" still shows, unless that Pokémon failed to load. No sta
+         +ts show.                                                       
+      19 +- [x] Tapping an empty slot opens the picker for that slot.    
+      20 +- [x] Tapping a filled slot opens the picker for that slot, to 
+         +swap its Pokémon.                                              
+      21  
+      22  **Filled slot**
+      23  
+      24 -- [ ] A filled slot shows the ID badge, image, name, type pills
+         -, height and weight, and a ✕ button.                           
+      25 -- [ ] The name and ID use the existing formats: `mr-mime` → `Mr
+         - Mime`, `6` → `006`.                                           
+      26 -- [ ] A Pokémon with two types shows two pills in API order: Ch
+         -arizard shows Fire, then Flying. Pills that don't fit on one li
+         -ne wrap onto a second line.                                    
+      27 -- [ ] Height and weight use the About tab's format: Charizard s
+         -hows `1.7 m` and `90.5 kg`.                                    
+      28 -- [ ] Height and weight are never green.                       
+      29 -- [ ] A long name wraps onto more lines and is not cut off: `sq
+         -uawkabilly-yellow-plumage` shows in full.                      
+      30 -- [ ] If the image can't load (e.g. ID `10264`), the image area
+         - shows the muted Pokéball placeholder and keeps its size.      
+      24 +- [x] A filled slot shows the ID badge, image, name, type pills
+         +, height and weight, and a ✕ button.                           
+      25 +- [x] The name and ID use the existing formats: `mr-mime` → `Mr
+         + Mime`, `6` → `006`.                                           
+      26 +- [x] A Pokémon with two types shows two pills in API order: Ch
+         +arizard shows Fire, then Flying. Pills that don't fit on one li
+         +ne wrap onto a second line.                                    
+      27 +- [x] Height and weight use the About tab's format: Charizard s
+         +hows `1.7 m` and `90.5 kg`.                                    
+      28 +- [x] Height and weight are never green.                       
+      29 +- [x] A long name wraps onto more lines and is not cut off: `sq
+         +uawkabilly-yellow-plumage` shows in full.                      
+      30 +- [x] If the image can't load (e.g. ID `10264`), the image area
+         + shows the muted Pokéball placeholder and keeps its size.      
+      31  
+      32  **Removing**
+      33  
+      34 -- [ ] Tapping ✕ empties that slot straight away, with no confir
+         -mation or undo, and does not open the picker.                  
+      34 +- [x] Tapping ✕ empties that slot straight away, with no confir
+         +mation or undo, and does not open the picker.                  
+      35  - [x] After removing a Pokémon, the other Pokémon stays in its 
+          own slot and does not shift over. *(unit test)*
+      36 -- [ ] After removing a Pokémon, the stats disappear and "Pick t
+         -wo Pokémon to compare" shows.                                  
+      36 +- [x] After removing a Pokémon, the stats disappear and "Pick t
+         +wo Pokémon to compare" shows.                                  
+     … 89 more lines (ctrl+o to expand)
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● All the boxes are ticked, and I confirmed the counts on GitHub:
+
+  - Spec: all 57 criteria in specs/features/compare.md.
+  - Issue body: all 57 criteria in #15. I rebuilt the list from the spec, so it
+    now has the final wording for what shows below the slots.
+  - Plan comment: all 19 tasks, including the phone test.
+
+  The spec header still says Status: draft, and I left that alone because you
+  only asked for the boxes. Nothing is committed yet. The next steps are
+  /review-issue 15, then /commit-issue 15. The chat export also needs to go in
+  chat-history/ on this branch before merging.
+
+> /review-issue 15
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Review of #15
+
+  Result: no spec criterion fails. There are 3 ❌ items to fix before merging,
+  and none of them is a bug in Compare. I changed nothing.
+
+  Lint, typecheck and tests
+
+  ┌────────────────────────────────┬───────────────────────┐
+  │            Command             │        Output         │
+  ├────────────────────────────────┼───────────────────────┤
+  │ npx expo lint --max-warnings 0 │ Exit 0, no warnings   │
+  ├────────────────────────────────┼───────────────────────┤
+  │ npx tsc --noEmit               │ Exit 0, no errors     │
+  ├────────────────────────────────┼───────────────────────┤
+  │ npx jest                       │ 106 of 106 tests pass │
+  └────────────────────────────────┴───────────────────────┘
+
+  Findings
+
+  - ❌ Learned rule not fully met: cards on the homepage, in search results and
+    on Favorites still have no accessibilityRole or accessibilityLabel. I only
+    added them for picker cards (PokemonCard.tsx:37-38
+    (src/components/PokemonCard.tsx#L37-L38)). The gap is older than this
+    feature, but I edited those lines and AGENTS.md says every button.
+  - ❌ Chat export missing: chat-history/ has nothing for #15 yet, and it has to
+    be committed on this branch before merging.
+  - ❌ Spec is out of date:
+    - The Code layout doesn't list TypePills, DetailHeader, PokemonGrid,
+      SearchResults, src/lib/pokemon.ts or src/app/(tabs)/_layout.tsx.
+    - The header still says Status: draft.
+  - ❌ Small logic in UI: the "Change…" and "Remove…" labels are built inside
+    the component, partly duplicated and untested (CompareSlot.tsx:26-36
+    (src/components/CompareSlot.tsx#L26-L36)). They belong in
+    src/lib/compare.ts.
+  - ⚠️ Possible double back (not confirmed): a very fast double tap on a picker
+    card could call router.back() twice (ComparePicker.tsx:23-25
+    (src/components/ComparePicker.tsx#L23-L25)). That could leave the Compare
+    tab. It's in the test script below.
+  - ⚠️ Duplication: ComparePicker repeats the search and grid layout from the
+    homepage. It works, but changes must be made in both places.
+  - ⚠️ Test gap: formatHeight and formatWeight are tested, but the new height
+    and weight fields on toPokemonDetail aren't.
+
+  Acceptance criteria
+
+  Unit-tested criteria are marked (test). For the rest I could only read the
+  code, and they rely on your phone test.
+
+  Compare tab
+  - ✅ Third tab with the Compare icon: _layout.tsx:45-48
+    (src/app/%28tabs%29/_layout.tsx#L45-L48)
+  - ✅ Title and two slots: ComparePage.tsx:27
+    (src/components/ComparePage.tsx#L27)
+  - ✅ Both slots empty shows the prompt: ComparePage.tsx:47
+    (src/components/ComparePage.tsx#L47)
+  - ✅ One slot filled shows the prompt, unless it failed: compare.ts:106
+    (src/lib/compare.ts#L106) (test)
+  - ✅ Empty slot opens the picker: ComparePage.tsx:34
+    (src/components/ComparePage.tsx#L34)
+  - ✅ Filled slot opens the picker: ComparePage.tsx:42
+    (src/components/ComparePage.tsx#L42)
+
+  Filled slot (all in CompareSlot.tsx:82-98
+  (src/components/CompareSlot.tsx#L82-L98) unless noted)
+  - ✅ Badge, image, name, pills, height, weight and ✕
+  - ✅ Existing name and ID formats: CompareSlot.tsx:89
+    (src/components/CompareSlot.tsx#L89)
+  - ✅ Pills in API order and wrapping: TypePills.tsx
+    (src/components/TypePills.tsx)
+  - ✅ Height and weight format: pokemon.ts:106-107
+    (src/lib/pokemon.ts#L106-L107)
+  - ✅ Height and weight are never green: they use a plain text style
+  - ✅ Long names wrap: there is no numberOfLines
+  - ✅ Image placeholder: CompareSlot.tsx:86
+    (src/components/CompareSlot.tsx#L86)
+
+  Removing
+  - ✅ ✕ empties the slot and doesn't open the picker: CompareSlot.tsx:58-68
+    (src/components/CompareSlot.tsx#L58-L68)
+  - ✅ The other Pokémon stays put: compare.ts:45 (src/lib/compare.ts#L45)
+    (test)
+  - ✅ Stats disappear and the prompt shows: compare.ts:106
+    (src/lib/compare.ts#L106) (test)
+
+  Stats comparison (all in compare.ts:73 (src/lib/compare.ts#L73) unless noted)
+  - ✅ Six rows in order with left and right values: CompareStats.tsx:17-26
+    (src/components/CompareStats.tsx#L17-L26)
+  - ✅ Charizard and Blastoise values (test)
+  - ✅ Higher value is green and semibold: CompareStats.tsx:49
+    (src/components/CompareStats.tsx#L49) (test)
+  - ✅ The six green values (test)
+  - ✅ Ties get no green: compare.ts:65 (src/lib/compare.ts#L65) (test)
+  - ✅ Green moves when the Pokémon swap slots (test)
+
+  Selection
+  - ✅ Survives tabs, Detail and the picker: _layout.tsx:45
+    (src/app/_layout.tsx#L45)
+  - ✅ Empty after a restart: useCompare.tsx:26 (src/hooks/useCompare.tsx#L26)
+  - ✅ Not in SQLite: nothing in the Compare code touches src/db/
+
+  Picker
+  - ✅ Full page with back button, title, search and list, no tab bar:
+    ComparePicker.tsx:29-45 (src/components/ComparePicker.tsx#L29-L45)
+  - ✅ Includes alternate forms: it uses the same list as the homepage
+  - ✅ No ⋮ button: PokemonCard.tsx:50 (src/components/PokemonCard.tsx#L50)
+  - ✅ Tapping a card fills the slot and goes back: ComparePicker.tsx:23-25
+    (src/components/ComparePicker.tsx#L23-L25)
+  - ✅ Swapping replaces only that slot: compare.ts:37 (src/lib/compare.ts#L37)
+    (test)
+  - ✅ The other slot's Pokémon is left out: ComparePicker.tsx:45
+    (src/components/ComparePicker.tsx#L45) and :51
+    (src/components/ComparePicker.tsx#L51) (test)
+  - ✅ The current Pokémon stays listed and changes nothing: compare.ts:37
+    (src/lib/compare.ts#L37) (test)
+  - ✅ Search follows the search spec: ComparePicker.tsx:19
+    (src/components/ComparePicker.tsx#L19)
+  - ✅ With the keyboard open, a tap only closes it: PokemonCardList.tsx:56
+    (src/components/PokemonCardList.tsx#L56)
+  - ✅ Only match excluded shows "No Pokémon found": compare.ts:61
+    (src/lib/compare.ts#L61) (test)
+  - ✅ Search text starts empty and stays separate: the search state is local to
+    the picker
+  - ✅ Leaving changes nothing: nothing is set until a card is tapped
+  - ✅ List loading, error and Retry: reused from PokemonGrid
+
+  ⋮ menu (all in OptionsSheet.tsx (src/components/OptionsSheet.tsx))
+  - ✅ Row order: :116 (src/components/OptionsSheet.tsx#L116)
+  - ✅ Icon and label: :119 (src/components/OptionsSheet.tsx#L119)
+  - ✅ Opens the tab after the sheet closes: :121
+    (src/components/OptionsSheet.tsx#L121)
+  - ✅ The five placement rules: compare.ts:26 (src/lib/compare.ts#L26) (test)
+  - ✅ No row on "Unknown": compare.ts:57 (src/lib/compare.ts#L57) (test)
+  - ✅ Works from all three places: they all use the same sheet
+
+  States
+  - ✅ Loading slot shows badge, spinner and a working ✕: CompareSlot.tsx:48-51
+    (src/components/CompareSlot.tsx#L48-L51)
+  - ✅ Order below the slots: compare.ts:106 (src/lib/compare.ts#L106) (test)
+  - ✅ Failed slot shows the error, Retry and a working ✕: CompareSlot.tsx:53-57
+    (src/components/CompareSlot.tsx#L53-L57)
+  - ✅ Retry requests only that Pokémon: each slot has its own query
+    (ComparePage.tsx:21-22 (src/components/ComparePage.tsx#L21-L22))
+  - ✅ One fails: the other stays and nothing shows below: compare.ts:106
+    (src/lib/compare.ts#L106) (test)
+  - ✅ Both fail: each slot shows its own error
+  - ✅ Cached data shows with no spinner: compare.ts:92 (src/lib/compare.ts#L92)
+    (test)
+
+  Accessibility
+  - ✅ Slots, ✕, picker cards, back and Retry have a role and label:
+    CompareSlot.tsx:44-45 (src/components/CompareSlot.tsx#L44-L45), :63-64
+    (src/components/CompareSlot.tsx#L63-L64), PokemonCard.tsx:37-38
+    (src/components/PokemonCard.tsx#L37-L38)
+  - ✅ Stats rows are read with names and values: CompareStats.tsx:21
+    (src/components/CompareStats.tsx#L21) (test on the text)
+
+  Other checks
+
+  ┌──────────────────────────────┬──────────────────────────────────────────┐
+  │            Check             │                  Result                  │
+  ├──────────────────────────────┼──────────────────────────────────────────┤
+  │ Every load has loading and   │ ✅ Slots, stats area, picker list,       │
+  │ error states                 │ picker search                            │
+  ├──────────────────────────────┼──────────────────────────────────────────┤
+  │ Every load has an empty      │ ✅ Empty slots, prompt, "No Pokémon      │
+  │ state                        │ found"                                   │
+  ├──────────────────────────────┼──────────────────────────────────────────┤
+  │ UI, data and logic separated │ ❌ Only the slot labels; everything else │
+  │                              │  is split correctly                      │
+  ├──────────────────────────────┼──────────────────────────────────────────┤
+  │ No any, as casts, @ts-ignore │ ✅ The only match is import * as         │
+  │  or console.log              │ SplashScreen, which isn't a cast         │
+  ├──────────────────────────────┼──────────────────────────────────────────┤
+  │ Routes only in src/app/      │ ✅ Both new routes are thin              │
+  ├──────────────────────────────┼──────────────────────────────────────────┤
+  │ Expo Go only, no new         │ ✅                                       │
+  │ packages                     │                                          │
+  ├──────────────────────────────┼──────────────────────────────────────────┤
+  │ AGENTS.md learned rule       │ ❌ See the first finding                 │
+  ├──────────────────────────────┼──────────────────────────────────────────┤
+  │ Chat exported on the branch  │ ❌ Not yet                               │
+  ├──────────────────────────────┼──────────────────────────────────────────┤
+  │ Nothing committed            │ ✅                                       │
+  └──────────────────────────────┴──────────────────────────────────────────┘
+
+  Phone test script
+
+  1. Open Compare: you see two "Add Pokémon" cards and the prompt.
+  2. Tap slot 1, search char and pick Charizard. Tap slot 2 and pick Blastoise.
+     Check the green: 79, 84, 100, 109, 105 and 100.
+  3. Open slot 2's picker and search charizard: the plain Charizard is missing.
+  4. Double-tap a picker card very fast: you should land on Compare, not another
+     tab.
+  5. Tap ✕ on slot 1: Blastoise stays on the right and the prompt shows.
+  6. On the homepage, use ⋮ → Compare on Pikachu: it fills slot 1. Then pick
+     pikachu-phd for the other slot: no green at all.
+  7. Turn on airplane mode and add a Pokémon you haven't opened: the error and
+     Retry show, with nothing below the slots. Turn it off and tap Retry.
+  8. Restart the app: both slots are empty.
+
+  How the code works, in plain language
+
+  - The slots: useCompare.tsx is a shared box holding two numbers, or null for
+    empty. It sits above all the screens in _layout.tsx, so the ⋮ menu, tab and
+    picker all see the same box. It lives only in memory, which is why a restart
+    clears it.
+  - The rules: compare.ts has no React in it, only plain functions: numbers go
+    in, an answer comes out. That makes it easy to test. For example, addToSlots
+    decides where a Pokémon goes, and getHigherSide decides which side turns
+    green.
+  - Loading the data: useComparePokemon uses the same cache key as Detail, so a
+    Pokémon you've already opened appears instantly. enabled: id !== null stops
+    an empty slot from making a request.
+  - What shows below the slots: each slot gets one status: empty, loading,
+    failed or loaded. getCompareArea looks at both and picks one answer, in the
+    order you approved.
+  - The picker: it's the homepage's grid and search with two small differences.
+    With no onOptions there's no ⋮, and with onPick a tap fills the slot instead
+    of opening Detail. excludePokemon removes the Pokémon in the other slot
+    before the list renders, which is how a Pokémon can't be compared with
+    itself.
+  - ✕ and Retry: they sit next to the slot's button, not inside it, because iOS
+    screen readers can't reach a button inside a button.
+
+  Should I fix the three code and spec items (card labels, slot labels, Code
+  layout and status)? The chat export is yours to do.
+
+> Fix all missing accessibility roles and labels. Update all specs to complete.
+
+● I'm starting with an audit of every pressable in the app, plus each spec's
+  status line, so nothing gets missed.
+
+  Ran 1 shell command (ctrl+o to expand)
+● The audit left three gaps to fix: PokemonCard outside the picker,
+  EvolutionCard missing both props, and DetailTabs with a role but no label.
+  I'll update the two draft specs, compare.md and options menu.md, next.
+
+  Searched for 1 pattern, read 3 files (ctrl+o to expand)
+
+● Update(src\components\PokemonCard.tsx)
+  ⎿  Added 5 lines, removed 2 lines
+      30      }
+      31    }
+      32  
+      33 +  // A loading card has no name yet, so it is announced by its 
+         +ID.                                                            
+      34 +  const title = name === undefined ? `Pokémon ${formatBadge(id)
+         +}` : formatName(name);                                         
+      35 +                                                               
+      36    return (
+      37      <Pressable
+      38        style={[styles.card, { width }]}
+      39        onPress={handlePress}
+      37 -      accessibilityRole={onPick ? "button" : undefined}        
+      38 -      accessibilityLabel={onPick && name !== undefined ? `Pick 
+         -${formatName(name)}` : undefined}                              
+      40 +      accessibilityRole="button"                               
+      41 +      accessibilityLabel={`${onPick ? "Pick" : "Open"} ${title}
+         +`}                                                             
+      42      >
+      43        <View style={[styles.imageArea, { height: width }]}>
+      44          {name !== undefined && <PokemonImage id={id} placeholde
+          rBox={PLACEHOLDER_BOX} />}
+
+● Update(src\components\EvolutionCard.tsx)
+  ⎿  Added 2 lines
+      24        disabled={isCurrent}
+      25        // Replaces instead of pushes, so back returns to the lis
+          t that opened Detail.
+      26        onPress={() => router.replace(`/pokemon/${id}`)}
+      27 +      accessibilityRole="button"                               
+      28 +      accessibilityLabel={`Open ${formatName(name)}`}          
+      29      >
+      30        <View style={styles.imageArea}>
+      31          <PokemonImage id={id} placeholderBox={PLACEHOLDER_BOX} 
+          />
+
+● Update(src\components\DetailTabs.tsx)
+  ⎿  Added 1 line
+      24              style={[styles.tab, isActive && styles.tabActive]}
+      25              onPress={() => onChange(tab)}
+      26              accessibilityRole="tab"
+      27 +            accessibilityLabel={tab}                           
+      28              accessibilityState={{ selected: isActive }}
+      29            >
+      30              <Text style={[styles.label, !isActive && styles.lab
+          elInactive]}>{tab}</Text>
+
+  Read 1 file (ctrl+o to expand)
+
+● Update(specs\features\compare.md)
+  ⎿  Added 3 lines
+      167    - `src/components/ComparePicker.tsx` — picker page
+      168    - `src/components/OptionsSheet.tsx` — Compare row
+      169    - `src/components/PokemonCard.tsx`, `src/components/PokemonC
+           ardList.tsx` — cards without ⋮ in the picker
+      170 +  - `src/components/PokemonGrid.tsx`, `src/components/SearchRe
+          +sults.tsx` — reused in the picker, with `onPick` and, on the g
+          +rid, `excludeId`                                              
+      171 +  - `src/components/TypePills.tsx` — the type pills, moved out
+          + of `src/components/DetailHeader.tsx` so slots can use them   
+      172    - `src/components/Icon.tsx` — registers the three new icons
+      173 +  - `src/app/(tabs)/_layout.tsx` — the third tab              
+      174  - Data (API + queries): `src/hooks/useCompare.tsx` — the slots
+            in a React context, mounted in `src/app/_layout.tsx`. `src/ho
+           oks/usePokemonDetail.ts`, `src/hooks/usePokemonList.ts`, `src/
+           hooks/usePokemonSearch.ts` — existing
+      175  - Logic (pure functions): `src/lib/compare.ts` — where a Pokém
+           on goes from the ⋮ menu, setting and clearing a slot, which Po
+           kémon the picker leaves out, and which value in a row is highe
+           r
+      176  - Theme: `src/theme/colors.ts` — `#15803D`
+
+● Update(specs\features\compare.md)
+  ⎿  Added 1 line, removed 1 line
+      172    - `src/components/Icon.tsx` — registers the three new icons
+      173    - `src/app/(tabs)/_layout.tsx` — the third tab
+      174  - Data (API + queries): `src/hooks/useCompare.tsx` — the slots
+            in a React context, mounted in `src/app/_layout.tsx`. `src/ho
+           oks/usePokemonDetail.ts`, `src/hooks/usePokemonList.ts`, `src/
+           hooks/usePokemonSearch.ts` — existing
+      175 -- Logic (pure functions): `src/lib/compare.ts` — where a Pokém
+          -on goes from the ⋮ menu, setting and clearing a slot, which Po
+          -kémon the picker leaves out, and which value in a row is highe
+          -r                                                             
+      175 +- Logic (pure functions): `src/lib/compare.ts` — where a Pokém
+          +on goes from the ⋮ menu, setting and clearing a slot, which Po
+          +kémon the picker leaves out, and which value in a row is highe
+          +r. `src/lib/pokemon.ts` — `height` and `weight` strings on the
+          + detail data                                                  
+      176  - Theme: `src/theme/colors.ts` — `#15803D`
+      177  
+      178  ## Out of scope
+
+● Bash(sed -i '3s/Status: draft/Status: complete/' specs/features/compare.md
+      "specs/features/options menu.md" && grep -n '^> ' specs/features/*.md;
+      echo "--- tsc"; npx…)
+  ⎿  Updated specs\features\compare.md (+1 -1)
+      1  # Feature: compare
+      2  
+      3 -> Issue: #15 · Status: draft                                    
+      3 +> Issue: #15 · Status: complete                                 
+      4  
+      5  ## Goal
+      6  
+  ⎿  Updated specs\features\options menu.md (+143 -143)
+        1 -# Feature: options menu                                       
+        2 -                                                              
+        3 -> Issue: #13 · Status: draft                                  
+        4 -                                                              
+        5 -## Goal                                                       
+        6 -                                                              
+        7 -As a Pokédex user, I want to open a menu from a card's ⋮ butto
+          -n, so that I can open, favorite or share a Pokémon without goi
+          -ng through its Detail page first.                             
+        8 -                                                              
+        9 -## Acceptance criteria                                        
+       10 -                                                              
+       11 -Each one testable on the phone (and, where possible, in a unit
+          - test on the hook or service).                                
+       12 -                                                              
+       13 -**Opening the sheet**                                         
+       14 -                                                              
+       15 -- [x] Tapping a card's ⋮ button on the homepage, in search res
+          -ults or on Favorites opens the bottom sheet for that Pokémon. 
+       16 -- [x] Tapping ⋮ does not open Detail.                         
+       17 -- [x] While the keyboard is open, tapping ⋮ only closes the ke
+          -yboard and the sheet does not open, as in the search spec.    
+       18 -- [x] A card that is still loading has no ⋮ button, so it has 
+          -no menu.                                                      
+       19 -- [x] The sheet shows, top to bottom: Open Pokémon, the favori
+          -te row, Share. It has no header.                              
+       20 -- [x] On opening, the overlay fades in while the sheet slides 
+          -up from the bottom edge of the screen, both at the same time. 
+       21 -                                                              
+       22 -**Closing the sheet**                                         
+       23 -                                                              
+       24 -- [x] Tapping outside the sheet closes it.                    
+       25 -- [x] The Android back button closes the sheet and does not le
+          -ave the page.                                                 
+       26 -- [x] Tapping inside the sheet, but not on a row, does not clo
+          -se it.                                                        
+       27 -- [x] Swiping the sheet down does not close it.               
+       28 -- [x] On every close (tap outside, Android back, Open Pokémon)
+          -, the overlay fades out while the sheet slides back down past 
+          -the bottom edge, both at the same time.                       
+       29 -- [x] While the sheet is closing, further taps on it or outsid
+          -e it do nothing.                                              
+       30 -                                                              
+       31 -**Open Pokémon**                                              
+       32 -                                                              
+       33 -- [x] Tapping Open Pokémon closes the sheet and, once the clos
+          -ing animation has finished, opens Detail for that Pokémon.    
+       34 -- [x] The device's back action on that Detail page returns to 
+          -the page the sheet was opened from.                           
+       35 -                                                              
+       36 -**Favorite row**                                              
+       37 -                                                              
+       38 -- [x] A Pokémon that is not a favorite shows `assets/icons/Fav
+          -orites.svg` (outline) in `#0E0940` and "Add to favorites".    
+       39 -- [x] A favorite shows `assets/icons/Favorites_Active.svg` (fi
+          -lled) in `#FF4F68` and "Remove from favorites".               
+       40 -- [x] Tapping "Add to favorites" saves the Pokémon straight aw
+          -ay, with no confirmation, and the sheet stays open.           
+     … 246 more lines (ctrl+o to expand)
+  ⎿  (timeout 4m)
+
+● Every button in the app now has an accessibility role and label, and every
+  feature spec is set to complete. Typecheck, lint and all 106 tests pass, and
+  nothing is committed.
+
+  Accessibility
+
+  Component: PokemonCard.tsx (src/components/PokemonCard.tsx)
+  Fix: Every card is now a button: "Open Bulbasaur", or "Pick Bulbasaur" in the
+    picker. A card that's still loading says "Open Pokémon 001".
+  ────────────────────────────────────────
+  Component: EvolutionCard.tsx (src/components/EvolutionCard.tsx)
+  Fix: Added the button role and "Open {name}".
+  ────────────────────────────────────────
+  Component: DetailTabs.tsx (src/components/DetailTabs.tsx)
+  Fix: Added the label (About, Stats, Evolution); it already had the tab role.
+
+  Specs
+  - compare.md and options menu.md are now Status: complete; the others already
+    were. _template.md stays on draft because it's the template.
+  - I also updated the Code layout in compare.md, so that review item is closed.
+
+  Still open
+  - ⋮ button on iOS: it has a role and label, but it sits inside the card's
+    button, so VoiceOver probably can't reach it. This was already the case, and
+    I haven't tested it with VoiceOver. Fixing it means moving ⋮ out of the
+    card, the same way I did for ✕ on the Compare slots.
+  - Slot labels: building the "Change…" and "Remove…" labels in CompareSlot
+    still needs moving to src/lib/compare.ts. You didn't include that here, so I
+    left it.
+  - Phone checks: these new labels only matter with a screen reader, so they're
+    worth a quick check with TalkBack or VoiceOver. The double-tap check on
+    picker cards from the test script is also still worth doing.
+  - Chat export: it still needs to go in chat-history/ before merging.
+
+  Next is /commit-issue 15.

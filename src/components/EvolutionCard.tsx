@@ -24,6 +24,8 @@ export function EvolutionCard({ id, name, isCurrent }: EvolutionCardProps) {
       disabled={isCurrent}
       // Replaces instead of pushes, so back returns to the list that opened Detail.
       onPress={() => router.replace(`/pokemon/${id}`)}
+      accessibilityRole="button"
+      accessibilityLabel={`Open ${formatName(name)}`}
     >
       <View style={styles.imageArea}>
         <PokemonImage id={id} placeholderBox={PLACEHOLDER_BOX} />

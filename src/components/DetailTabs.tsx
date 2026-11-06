@@ -24,6 +24,7 @@ export function DetailTabs({ active, onChange }: DetailTabsProps) {
             style={[styles.tab, isActive && styles.tabActive]}
             onPress={() => onChange(tab)}
             accessibilityRole="tab"
+            accessibilityLabel={tab}
             accessibilityState={{ selected: isActive }}
           >
             <Text style={[styles.label, !isActive && styles.labelInactive]}>{tab}</Text>

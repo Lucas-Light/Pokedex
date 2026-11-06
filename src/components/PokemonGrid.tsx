@@ -8,15 +8,19 @@ import {
 } from "@/components/ListStates";
 import { PokemonCardList } from "@/components/PokemonCardList";
 import { usePokemonList } from "@/hooks/usePokemonList";
+import { excludePokemon } from "@/lib/compare";
 import type { PokemonListItem } from "@/lib/pokemon";
 import { colors } from "@/theme/colors";
 import { spacing } from "@/theme/spacing";
 
 type PokemonGridProps = {
-  onOptions: (pokemon: PokemonListItem) => void;
+  onOptions?: (pokemon: PokemonListItem) => void;
+  onPick?: (id: number) => void;
+  /** A Pokémon to leave out of the list. */
+  excludeId?: number | null;
 };
 
-export function PokemonGrid({ onOptions }: PokemonGridProps) {
+export function PokemonGrid({ onOptions, onPick, excludeId = null }: PokemonGridProps) {
   const {
     data,
     isPending,
@@ -35,7 +39,9 @@ export function PokemonGrid({ onOptions }: PokemonGridProps) {
     return <CenteredError message="Could not load Pokémon" onRetry={() => refetch()} />;
   }
 
-  if (data.length === 0) {
+  const items = excludePokemon(data, excludeId);
+
+  if (items.length === 0) {
     return <CenteredMessage message="No Pokémon found" />;
   }
 
@@ -63,8 +69,9 @@ export function PokemonGrid({ onOptions }: PokemonGridProps) {
 
   return (
     <PokemonCardList
-      data={data}
+      data={items}
       onOptions={onOptions}
+      onPick={onPick}
       onEndReached={loadNextPage}
       footer={renderFooter()}
     />

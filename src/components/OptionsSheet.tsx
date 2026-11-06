@@ -13,7 +13,9 @@ import {
 import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Icon, type IconName } from "@/components/Icon";
+import { useCompare } from "@/hooks/useCompare";
 import { useFavorite } from "@/hooks/useFavorites";
+import { canCompare } from "@/lib/compare";
 import type { PokemonListItem } from "@/lib/pokemon";
 import { canShare, formatShareMessage } from "@/lib/share";
 import { colors } from "@/theme/colors";
@@ -21,7 +23,7 @@ import { fonts } from "@/theme/fonts";
 import { spacing } from "@/theme/spacing";
 
 const ANIMATION_DURATION = 250;
-const MAX_ROWS = 3;
+const MAX_ROWS = 4;
 
 type OptionsSheetProps = {
   /** The Pokémon the sheet is open for, or null while it is closed. */
@@ -60,6 +62,7 @@ async function sharePokemon({ id, name }: PokemonListItem) {
 function OpenSheet({ pokemon, onClose }: { pokemon: PokemonListItem; onClose: () => void }) {
   const progress = useAnimatedValue(0);
   const [isClosing, setIsClosing] = useState(false);
+  const { add } = useCompare();
 
   useEffect(() => {
     animateTo(progress, 1).start();
@@ -75,6 +78,11 @@ function OpenSheet({ pokemon, onClose }: { pokemon: PokemonListItem; onClose: ()
       onClose();
       afterClose?.();
     });
+  }
+
+  function openCompare() {
+    add(pokemon.id);
+    router.navigate("/compare");
   }
 
   return (
@@ -105,6 +113,14 @@ function OpenSheet({ pokemon, onClose }: { pokemon: PokemonListItem; onClose: ()
             onPress={() => close(() => router.push(`/pokemon/${pokemon.id}`))}
           />
           <FavoriteRow id={pokemon.id} disabled={isClosing} />
+          {canCompare(pokemon.name) && (
+            <SheetRow
+              icon="compare"
+              label="Compare"
+              disabled={isClosing}
+              onPress={() => close(openCompare)}
+            />
+          )}
           {canShare(pokemon.name) && (
             <SheetRow
               icon="share"
