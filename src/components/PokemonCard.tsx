@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { Icon } from "@/components/Icon";
 import { PokemonImage } from "@/components/PokemonImage";
-import { formatBadge, formatName } from "@/lib/pokemon";
+import { formatBadge, formatName, type PokemonListItem } from "@/lib/pokemon";
 import { colors, shadows } from "@/theme/colors";
 import { fonts } from "@/theme/fonts";
 import { spacing } from "@/theme/spacing";
@@ -15,9 +15,10 @@ type PokemonCardProps = {
   /** Without a name the card is still loading and shows only its badge. */
   name?: string;
   width: number;
+  onOptions: (pokemon: PokemonListItem) => void;
 };
 
-export function PokemonCard({ id, name, width }: PokemonCardProps) {
+export function PokemonCard({ id, name, width, onOptions }: PokemonCardProps) {
   return (
     <Pressable style={[styles.card, { width }]} onPress={() => router.push(`/pokemon/${id}`)}>
       <View style={[styles.imageArea, { height: width }]}>
@@ -32,9 +33,8 @@ export function PokemonCard({ id, name, width }: PokemonCardProps) {
             <Text style={styles.name} numberOfLines={1} ellipsizeMode="tail">
               {formatName(name)}
             </Text>
-            {/* Takes the touch so Detail doesn't open. The menu comes with the Options menu feature. */}
             <Pressable
-              onPress={() => {}}
+              onPress={() => onOptions({ id, name })}
               hitSlop={12}
               accessibilityRole="button"
               accessibilityLabel={`Options for ${formatName(name)}`}

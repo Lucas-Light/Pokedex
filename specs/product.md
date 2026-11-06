@@ -37,7 +37,7 @@ One spec file and one GitHub issue per feature.
 | 3 | Detail page | [specs/features/detail page.md](features/detail%20page.md) | #5 |
 | 4 | Favorites | [specs/features/favorites.md](features/favorites.md) | #7 |
 | 5 | Compare | [specs/features/compare.md](features/compare.md) | #? |
-| 6 | Options menu | [specs/features/options menu.md](features/options%20menu.md) | #? |
+| 6 | Options menu | [specs/features/options menu.md](features/options%20menu.md) | #13 |
 | 7 | GitHub CI | [specs/features/Github CI.md](features/Github%20CI.md) | #9 |
 
 ## Technical choices

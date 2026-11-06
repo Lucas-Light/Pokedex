@@ -2,6 +2,7 @@ import type { ReactElement, Ref } from "react";
 import { FlatList, StyleSheet, useWindowDimensions } from "react-native";
 
 import { PokemonCard } from "@/components/PokemonCard";
+import type { PokemonListItem } from "@/lib/pokemon";
 import { spacing } from "@/theme/spacing";
 
 type PokemonCardItem = {
@@ -12,6 +13,7 @@ type PokemonCardItem = {
 type PokemonCardListProps<Item extends PokemonCardItem> = {
   data: Item[];
   ref?: Ref<FlatList<Item>>;
+  onOptions: (pokemon: PokemonListItem) => void;
   onEndReached?: () => void;
   footer?: ReactElement;
 };
@@ -19,6 +21,7 @@ type PokemonCardListProps<Item extends PokemonCardItem> = {
 export function PokemonCardList<Item extends PokemonCardItem>({
   data,
   ref,
+  onOptions,
   onEndReached,
   footer,
 }: PokemonCardListProps<Item>) {
@@ -31,7 +34,9 @@ export function PokemonCardList<Item extends PokemonCardItem>({
       data={data}
       numColumns={2}
       keyExtractor={(item) => String(item.id)}
-      renderItem={({ item }) => <PokemonCard id={item.id} name={item.name} width={cardWidth} />}
+      renderItem={({ item }) => (
+        <PokemonCard id={item.id} name={item.name} width={cardWidth} onOptions={onOptions} />
+      )}
       columnWrapperStyle={styles.row}
       contentContainerStyle={styles.content}
       onEndReached={onEndReached}

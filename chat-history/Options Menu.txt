@@ -1,0 +1,1622 @@
+
+> /spec-feature Options menu
+
+  Ran 2 shell commands (ctrl+o to expand)
+
+● Fetch(https://www.figma.com/design/dsgGXcu5WELIvRW90m5308/Pok%C3%A9mon-Code-Ch
+       allenge?node-id=1-2)
+  ⎿  Received 0 bytes (403 Forbidden)
+
+● The API check is done, but Figma blocked the fetch (403). I'm checking the
+  repo for traces of the menu design, and how Share works in SDK 58.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Fetch(https://docs.expo.dev/versions/v58.0.0/sdk/sharing/)
+  ⎿  Received 21.1KB (200 OK)
+
+● I checked the API and the existing code: the menu needs no new endpoints, and
+  React Native's built-in Share looks like the right fit, since expo-sharing
+  isn't installed. The Figma link returned 403, so I need your input on the menu
+  design before going further.
+
+● User answered Claude's questions:
+  ⎿  · I can't open Figma (403). What should the ⋮ menu on a Pokémon card look
+     like? → Bottom sheet
+     · The product spec names the menu item 'Add to favorites'. What should it
+     do when the Pokémon is already a favorite? → Switch to Remove (Recommended)
+     · A card whose request failed shows the name 'Unknown' and still has a ⋮
+     button. What should Share do on that card? → Hide Share (Recommended)
+
+● Fetch(https://reactnative.dev/docs/share)
+  ⎿  Received 40.3KB (200 OK)
+
+● User answered Claude's questions:
+  ⎿  · What exact message should Share send, using Bulbasaur as the example? The
+     product spec says 'Check out this Pokémon!' with the name and an image
+     link. → Three lines
+     · What should the bottom sheet contain besides the menu items? → I will
+     upload an image file with the figma design of the options menu
+     · Favorite status comes from SQLite. What should the favorite row do while
+     that status is still loading, or if reading it failed? → Hide the row
+     (Recommended)
+
+● Got it: Share sends three lines, and the favorite row stays hidden until its
+  status is known. I'll wait for your Figma image before settling the sheet's
+  content, so please upload it next, either in this chat or as a file path.
+
+  The React Native docs also settle how Share works: message works on both
+  platforms, but url appears to be iOS-only. The link therefore has to go inside
+  message, or Android would lose it:
+
+  Check out this Pokémon!
+  Bulbasaur
+  https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other
+  /home/1.png
+
+  You can answer these three alongside the image:
+
+  1. Tapping the favorite row: I'd close the sheet straight away and save in the
+     background. If saving fails, the same "Could not save favorite" alert as
+     on Detail appears. Or should the sheet stay open until the save finishes?
+  2. Share fails or is cancelled: cancelling should do nothing. If the share
+     dialog can't open, I'd show a native alert, "Could not share Pokémon", with
+     an OK button. Is that OK?
+  3. Dead image links: some forms, like 10083, have no HOME image, so the shared
+     link would give a 404. I'd share it anyway and list this as a known
+     limitation, because checking first would add a request for a rare case. Is
+     that OK, or should Share leave the link out or be hidden for those forms?
+
+  Unless you object, I'll also carry over these existing rules:
+  - Removing a favorite on the Favorites page makes the card disappear straight
+    away, with no confirmation.
+  - While the keyboard is open, tapping ⋮ only closes the keyboard.
+  - Cards that are still loading have no ⋮, so they have no menu.
+
+[Image #1]
+
+> 1. Tapping the favorite row should not close the sheet, only when tapping
+  outside the sheet or pressing the android back button
+
+● Thanks, that clears up the design. It's a full-width white sheet with square
+  corners and no header, over a grey overlay. It has three rows, each with a 24
+  icon on the left and a label, and "Add to favorites" uses the heart we already
+  have.
+
+  The sheet closes only on a tap outside it or the Android back button, so
+  there's no swipe-down. Open Pokémon still has to close it, because it leaves
+  the screen.
+
+  Your rule raises two new questions, and my Share and dead-link proposals from
+  last time are still open.
+
+● User answered Claude's questions:
+  ⎿  · The sheet stays open after tapping the favorite row. What should that row
+     show once the Pokémon is a favorite? → Filled pink + Remove (Recommended)
+     · What should happen to the sheet when the user taps Share? → Sheet stays
+     open (Recommended)
+     · Are these two Share edge cases OK? (a) If the share dialog can't open, a
+     native alert says 'Could not share Pokémon' with an OK button, and
+     cancelling does nothing. (b) Forms with no HOME image, like 10083, still
+     share the link even though it gives a 404, listed as a known limitation. →
+     Yes, both (Recommended)
+
+● All the decisions are in. Before writing, I'm measuring the sizes and colours
+  from your image and checking how "Unknown" cards get their name.
+
+  Ran 2 shell commands (ctrl+o to expand)
+
+● Write(specs\features\options menu.md)
+  ⎿  Wrote 138 lines to specs\features\options menu.md
+      1 # Feature: options menu
+      2
+      3 > Issue: #? · Status: draft
+      4
+      5 ## Goal
+      6
+      7 As a Pokédex user, I want to open a menu from a card's ⋮ button,
+        so that I can open, favorite or share a Pokémon without going thr
+        ough its Detail page first.
+      8
+     … +130 lines (ctrl+o to expand)
+
+● The spec is written: specs/features/options menu.md
+  (specs/features/options%20menu.md). No code was changed, and specs/product.md
+  didn't need updating because its table already links to this file. The issue
+  number stays #? until /create-issue.
+
+  Please check these, because I decided or worked them out myself:
+  - Overlay colour: the image shows a flat #A6ADB3, so I set it to black at 30%
+    over the page. That's almost exactly the same colour over your #EDF6FF
+    background, and the list stays visible behind it. If the Figma value
+    differs, use that one.
+  - Sizes and font: the sizes are measured from your image: 56 high rows, icons
+    16 from the left, labels 64 from the left. Rubik 500 16 is my reading of the
+    font from the image.
+  - Bottom line in the image: I treated it as the system navigation bar, not
+    part of the sheet.
+  - Sheet placement: the sheet has to sit above the grid, not inside a card.
+    Otherwise it would disappear when you remove a favorite on the Favorites
+    page, which breaks your stay-open rule.
+  - Sheet with hidden rows: if the favorite status can't be read on an "Unknown"
+    card, the sheet shows only Open Pokémon.
+  - Other small rules: tapping inside the sheet but not on a row does nothing,
+    and the sheet gets no custom animation.
+
+  Before building:
+  - Icons: the Open Pokémon and Share icons aren't in assets/icons/, so they
+    need exporting from Figma. This is the only open question in the spec.
+  - product.md wording: its Share section still says the options button is on
+    tiles "in the list and in Favorites", while this spec and the search spec
+    also include search results. I left that text alone, but it's a quick fix if
+    you want it to match.
+
+  Next step is /create-issue options menu.
+
+> The icons are uploaded in assets/icons as Open.svg and Share.svg
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Both icons match the design: Open.svg is 18×18 and Share.svg is 18×20, the
+  same sizes I measured in your image. I'm updating the spec to use them and
+  closing the open question.
+
+● Update(specs\features\options menu.md)
+  ⎿  Added 1 line, removed 1 line
+      82  | Icon | 24 box, 16 from the left edge, in `#0E0940` (filled he
+          art in `#FF4F68`) |
+      83  | Label | Starts 64 from the left edge (24 gap after the icon),
+           Rubik 500 16, `#0E0940` |
+      84  | Below the rows | The device's bottom safe area. The line at t
+          he bottom of the Figma frame is the system navigation bar, not 
+          part of the sheet |
+      85 -| Open Pokémon icon | New SVG, two diagonal arrows pointing out
+         -wards |                                                        
+      85 +| Open Pokémon icon | `assets/icons/Open.svg`, 18×18 in the 24 
+         +box |                                                          
+      86  | Favorite icon | `assets/icons/Favorites.svg` or `assets/icons
+          /Favorites_Active.svg` |
+      87  | Share icon | New SVG, three connected dots |
+      88  
+
+● Update(specs\features\options menu.md)
+  ⎿  Added 1 line, removed 1 line
+      84  | Below the rows | The device's bottom safe area. The line at t
+          he bottom of the Figma frame is the system navigation bar, not 
+          part of the sheet |
+      85  | Open Pokémon icon | `assets/icons/Open.svg`, 18×18 in the 24 
+          box |
+      86  | Favorite icon | `assets/icons/Favorites.svg` or `assets/icons
+          /Favorites_Active.svg` |
+      87 -| Share icon | New SVG, three connected dots |                 
+      87 +| Share icon | `assets/icons/Share.svg`, 18×20 in the 24 box | 
+      88  
+      89  With a hidden row, the sheet gets shorter and the other rows ke
+          ep their order.
+      90  
+
+● Update(specs\features\options menu.md)
+  ⎿  Added 1 line, removed 1 line
+      135  
+      136  ## Open questions
+      137  
+      138 -- `Open` and `Share` icon SVGs must be exported from Figma int
+          -o `assets/icons/` before building.                            
+      138 +- None.                                                       
+
+● The spec now points to Open.svg and Share.svg with their sizes, and it has no
+  open questions left. Both icons are still unregistered in Icon.tsx, which is
+  already listed in the spec's code layout for the build.
+
+  The next step is /create-issue options menu.
+
+> /create-issue options menu
+
+  Ran 1 shell command (ctrl+o to expand)
+● The spec has no placeholders and there's no duplicate issue. The repo has no
+  feature label, so I'll create the issue without one, in the same format as #7.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Bash(cd "C:/Users/Gebruiker/Documents/GitHub/Pokedex" && sed -i 's/^> Issue:
+      #? · Status: draft/> Issue: #13 · Status: draft/; s/shared as an image in
+      chat #?/shared…)
+  ⎿  Updated specs\features\options menu.md (+2 -2)
+      1  # Feature: options menu
+      2  
+      3 -> Issue: #? · Status: draft                                     
+      3 +> Issue: #13 · Status: draft                                    
+      4  
+      5  ## Goal
+      6  
+     ...
+      70  ## Screens & UI
+      71  
+      72  - Route(s): none added. The sheet opens over `src/app/(tabs)/in
+          dex.tsx` and `src/app/(tabs)/favorites.tsx`, and search results
+           live on the homepage.
+      73 -- Figma frame: options menu frame, shared as an image in chat #
+         -?. Sizes below are measured from that image at 390×844.        
+      73 +- Figma frame: options menu frame, shared as an image in the sp
+         +ec chat for #13. Sizes below are measured from that image at 39
+         +0×844.                                                         
+      74  - A full-width white sheet at the bottom of the screen, over a 
+          dimmed page.
+      75  - Replaces "Tapping a card's ⋮ button does nothing" in the home
+          page list and favorites specs.
+      76  
+  ⎿  Updated specs\product.md (+87 -87)
+       1 -# Product: Pokédex                                             
+       2 -                                                               
+       3 -> Status: complete — sharpened with `/spec-product`.           
+       4 -                                                               
+       5 -## One-liner                                                   
+       6 -                                                               
+       7 -A Pokémon mobile app on live data from an API, based on showing
+         - a list of Pokémon.                                            
+       8 -                                                               
+       9 -## Who it is for                                               
+      10 -                                                               
+      11 -School project and a learning experience.                      
+      12 -                                                               
+      13 -## Core action                                                 
+      14 -                                                               
+      15 -Showing a live list of all Pokémon.                            
+      16 -                                                               
+      17 -## Data source                                                 
+      18 -                                                               
+      19 -- API: [PokeAPI](https://pokeapi.co/docs/v2) — no key needed.  
+      20 -- Endpoints used:                                              
+      21 -  - **List:** `https://pokeapi.co/api/v2/pokemon?limit=20&offse
+         -t=0`, page by page. The Pokémon ID comes from each result's `ur
+         -l`.                                                            
+      22 -  - **Search:** `https://pokeapi.co/api/v2/pokemon?limit=100000
+         -`                                                              
+      23 -  - **Detail:** `https://pokeapi.co/api/v2/pokemon/{id or name}
+         -/`                                                             
+      24 -  - **Evolution chain (Detail):** follow `species.url` from the
+         - Detail response, then `evolution_chain.url` from that response
+         -. `pokemon-species/{id}` returns 404 for alternate forms.      
+      25 -  - **Favorites:** `https://pokeapi.co/api/v2/pokemon/{id or na
+         -me}/`                                                          
+      26 -  - **Compare:** `https://pokeapi.co/api/v2/pokemon/{id or name
+         -}/`                                                            
+      27 -- Images, everywhere in the app: `https://raw.githubusercontent
+         -.com/PokeAPI/sprites/master/sprites/pokemon/other/home/{id}.png
+         -`                                                              
+      28 -                                                               
+      29 -## Features                                                    
+      30 -                                                               
+      31 -One spec file and one GitHub issue per feature.                
+      32 -                                                               
+      33 -| # | Feature | Spec | Issue |                                 
+      34 -|---|---|---|---|                                              
+      35 -| 1 | Homepage list | [specs/features/homepage list.md](feature
+         -s/homepage%20list.md) | #1 |                                   
+      36 -| 2 | Search | [specs/features/search.md](features/search.md) |
+         - #3 |                                                          
+      37 -| 3 | Detail page | [specs/features/detail page.md](features/de
+         -tail%20page.md) | #5 |                                         
+      38 -| 4 | Favorites | [specs/features/favorites.md](features/favori
+         -tes.md) | #7 |                                                 
+      39 -| 5 | Compare | [specs/features/compare.md](features/compare.md
+         -) | #? |                                                       
+      40 -| 6 | Options menu | [specs/features/options menu.md](features/
+         -options%20menu.md) | #? |                                      
+     … 134 more lines (ctrl+o to expand)
+
+● The issue is created: https://github.com/Lucas-Light/Pokedex/issues/13
+
+  It has the goal, all 32 acceptance criteria and a link to the spec. #13 is now
+  in the spec header and in the table in specs/product.md.
+
+  - No label: the repo has no feature label, so the issue has none, as the
+    command allows.
+  - Spec link: it points to main, so it gives a 404 until the spec is merged.
+    The spec, Open.svg, Share.svg and the product.md change are all uncommitted,
+    so they should go on the feature branch.
+
+  The next step is /plan-issue 13.
+
+> /plan-issue 13
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Fetch(https://reactnative.dev/docs/modal)
+  ⎿  Received 46.4KB (200 OK)
+
+● Fetch(https://docs.expo.dev/versions/v58.0.0/sdk/safe-area-context/)
+  ⎿  Received 9.4KB (200 OK)
+
+● The docs are checked. The output was cut off before src/lib/pokemon.ts and the
+  scripts, so I'm reading those before writing the plan.
+
+  Made 1 scratchpad edit +103, ran 2 shell commands (ctrl+o to expand)
+
+● The plan is posted on issue #13
+  (https://github.com/Lucas-Light/Pokedex/issues/13#issuecomment-6696546929). No
+  code has been changed. The comment also shows how each acceptance criterion
+  gets met.
+
+  Approach
+
+  One OptionsSheet, built with React Native's Modal, serves all three grids. The
+  homepage and Favorites screens each keep the opened Pokémon in state and
+  render the sheet next to their grid, and ⋮ passes { id, name } up. That keeps
+  the sheet open when a card disappears or Favorites switches to "No favorites".
+
+  - Closing: a full-screen overlay Pressable handles taps outside, and
+    onRequestClose handles Android back. The sheet is a sibling of the overlay,
+    so a tap on it outside a row does nothing.
+  - Favorite row: it reuses useFavorite unchanged, which already covers saving,
+    the disabled state and the failure alert. No data layer changes are needed.
+  - Share: Share.share({ message }) with the link inside message, and the result
+    is ignored so cancelling does nothing. If it fails, the "Could not share
+    Pokémon" alert appears.
+  - Keyboard: no new code, because keyboardShouldPersistTaps="never" already
+    handles it.
+
+  Your decision
+
+  Sheet animation: the spec rules out custom animation but doesn't say which
+  built-in Modal animation to use. I recommend none, the default, which adds
+  nothing beyond the spec. With slide, the grey overlay moves up along with the
+  sheet, and fade is the softer alternative. Changing it later is a one-prop
+  edit.
+
+  Files
+
+  - UI:
+    - New: OptionsSheet.tsx
+    - Changed: PokemonCard, PokemonCardList, PokemonGrid, SearchResults,
+      FavoritesGrid, Icon, both tab screens
+    - Theme: colors.ts, spacing.ts
+  - Data: no changes.
+  - Logic:
+    - New: src/lib/share.ts and its test
+    - Changed: lib/favorites.ts exports UNKNOWN_NAME
+
+  Tasks
+
+  - [ ] Create branch feature/options-menu from main
+  - [ ] Add src/lib/share.ts and export UNKNOWN_NAME
+  - [ ] Add unit tests: Bulbasaur's exact message, deoxys-attack / 10001, and
+    canShare
+  - [ ] Register the open and share icons, and add the overlay colour and sheet
+    spacing
+  - [ ] Build OptionsSheet with the overlay and Open Pokémon and Share rows
+  - [ ] Add the favorite row: icon, label, hidden state, disabled while saving,
+    save-failed alert
+  - [ ] Add Share: message, hidden on "Unknown", share-failed alert
+  - [ ] Add accessibility roles and labels to every row and the overlay
+  - [ ] Pass onOptions from the card through the list and grids
+  - [ ] Render the sheet on the homepage and Favorites screens
+  - [ ] Run npx jest
+  - [ ] Run npx expo lint --max-warnings 0
+  - [ ] Run npx tsc --noEmit
+  - [ ] Test on phone: every acceptance criterion
+
+  To check on the phone: the docs don't confirm how the safe area behaves inside
+  Modal. Alerts and the share dialog on top of an open Modal also need
+  checking, ideally on both iOS and Android.
+
+  Say "go" to build with none, or tell me which animation you want or what to
+  change in the plan.
+
+> I want a fade and unfade for the dark overlay and a fly in from the sheet
+  from the bottom and back when closing
+
+● Modal's built-in animationType can't do this, because it moves the overlay and
+  sheet as one piece. They need separate animations, and the spec currently
+  rules out custom animation. I'll check React Native's built-in Animated API,
+  then update the spec, the issue and the plan.
+
+● Fetch(https://reactnative.dev/docs/animated)
+  ⎿  Received 105.5KB (200 OK)
+
+  Read 1 file (ctrl+o to expand)
+
+● Update(specs\features\options menu.md)
+  ⎿  Added 1 line
+      17  - [ ] While the keyboard is open, tapping ⋮ only closes the key
+          board and the sheet does not open, as in the search spec.
+      18  - [ ] A card that is still loading has no ⋮ button, so it has n
+          o menu.
+      19  - [ ] The sheet shows, top to bottom: Open Pokémon, the favorit
+          e row, Share. It has no header.
+      20 +- [ ] On opening, the overlay fades in while the sheet slides u
+         +p from the bottom edge of the screen, both at the same time.   
+      21  
+      22  **Closing the sheet**
+      23  
+
+● Update(specs\features\options menu.md)
+  ⎿  Added 2 lines
+      25  - [ ] The Android back button closes the sheet and does not lea
+          ve the page.
+      26  - [ ] Tapping inside the sheet, but not on a row, does not clos
+          e it.
+      27  - [ ] Swiping the sheet down does not close it.
+      28 +- [ ] On every close (tap outside, Android back, Open Pokémon),
+         + the overlay fades out while the sheet slides back down past th
+         +e bottom edge, both at the same time.                          
+      29 +- [ ] While the sheet is closing, further taps on it or outside
+         + it do nothing.                                                
+      30  
+      31  **Open Pokémon**
+      32  
+
+● Update(specs\features\options menu.md)
+  ⎿  Added 1 line, removed 1 line
+      30  
+      31  **Open Pokémon**
+      32  
+      33 -- [ ] Tapping Open Pokémon closes the sheet and opens Detail fo
+         -r that Pokémon.                                                
+      33 +- [ ] Tapping Open Pokémon closes the sheet and, once the closi
+         +ng animation has finished, opens Detail for that Pokémon.      
+      34  - [ ] The device's back action on that Detail page returns to t
+          he page the sheet was opened from.
+      35  
+      36  **Favorite row**
+
+● Update(specs\features\options menu.md)
+  ⎿  Added 1 line
+      88  | Open Pokémon icon | `assets/icons/Open.svg`, 18×18 in the 24 
+          box |
+      89  | Favorite icon | `assets/icons/Favorites.svg` or `assets/icons
+          /Favorites_Active.svg` |
+      90  | Share icon | `assets/icons/Share.svg`, 18×20 in the 24 box |
+      91 +| Animation | 250 ms for both opening and closing. Overlay: opa
+         +city 0 to 1 and back. Sheet: moves up from below the screen and
+         + back down. Not in Figma |                                     
+      92  
+      93  With a hidden row, the sheet gets shorter and the other rows ke
+          ep their order.
+      94  
+
+● Update(specs\features\options menu.md)
+  ⎿  Added 1 line, removed 1 line
+      111  ## Code layout
+      112  
+      113  - UI:
+      114 -  - `src/components/OptionsSheet.tsx` — the sheet, built with 
+          -React Native's `Modal`, with its rows                         
+      114 +  - `src/components/OptionsSheet.tsx` — the sheet, built with 
+          +React Native's `Modal` and animated with React Native's `Anima
+          +ted`, with its rows                                           
+      115    - `src/components/PokemonCard.tsx` — ⋮ opens the sheet
+      116    - `src/components/PokemonCardList.tsx`, `src/components/Poke
+           monGrid.tsx`, `src/components/SearchResults.tsx`, `src/compone
+           nts/FavoritesGrid.tsx` — pass the opened Pokémon up
+      117    - `src/components/Icon.tsx` — registers the two new icons
+
+● Update(specs\features\options menu.md)
+  ⎿  Added 1 line, removed 1 line
+      126  - A ⋮ button or sheet on Detail or on evolution cards
+      127  - More menu items, such as Compare
+      128  - A header with the Pokémon's name in the sheet
+      129 -- Custom sheet animation (Reanimated is out of scope in `specs
+          -/product.md`)                                                 
+      129 +- Reanimated, which is out of scope in `specs/product.md`. The
+          + sheet uses React Native's built-in `Animated`                
+      130  - Swipe to close
+      131  - Undo or a confirmation when removing a favorite
+      132  - Optimistic update of the favorite row
+
+  Made 8 scratchpad edits +21 -14 (ctrl+o to expand)
+
+● Fetch(https://reactnative.dev/docs/animations)
+  ⎿  Received 128.4KB (200 OK)
+
+● The docs confirm opacity and transform both run on the native driver, so the
+  approach holds. Now I'm updating the issue's criteria and the plan comment.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● The spec, the issue and the plan comment
+  (https://github.com/Lucas-Light/Pokedex/issues/13#issuecomment-6696546929) are
+  all updated, and the issue now has 35 acceptance criteria. Still no code
+  changed.
+
+  How it works: the overlay fades in while the sheet slides up from the bottom
+  edge, and both reverse on closing. Modal's own animation can only move them
+  together, so this uses React Native's built-in Animated. Reanimated stays out
+  of scope, and no new package is needed.
+
+  New acceptance criteria:
+  - Opening and closing both animate, and all three ways of closing (tap
+    outside, Android back, Open Pokémon) use the same animation.
+  - Taps while the sheet is closing do nothing. I added this so a double tap
+    can't close it twice or open Detail twice.
+
+  Two choices of mine to check:
+  - Duration: 250 ms in both directions, since Figma gives no value.
+  - Open Pokémon: Detail opens after the closing animation finishes, which adds
+    a 250 ms wait on that tap. Detail could open at the same moment instead, but
+    then the screen would change while the sheet is still moving.
+
+  The favorite and Share rows don't animate anything, because they leave the
+  sheet open.
+
+  Say "go" to build it, or tell me what to change.
+
+> go
+
+● Skill(build-issue)
+  ⎿  Successfully loaded skill
+● Building now. First I'm creating the branch and reading the files I'll change.
+
+  Read 11 files, ran 1 shell command (ctrl+o to expand)
+
+● The branch is ready, and PokemonListItem already fits, so I'll reuse it. React
+  Compiler handles memoisation, so I'm starting on the logic and its tests.
+
+● Write(src\lib\share.ts)
+  ⎿  Wrote 11 lines to src\lib\share.ts
+       1 import { UNKNOWN_NAME } from "@/lib/favorites";
+       2 import { formatName, getImageUrl } from "@/lib/pokemon";
+       3
+       4 /** The link sits in the message because Share's own `url` field
+          is iOS-only. */
+       5 export function formatShareMessage(id: number, name: string): st
+         ring {
+       6   return ["Check out this Pokémon!", formatName(name), getImageU
+         rl(id)].join("\n");
+       7 }
+     … +4 lines (ctrl+o to expand)
+
+● Update(src\lib\favorites.ts)
+  ⎿  Added 1 line, removed 1 line
+      1 -const UNKNOWN_NAME = "Unknown";                                 
+      1 +export const UNKNOWN_NAME = "Unknown";                          
+      2  
+      3  /** The part of a Pokémon query that decides what its card and t
+         he page show. */
+      4  export type FavoriteQuery = {
+
+● Write(src\lib\__tests__\share-test.ts)
+  ⎿  Wrote 28 lines to src\lib\__tests__\share-test.ts
+       1 import { canShare, formatShareMessage } from "@/lib/share";
+       2
+       3 describe("formatShareMessage", () => {
+       4   it("puts the text, the name and the image link on three lines"
+         , () => {
+       5     expect(formatShareMessage(1, "bulbasaur")).toBe(
+       6       "Check out this Pokémon!\n" +
+       7         "Bulbasaur\n" +
+       8         "https://raw.githubusercontent.com/PokeAPI/sprites/maste
+         r/sprites/pokemon/other/home/1.png",
+     … +20 lines (ctrl+o to expand)
+
+● Update(src\components\Icon.tsx)
+  ⎿  Added 2 lines
+      15      height: 19,
+      16    },
+      17    options: { source: require("@/assets/icons/Options.svg"), wid
+          th: 3, height: 15 },
+      18 +  open: { source: require("@/assets/icons/Open.svg"), width: 18
+         +, height: 18 },                                                
+      19 +  share: { source: require("@/assets/icons/Share.svg"), width: 
+         +18, height: 20 },                                              
+      20  } as const;
+      21  
+      22  export type IconName = keyof typeof icons;
+
+● Update(src\theme\colors.ts)
+  ⎿  Added 1 line
+      12    typePill: "rgba(14, 9, 64, 0.08)",
+      13    tabBorder: "#DBDAE6",
+      14    statTrack: "#F3F3F7",
+      15 +  overlay: "rgba(0, 0, 0, 0.3)",                               
+      16  } as const;
+      17  
+      18  /** Keyed by the type name in the API. */
+
+● Update(src\theme\spacing.ts)
+  ⎿  Added 3 lines
+      17    detailSection: 24,
+      18    pillRadius: 99,
+      19    evolutionCardHeight: 80,
+      20 +  sheetRowHeight: 56,                                          
+      21 +  sheetRowPadding: 16,                                         
+      22 +  sheetRowGap: 24,                                             
+      23  } as const;
+
+● Write(src\components\OptionsSheet.tsx)
+  ⎿  Wrote 195 lines to src\components\OptionsSheet.tsx
+       1 import { router } from "expo-router";
+       2 import { useEffect, useState } from "react";
+       3 import {
+       4   Alert,
+       5   Animated,
+       6   Modal,
+       7   Pressable,
+       8   Share,
+       9   StyleSheet,
+      10   Text,
+     … +185 lines (ctrl+o to expand)
+
+● Update(src\components\PokemonCard.tsx)
+  ⎿  Added 1 line, removed 1 line
+      3  
+      4  import { Icon } from "@/components/Icon";
+      5  import { PokemonImage } from "@/components/PokemonImage";
+      6 -import { formatBadge, formatName } from "@/lib/pokemon";        
+      6 +import { formatBadge, formatName, type PokemonListItem } from "@
+        +/lib/pokemon";                                                  
+      7  import { colors, shadows } from "@/theme/colors";
+      8  import { fonts } from "@/theme/fonts";
+      9  import { spacing } from "@/theme/spacing";
+
+● Update(src\components\PokemonCard.tsx)
+  ⎿  Added 2 lines, removed 1 line
+      15    /** Without a name the card is still loading and shows only i
+          ts badge. */
+      16    name?: string;
+      17    width: number;
+      18 +  onOptions: (pokemon: PokemonListItem) => void;               
+      19  };
+      20  
+      20 -export function PokemonCard({ id, name, width }: PokemonCardPro
+         -ps) {                                                          
+      21 +export function PokemonCard({ id, name, width, onOptions }: Pok
+         +emonCardProps) {                                               
+      22    return (
+      23      <Pressable style={[styles.card, { width }]} onPress={() => 
+          router.push(`/pokemon/${id}`)}>
+      24        <View style={[styles.imageArea, { height: width }]}>
+
+● Update(src\components\PokemonCard.tsx)
+  ⎿  Added 1 line, removed 2 lines
+      33              <Text style={styles.name} numberOfLines={1} ellipsi
+          zeMode="tail">
+      34                {formatName(name)}
+      35              </Text>
+      36 -            {/* Takes the touch so Detail doesn't open. The men
+         -u comes with the Options menu feature. */}                     
+      36              <Pressable
+      38 -              onPress={() => {}}                               
+      37 +              onPress={() => onOptions({ id, name })}          
+      38                hitSlop={12}
+      39                accessibilityRole="button"
+      40                accessibilityLabel={`Options for ${formatName(nam
+          e)}`}
+
+● Update(src\components\PokemonCardList.tsx)
+  ⎿  Added 1 line
+      2  import { FlatList, StyleSheet, useWindowDimensions } from "react
+         -native";
+      3  
+      4  import { PokemonCard } from "@/components/PokemonCard";
+      5 +import type { PokemonListItem } from "@/lib/pokemon";           
+      6  import { spacing } from "@/theme/spacing";
+      7  
+      8  type PokemonCardItem = {
+
+● Update(src\components\PokemonCardList.tsx)
+  ⎿  Added 1 line
+      13  type PokemonCardListProps<Item extends PokemonCardItem> = {
+      14    data: Item[];
+      15    ref?: Ref<FlatList<Item>>;
+      16 +  onOptions: (pokemon: PokemonListItem) => void;               
+      17    onEndReached?: () => void;
+      18    footer?: ReactElement;
+      19  };
+
+● Update(src\components\PokemonCardList.tsx)
+  ⎿  Added 1 line
+      21  export function PokemonCardList<Item extends PokemonCardItem>({
+      22    data,
+      23    ref,
+      24 +  onOptions,                                                   
+      25    onEndReached,
+      26    footer,
+      27  }: PokemonCardListProps<Item>) {
+
+● Update(src\components\PokemonCardList.tsx)
+  ⎿  Added 3 lines, removed 1 line
+      34        data={data}
+      35        numColumns={2}
+      36        keyExtractor={(item) => String(item.id)}
+      37 -      renderItem={({ item }) => <PokemonCard id={item.id} name=
+         -{item.name} width={cardWidth} />}                              
+      37 +      renderItem={({ item }) => (                              
+      38 +        <PokemonCard id={item.id} name={item.name} width={cardW
+         +idth} onOptions={onOptions} />                                 
+      39 +      )}                                                       
+      40        columnWrapperStyle={styles.row}
+      41        contentContainerStyle={styles.content}
+      42        onEndReached={onEndReached}
+
+● Update(src\components\PokemonGrid.tsx)
+  ⎿  Added 6 lines, removed 1 line
+       8  } from "@/components/ListStates";
+       9  import { PokemonCardList } from "@/components/PokemonCardList";
+      10  import { usePokemonList } from "@/hooks/usePokemonList";
+      11 +import type { PokemonListItem } from "@/lib/pokemon";          
+      12  import { colors } from "@/theme/colors";
+      13  import { spacing } from "@/theme/spacing";
+      14  
+      14 -export function PokemonGrid() {                                
+      15 +type PokemonGridProps = {                                      
+      16 +  onOptions: (pokemon: PokemonListItem) => void;               
+      17 +};                                                             
+      18 +                                                               
+      19 +export function PokemonGrid({ onOptions }: PokemonGridProps) { 
+      20    const {
+      21      data,
+      22      isPending,
+
+● Update(src\components\PokemonGrid.tsx)
+  ⎿  Added 8 lines, removed 1 line
+      61      return undefined;
+      62    }
+      63  
+      64 -  return <PokemonCardList data={data} onEndReached={loadNextPag
+         -e} footer={renderFooter()} />;                                 
+      64 +  return (                                                     
+      65 +    <PokemonCardList                                           
+      66 +      data={data}                                              
+      67 +      onOptions={onOptions}                                    
+      68 +      onEndReached={loadNextPage}                              
+      69 +      footer={renderFooter()}                                  
+      70 +    />                                                         
+      71 +  );                                                           
+      72  }
+      73  
+      74  const styles = StyleSheet.create({
+
+● Update(src\components\SearchResults.tsx)
+  ⎿  Added 8 lines, removed 1 line
+      10    results: PokemonListItem[] | undefined;
+      11    isPending: boolean;
+      12    onRetry: () => void;
+      13 +  onOptions: (pokemon: PokemonListItem) => void;               
+      14  };
+      15  
+      15 -export function SearchResults({ text, results, isPending, onRet
+         -ry }: SearchResultsProps) {                                    
+      16 +export function SearchResults({                                
+      17 +  text,                                                        
+      18 +  results,                                                     
+      19 +  isPending,                                                   
+      20 +  onRetry,                                                     
+      21 +  onOptions,                                                   
+      22 +}: SearchResultsProps) {                                       
+      23    const list = useRef<FlatList<PokemonListItem>>(null);
+      24  
+      25    useEffect(() => {
+
+● Update(src\components\SearchResults.tsx)
+  ⎿  Added 1 line, removed 1 line
+      43      return <CenteredMessage message="No Pokémon found" />;
+      44    }
+      45  
+      46 -  return <PokemonCardList ref={list} data={results} />;        
+      46 +  return <PokemonCardList ref={list} data={results} onOptions={
+         +onOptions} />;                                                 
+      47  }
+
+● Update(src\components\FavoritesGrid.tsx)  ⎿  Added 6 lines, removed 1 line
+       8  } from "@/components/ListStates";
+       9  import { PokemonCardList } from "@/components/PokemonCardList";
+      10  import { useFavoriteIds, useFavoritePokemon } from "@/hooks/use
+          Favorites";
+      11 +import type { PokemonListItem } from "@/lib/pokemon";          
+      12  import { spacing } from "@/theme/spacing";
+      13  
+      14  const LOAD_ERROR = "Could not load favorites";
+      15  
+      15 -export function FavoritesGrid() {                              
+      16 +type FavoritesGridProps = {                                    
+      17 +  onOptions: (pokemon: PokemonListItem) => void;               
+      18 +};                                                             
+      19 +                                                               
+      20 +export function FavoritesGrid({ onOptions }: FavoritesGridProps
+         +) {                                                            
+      21    const { data: ids, isPending, refetch } = useFavoriteIds();
+      22  
+      23    if (isPending) {
+
+● Update(src\components\FavoritesGrid.tsx)
+  ⎿  Added 2 lines, removed 2 lines
+      32      return <CenteredMessage message="No favorites" />;
+      33    }
+      34  
+      35 -  return <FavoritesList ids={ids} />;                          
+      35 +  return <FavoritesList ids={ids} onOptions={onOptions} />;    
+      36  }
+      37  
+      38 -function FavoritesList({ ids }: { ids: number[] }) {           
+      38 +function FavoritesList({ ids, onOptions }: FavoritesGridProps &
+         + { ids: number[] }) {                                          
+      39    const { items, status, retryFailed } = useFavoritePokemon(ids
+          );
+      40  
+      41    if (status === "allFailed") {
+
+● Update(src\components\FavoritesGrid.tsx)
+  ⎿  Added 1 line, removed 1 line
+      49        </View>
+      50      ) : undefined;
+      51  
+      52 -  return <PokemonCardList data={items} footer={footer} />;     
+      52 +  return <PokemonCardList data={items} onOptions={onOptions} fo
+         +oter={footer} />;                                              
+      53  }
+      54  
+      55  const styles = StyleSheet.create({
+
+● Update(src\app\(tabs)\index.tsx)
+  ⎿  Added 2 lines
+      1 +import { useState } from "react";                               
+      2  import { Keyboard, Pressable, StyleSheet, View } from "react-nat
+         ive";
+      3  import { useSafeAreaInsets } from "react-native-safe-area-contex
+         t";
+      4  
+      5 +import { OptionsSheet } from "@/components/OptionsSheet";       
+      6  import { PokemonGrid } from "@/components/PokemonGrid";
+      7  import { ScreenTitle } from "@/components/ScreenTitle";
+      8  import { SearchBar } from "@/components/SearchBar";
+
+● Update(src\app\(tabs)\index.tsx)
+  ⎿  Added 1 line
+       8  import { SearchBar } from "@/components/SearchBar";
+       9  import { SearchResults } from "@/components/SearchResults";
+      10  import { usePokemonSearch } from "@/hooks/usePokemonSearch";
+      11 +import type { PokemonListItem } from "@/lib/pokemon";          
+      12  import { colors } from "@/theme/colors";
+      13  
+      14  export default function HomeScreen() {
+
+● Update(src\app\(tabs)\index.tsx)
+  ⎿  Added 38 lines, removed 33 lines
+      15    const insets = useSafeAreaInsets();
+      16    const search = usePokemonSearch();
+      17    const { isSearching } = search;
+      18 +  const [optionsPokemon, setOptionsPokemon] = useState<PokemonL
+         +istItem | null>(null);                                         
+      19  
+      20    return (
+      20 -    <Pressable                                                 
+      21 -      style={[styles.screen, { paddingTop: insets.top + 16 }]} 
+      22 -      onPress={() => Keyboard.dismiss()}                       
+      23 -      accessible={false}                                       
+      24 -    >                                                          
+      25 -      <SearchBar                                               
+      26 -        value={search.text}                                    
+      27 -        isSearching={isSearching}                              
+      28 -        onChangeText={search.setText}                          
+      29 -        onFocus={search.requestList}                           
+      30 -        onBack={search.clear}                                  
+      31 -      />                                                       
+      32 -      {!isSearching && <ScreenTitle title="All Pokémon" style={
+         -styles.title} />}                                              
+      33 -      <View style={styles.listArea}>                           
+      34 -        {/* Stays mounted under the results, so it keeps its sc
+         -roll position. */}                                             
+      35 -        <View                                                  
+      36 -          style={styles.listArea}                              
+      37 -          accessibilityElementsHidden={isSearching}            
+      38 -          importantForAccessibility={isSearching ? "no-hide-des
+         -cendants" : "auto"}                                            
+      39 -        >                                                      
+      40 -          <PokemonGrid />                                      
+      41 -        </View>                                                
+      42 -        {isSearching && (                                      
+      43 -          <View style={styles.results}>                        
+      44 -            <SearchResults                                     
+      45 -              text={search.text}                               
+      46 -              results={search.results}                         
+      47 -              isPending={search.isPending}                     
+      48 -              onRetry={search.retry}                           
+      49 -            />                                                 
+      21 +    <>                                                         
+      22 +      <Pressable                                               
+      23 +        style={[styles.screen, { paddingTop: insets.top + 16 }]
+         +}                                                              
+      24 +        onPress={() => Keyboard.dismiss()}                     
+      25 +        accessible={false}                                     
+      26 +      >                                                        
+      27 +        <SearchBar                                             
+      28 +          value={search.text}                                  
+      29 +          isSearching={isSearching}                            
+      30 +          onChangeText={search.setText}                        
+      31 +          onFocus={search.requestList}                         
+      32 +          onBack={search.clear}                                
+      33 +        />                                                     
+      34 +        {!isSearching && <ScreenTitle title="All Pokémon" style
+         +={styles.title} />}                                            
+      35 +        <View style={styles.listArea}>                         
+      36 +          {/* Stays mounted under the results, so it keeps its 
+         +scroll position. */}                                           
+      37 +          <View                                                
+      38 +            style={styles.listArea}                            
+      39 +            accessibilityElementsHidden={isSearching}          
+      40 +            importantForAccessibility={isSearching ? "no-hide-d
+         +escendants" : "auto"}                                          
+      41 +          >                                                    
+      42 +            <PokemonGrid onOptions={setOptionsPokemon} />      
+      43            </View>
+      51 -        )}                                                     
+      52 -      </View>                                                  
+      53 -    </Pressable>                                               
+      44 +          {isSearching && (                                    
+      45 +            <View style={styles.results}>                      
+      46 +              <SearchResults                                   
+      47 +                text={search.text}                             
+      48 +                results={search.results}                       
+      49 +                isPending={search.isPending}                   
+      50 +                onRetry={search.retry}                         
+      51 +                onOptions={setOptionsPokemon}                  
+      52 +              />                                               
+      53 +            </View>                                            
+      54 +          )}                                                   
+      55 +        </View>                                                
+      56 +      </Pressable>                                             
+      57 +      <OptionsSheet pokemon={optionsPokemon} onClose={() => set
+         +OptionsPokemon(null)} />                                       
+      58 +    </>                                                        
+      59    );
+      60  }
+      61  
+
+● Update(src\app\(tabs)\favorites.tsx)
+  ⎿  Added 11 lines, removed 4 lines
+       1 +import { useState } from "react";                              
+       2  import { StyleSheet, View } from "react-native";
+       3  import { useSafeAreaInsets } from "react-native-safe-area-conte
+          xt";
+       4  
+       5  import { FavoritesGrid } from "@/components/FavoritesGrid";
+       6 +import { OptionsSheet } from "@/components/OptionsSheet";      
+       7  import { ScreenTitle } from "@/components/ScreenTitle";
+       8 +import type { PokemonListItem } from "@/lib/pokemon";          
+       9  import { colors } from "@/theme/colors";
+      10  
+      11  export default function FavoritesScreen() {
+      12    const insets = useSafeAreaInsets();
+      13 +  const [optionsPokemon, setOptionsPokemon] = useState<PokemonL
+         +istItem | null>(null);                                         
+      14  
+      15    return (
+      12 -    <View style={[styles.screen, { paddingTop: insets.top + 16 
+         -}]}>                                                           
+      13 -      <ScreenTitle title="My favorites" />                     
+      14 -      <FavoritesGrid />                                        
+      15 -    </View>                                                    
+      16 +    <>                                                         
+      17 +      <View style={[styles.screen, { paddingTop: insets.top + 1
+         +6 }]}>                                                         
+      18 +        <ScreenTitle title="My favorites" />                   
+      19 +        <FavoritesGrid onOptions={setOptionsPokemon} />        
+      20 +      </View>                                                  
+      21 +      <OptionsSheet pokemon={optionsPokemon} onClose={() => set
+         +OptionsPokemon(null)} />                                       
+      22 +    </>                                                        
+      23    );
+      24  }
+      25  
+
+● All the code is written. Running the tests, lint and typecheck now.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Everything passes; I'm also running a real Android bundle to catch bad
+  imports, and I'm updating the plan comment since a single isClosing state now
+  handles repeat taps instead of the separate ref.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● The bundle builds. One tick failed because the / in the file path broke my sed
+  pattern, so I'm ticking that task with a simpler one.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● The options menu is built on feature/options-menu, but it hasn't been tested
+  on a phone yet, so none of the acceptance criteria are confirmed on a device.
+  Nothing is committed.
+
+  The 73 unit tests, lint and tsc all pass, and an Android bundle builds. 14 of
+  the 15 plan tasks are ticked on the issue; the last one is the phone test.
+
+  What changed
+
+  - New:
+    - OptionsSheet.tsx (src/components/OptionsSheet.tsx): the sheet, its
+      animation and its rows
+    - share.ts (src/lib/share.ts) and share-test.ts
+      (src/lib/__tests__/share-test.ts): the share message and its tests
+  - Passing onOptions from the screens to the cards: PokemonCard.tsx
+    (src/components/PokemonCard.tsx), PokemonCardList.tsx
+    (src/components/PokemonCardList.tsx), PokemonGrid.tsx
+    (src/components/PokemonGrid.tsx), SearchResults.tsx
+    (src/components/SearchResults.tsx), FavoritesGrid.tsx
+    (src/components/FavoritesGrid.tsx)
+  - Screens: index.tsx (src/app/(tabs)/index.tsx) and favorites.tsx
+    (src/app/(tabs)/favorites.tsx) hold the opened Pokémon and render the sheet.
+  - Small additions:
+    - Icon.tsx (src/components/Icon.tsx): the two new icons
+    - colors.ts (src/theme/colors.ts): overlay colour
+    - spacing.ts (src/theme/spacing.ts): sheet spacing
+    - favorites.ts (src/lib/favorites.ts): exports UNKNOWN_NAME
+
+  One change from the plan: repeat taps while closing are ignored by a single
+  isClosing state, not a separate ref. That state also disables the rows and the
+  overlay, and I updated the plan comment to match.
+
+  Acceptance criteria
+
+  - Covered by unit tests: the share message contents, including Bulbasaur's
+    exact text and deoxys-attack, and no Share on "Unknown" cards.
+  - Implemented, needs a phone check: the other criteria.
+
+  What to test on your phone
+
+  Run npx expo start. These are the riskiest, so try them first:
+  1. Animation: the overlay fades while the sheet slides, in both directions.
+     There should be no flash of the sheet on the first frame.
+  2. Safe area: the rows should sit clear of the system navigation bar, and the
+     overlay should cover the status bar. The docs don't confirm how the safe
+     area behaves inside Modal.
+  3. Open Pokémon: Detail opens cleanly after the sheet closes, and back returns
+     to the right page. Check this on iOS too if you can, because Modal closing
+     and navigating happen right after each other there.
+  4. Share: the dialog opens on top of the sheet and the sheet is still there
+     afterwards. Cancelling does nothing. Send one to yourself to confirm the
+     three lines and the link arrive.
+  5. Favorites tab:
+     - Remove a favorite: its card disappears behind the open sheet, and the row
+       switches to "Add to favorites".
+     - Add it back: the card returns in its ID position.
+     - Remove the last favorite: "No favorites" shows behind the sheet.
+  6. Closing: tap outside, then use Android back, and check that swiping down
+     and tapping the sheet between rows do nothing. Rapid double taps on Open
+     Pokémon should open Detail only once.
+  7. Search: with the keyboard open, ⋮ only closes the keyboard, and a second
+     tap opens the sheet.
+  8. Unknown card: in airplane mode, fully restart the app to get "Unknown"
+     cards. Share should be hidden, and you should be able to remove that
+     favorite. Removing it also confirms that the favorite row works with no
+     connection.
+
+  The error alerts are hard to trigger on purpose, so they may stay unconfirmed:
+  "Could not save favorite" needs a failing SQLite write, and "Could not share
+  Pokémon" needs the share dialog to fail.
+
+  When the phone test is done, tell me what you find, or run /review-issue 13.
+
+> I need more padding at the bottom of the sheet, since the share button is
+  covered by my android buttons
+
+● I'll find out why first. The sheet already adds insets.bottom, so a padding
+  number that merely looks right on your phone could be wrong on other devices.
+  Something about how Modal is sized on Android is probably off, so I'm checking
+  the React Native source.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● The modal sheet extends to the physical bottom of the screen, so it's likely
+  sitting behind the Android buttons because of the insets.bottom value passed
+  from the main window. I'm checking how the library measures that inset and
+  whether a device is connected to confirm it.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● The safe-area insets come from the Modal's own window, not the app's main
+  window, so my hook was measuring the wrong one. I'll add a SafeAreaProvider
+  inside the Modal and check that it behaves before fixing the hook.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Update(src\components\OptionsSheet.tsx)
+  ⎿  Added 1 line, removed 1 line
+      1  import { router } from "expo-router";
+      2 -import { useEffect, useState } from "react";                    
+      2 +import { type ReactNode, useEffect, useState } from "react";    
+      3  import {
+      4    Alert,
+      5    Animated,
+
+● Update(src\components\OptionsSheet.tsx)
+  ⎿  Added 1 line, removed 1 line
+      10    Text,
+      11    useAnimatedValue,
+      12  } from "react-native";
+      13 -import { useSafeAreaInsets } from "react-native-safe-area-conte
+         -xt";                                                           
+      13 +import { SafeAreaProvider, useSafeAreaInsets } from "react-nati
+         +ve-safe-area-context";                                         
+      14  
+      15  import { Icon, type IconName } from "@/components/Icon";
+      16  import { useFavorite } from "@/hooks/useFavorites";
+
+● Update(src\components\OptionsSheet.tsx)
+  ⎿  Removed 1 line
+      58  }
+      59  
+      60  function OpenSheet({ pokemon, onClose }: { pokemon: PokemonList
+          Item; onClose: () => void }) {
+      61 -  const insets = useSafeAreaInsets();                          
+      61    const progress = useAnimatedValue(0);
+      62    const [isClosing, setIsClosing] = useState(false);
+      63  
+
+● Update(src\components\OptionsSheet.tsx)
+  ⎿  Added 43 lines, removed 30 lines
+      77      });
+      78    }
+      79  
+      80 -  // The tallest possible sheet, so it starts off-screen withou
+         -t being measured first.                                        
+      81 -  const hiddenOffset = MAX_ROWS * spacing.sheetRowHeight + inse
+         -ts.bottom;                                                     
+      82 -  const translateY = progress.interpolate({ inputRange: [0, 1],
+         - outputRange: [hiddenOffset, 0] });                            
+      83 -                                                               
+      80    return (
+      81      <Modal
+      82        transparent
+     ...
+       85        navigationBarTranslucent
+       86        onRequestClose={() => close()}
+       87      >
+       92 -      <Animated.View style={[styles.overlay, { opacity: progre
+          -ss }]}>                                                       
+       93 -        <Pressable                                            
+       94 -          style={styles.outside}                              
+       95 -          onPress={() => close()}                             
+       96 -          disabled={isClosing}                                
+       97 -          accessibilityRole="button"                          
+       98 -          accessibilityLabel="Close options"                  
+       99 -        />                                                    
+      100 -      </Animated.View>                                        
+      101 -      {/* A sibling of the overlay, so a tap on the sheet itse
+          -lf doesn't close it. */}                                      
+      102 -      <Animated.View                                          
+      103 -        style={[styles.sheet, { paddingBottom: insets.bottom, 
+          -transform: [{ translateY }] }]}                               
+      104 -      >                                                       
+      105 -        <SheetRow                                             
+      106 -          icon="open"                                         
+      107 -          label="Open Pokémon"                                
+      108 -          disabled={isClosing}                                
+      109 -          onPress={() => close(() => router.push(`/pokemon/${p
+          -okemon.id}`))}                                                
+      110 -        />                                                    
+      111 -        <FavoriteRow id={pokemon.id} disabled={isClosing} />  
+      112 -        {canShare(pokemon.name) && (                          
+       88 +      {/* The modal is its own window, so its insets have to b
+          +e measured inside it. */}                                     
+       89 +      <SafeAreaProvider>                                      
+       90 +        <Animated.View style={[styles.overlay, { opacity: prog
+          +ress }]}>                                                     
+       91 +          <Pressable                                          
+       92 +            style={styles.outside}                            
+       93 +            onPress={() => close()}                           
+       94 +            disabled={isClosing}                              
+       95 +            accessibilityRole="button"                        
+       96 +            accessibilityLabel="Close options"                
+       97 +          />                                                  
+       98 +        </Animated.View>                                      
+       99 +        {/* A sibling of the overlay, so a tap on the sheet it
+          +self doesn't close it. */}                                    
+      100 +        <SheetPanel progress={progress}>                      
+      101            <SheetRow
+      114 -            icon="share"                                      
+      115 -            label="Share"                                     
+      102 +            icon="open"                                       
+      103 +            label="Open Pokémon"                              
+      104              disabled={isClosing}
+      117 -            onPress={() => sharePokemon(pokemon)}             
+      105 +            onPress={() => close(() => router.push(`/pokemon/$
+          +{pokemon.id}`))}                                              
+      106            />
+      119 -        )}                                                    
+      120 -      </Animated.View>                                        
+      107 +          <FavoriteRow id={pokemon.id} disabled={isClosing} />
+      108 +          {canShare(pokemon.name) && (                        
+      109 +            <SheetRow                                         
+      110 +              icon="share"                                    
+      111 +              label="Share"                                   
+      112 +              disabled={isClosing}                            
+      113 +              onPress={() => sharePokemon(pokemon)}           
+      114 +            />                                                
+      115 +          )}                                                  
+      116 +        </SheetPanel>                                         
+      117 +      </SafeAreaProvider>                                     
+      118      </Modal>
+      119    );
+      120  }
+      121  
+      122 +function SheetPanel({ progress, children }: { progress: Animat
+          +ed.Value; children: ReactNode }) {                            
+      123 +  const insets = useSafeAreaInsets();                         
+      124 +                                                              
+      125 +  // The tallest possible sheet, so it starts off-screen witho
+          +ut being measured first.                                      
+      126 +  const hiddenOffset = MAX_ROWS * spacing.sheetRowHeight + ins
+          +ets.bottom;                                                   
+      127 +  const translateY = progress.interpolate({ inputRange: [0, 1]
+          +, outputRange: [hiddenOffset, 0] });                          
+      128 +                                                              
+      129 +  return (                                                    
+      130 +    <Animated.View                                            
+      131 +      style={[styles.sheet, { paddingBottom: insets.bottom, tr
+          +ansform: [{ translateY }] }]}                                 
+      132 +    >                                                         
+      133 +      {children}                                              
+      134 +    </Animated.View>                                          
+      135 +  );                                                          
+      136 +}                                                             
+      137 +                                                              
+      138  function FavoriteRow({ id, disabled }: { id: number; disabled:
+            boolean }) {
+      139    const { isFavorite, isSaving, toggle } = useFavorite(id, sho
+           wSaveError);
+      140  
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● I've pushed a fix, but I can't confirm it from here because no device is
+  connected, so please reload and check it on your phone. Tests, lint and tsc
+  all pass, but they can't show the sheet's position.
+
+  Likely cause: on Android, the sheet's Modal is a separate window that reaches
+  the physical bottom of the screen, behind your buttons. The sheet's bottom
+  padding used the inset from the app's main window, which appears to be too
+  small for that window. This comes from reading the React Native and safe-area
+  source, not from measuring on your phone.
+
+  Fix: I put a SafeAreaProvider inside the Modal, so the sheet now measures the
+  height of the Android buttons in its own window, in OptionsSheet.tsx
+  (src/components/OptionsSheet.tsx). I didn't add a fixed padding value, because
+  the right amount differs between button navigation and gesture navigation.
+  The sheet's slide-out distance uses the same measured value, so it still
+  leaves the screen fully.
+
+  What to check:
+  - All three rows sit fully above your Android buttons, and Share can be
+    tapped.
+  - The slide in and out still looks smooth, with no jump at the start of
+    opening.
+
+  If Share is still covered, tell me whether the bottom tab bar on the main
+  screens also sits behind your Android buttons. That would show whether the
+  inset is wrong everywhere or only in the sheet.
+
+  The Figma frame shows 28 of space below the rows, while the spec uses the
+  device's safe area, so the space you get depends on your navigation mode. If
+  it's clear of the buttons but still feels tight, tell me and I'll add a
+  minimum to the spec.
+
+> I want to change the share, so that the image shows up instead of just being
+  an url when I send it through WhatsApp or Discord for exmaple
+
+● This changes the spec, because sharing the image file is currently listed as
+  out of scope. Before proposing anything, I'm checking what SDK 58 can do,
+  especially whether text can be sent along with an image.
+
+● Fetch(https://docs.expo.dev/versions/v58.0.0/sdk/sharing/)  ⎿  Received 21.1KB (200 OK)
+
+● Fetch(https://docs.expo.dev/versions/v58.0.0/sdk/filesystem/)
+  ⎿  Received 80.7KB (200 OK)
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Expo Go supports showing the image via expo-sharing, but that can't carry the
+  caption, and React Native's Share has no file option on Android, so the
+  decision is yours. I haven't changed any code until the spec is updated.
+
+● User declined to answer questions
+  ⎿  · expo-sharing can send the image file but no text with it. What should
+     Share send to apps like WhatsApp and Discord? (Image only (Recommended) /
+     Keep text + link)
+     · The image has to download first, which takes a moment. What should the
+     Share row show while it downloads? (Spinner in the row (Recommended) / Just
+     disable the row)
+     · Some forms have no image (e.g. ID 10083 returns 404), and a download can
+     fail when offline. What should Share do then? (Show the error alert
+     (Recommended) / Fall back to text)
+
+> Actually the share is fine as is
+
+● No problem, Share stays as it is: the three-line text with the image link.
+  Nothing changed for this idea, so the spec, the issue and the code are all as
+  they were.
+
+  Still open from before:
+  - Bottom padding fix: please confirm on your phone that all three rows now sit
+    above your Android buttons.
+  - Phone test: this is the last unticked task on #13, so run through the rest
+    of the checklist.
+
+  Nothing is committed yet. When the phone test is done, run /review-issue 13.
+
+> Phone test works. Check all boxes
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● The ticks went through, and only my verification query failed, so I'm
+  rechecking the issue a simpler way.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● All the boxes are ticked:
+
+  ┌────────────────────────────────────────────────────────────────┬────────┐
+  │                             Where                              │ Ticked │
+  ├────────────────────────────────────────────────────────────────┼────────┤
+  │ Spec (specs/features/options%20menu.md) acceptance criteria    │ 35 of  │
+  │                                                                │ 35     │
+  ├────────────────────────────────────────────────────────────────┼────────┤
+  │ Issue #13 (https://github.com/Lucas-Light/Pokedex/issues/13)   │ 35 of  │
+  │ acceptance criteria                                            │ 35     │
+  ├────────────────────────────────────────────────────────────────┼────────┤
+  │ Plan tasks in the issue comment                                │ 15 of  │
+  │                                                                │ 15     │
+  └────────────────────────────────────────────────────────────────┴────────┘
+
+  The spec header still says Status: draft, and your finished specs say
+  complete, so that can change when you commit. Nothing is committed yet, and
+  #13 stays open until the closes #13 commit is merged.
+
+  Next is /review-issue 13, then /commit-issue 13. Remember to add the exported
+  chat to chat-history/ on this branch before merging.
+
+> /review-issue 13
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Review of #13: one criterion fails, and it's ready to commit once you've
+  decided on it
+
+  34 of 35 acceptance criteria pass in the code; one has a real gap (#28). Lint,
+  types and tests are clean. This review found no crashes or rule violations.
+
+  My mistake: step 8 of my earlier phone checklist was wrong. Restarting in
+  airplane mode makes every favorite fail, so the page shows the full error and
+  no "Unknown" cards. The "Unknown" behaviour was probably never tested on your
+  phone, even though the boxes are ticked. Step 6 of the script below tests it
+  properly.
+
+  Checks
+
+  ┌────────────────────────────────┬──────────────────────┐
+  │             Check              │        Result        │
+  ├────────────────────────────────┼──────────────────────┤
+  │ npx expo lint --max-warnings 0 │ ✅ exit 0, no output │
+  ├────────────────────────────────┼──────────────────────┤
+  │ npx tsc --noEmit               │ ✅ exit 0, no output │
+  ├────────────────────────────────┼──────────────────────┤
+  │ npx jest (not requested)       │ ✅ 73 of 73 passed   │
+  └────────────────────────────────┴──────────────────────┘
+
+  Acceptance criteria
+
+  * means the code is right, but I can't confirm it was seen on a phone.
+
+  Opening the sheet
+  1. ✅ ⋮ opens the sheet on all three grids: PokemonCard.tsx:37
+     (src/components/PokemonCard.tsx#L37), index.tsx:42
+     (src/app/(tabs)/index.tsx#L42), index.tsx:51
+     (src/app/(tabs)/index.tsx#L51), favorites.tsx:19
+     (src/app/(tabs)/favorites.tsx#L19)
+  2. ✅ ⋮ doesn't open Detail, because the inner Pressable takes the touch:
+     PokemonCard.tsx:37 (src/components/PokemonCard.tsx#L37)
+  3. ✅ With the keyboard open, ⋮ only closes it: PokemonCardList.tsx:48
+     (src/components/PokemonCardList.tsx#L48)
+  4. ✅ Loading cards have no ⋮, because it only renders when the card has a
+     name: PokemonCard.tsx (src/components/PokemonCard.tsx)
+  5. ✅ Row order, no header: OptionsSheet.tsx:101-115
+     (src/components/OptionsSheet.tsx#L101-L115)
+  6. ✅ Fade and slide on opening: OptionsSheet.tsx:64-66
+     (src/components/OptionsSheet.tsx#L64-L66)
+
+  Closing the sheet
+
+  7. ✅ Tap outside closes it: OptionsSheet.tsx:93
+     (src/components/OptionsSheet.tsx#L93)
+  8. ✅ Android back closes it: OptionsSheet.tsx:86
+     (src/components/OptionsSheet.tsx#L86)
+  9. ✅ A tap inside the sheet does nothing, because it's a sibling of the
+     overlay: OptionsSheet.tsx:99-100 (src/components/OptionsSheet.tsx#L99-L100)
+  10. ✅ No swipe to close: no gesture code exists
+  11. ✅ Every close animates: OptionsSheet.tsx:74
+      (src/components/OptionsSheet.tsx#L74)
+  12. ✅ Taps while closing are ignored: OptionsSheet.tsx:69
+      (src/components/OptionsSheet.tsx#L69), OptionsSheet.tsx:94
+      (src/components/OptionsSheet.tsx#L94)
+
+  Open Pokémon
+
+  13. ✅ Detail opens after the animation: OptionsSheet.tsx:105
+      (src/components/OptionsSheet.tsx#L105)
+  14. ✅ Back returns to the same page, through a normal router.push
+
+  Favorite row
+
+  15. ✅ Outline heart and "Add to favorites": OptionsSheet.tsx:148-150
+      (src/components/OptionsSheet.tsx#L148-L150)
+  16. ✅ Filled heart and "Remove from favorites": same lines
+  17. ✅ Adding keeps the sheet open: OptionsSheet.tsx:152
+      (src/components/OptionsSheet.tsx#L152)
+  18. ✅ Removing keeps the sheet open: same line
+  19. ✅ The row changes only after saving and can't be tapped during it:
+      OptionsSheet.tsx:151 (src/components/OptionsSheet.tsx#L151)
+  20. ✅* Save fails: alert shows and the sheet stays: OptionsSheet.tsx:48-50
+      (src/components/OptionsSheet.tsx#L48-L50)
+  21. ✅ Row hidden while the status is unknown: OptionsSheet.tsx:142
+      (src/components/OptionsSheet.tsx#L142)
+  22. ✅ Changes reach Detail and Favorites through the shared ['favorites']
+      query
+  23. ✅ Card removed behind the open sheet: favorites.tsx:21
+      (src/app/(tabs)/favorites.tsx#L21)
+  24. ✅ Adding it back restores its ID position
+  25. ✅ Last favorite shows "No favorites" and the sheet stays: the sheet sits
+      outside FavoritesGrid
+  26. ✅* canShare hides Share on "Unknown" cards: OptionsSheet.tsx:108
+      (src/components/OptionsSheet.tsx#L108), unit tested
+  27. ✅ Share opens and the sheet stays: OptionsSheet.tsx:113
+      (src/components/OptionsSheet.tsx#L113)
+  28. ❌ A favorite that keeps failing can be removed. This only works if at
+      least one other favorite loads. If all of them fail, FavoritesGrid.tsx
+      (src/components/FavoritesGrid.tsx) shows the full error page, so there's
+      no card and no ⋮. A single favorite whose ID has left the API can't be
+      removed at all.
+
+  Share
+
+  29. ✅ Three-line message: share.ts:5-7 (src/lib/share.ts#L5-L7), unit tested
+  30. ✅ Bulbasaur's exact text: share-test.ts (src/lib/__tests__/share-test.ts)
+  31. ✅ deoxys-attack / 10001: same test file
+  32. ✅* Link arrives on both platforms, because it's inside message. Confirmed
+      only if you tested on iOS as well as Android.
+  33. ✅ Cancelling does nothing, because the result is ignored:
+      OptionsSheet.tsx:54 (src/components/OptionsSheet.tsx#L54)
+  34. ✅* Share fails: alert shows: OptionsSheet.tsx:55-57
+      (src/components/OptionsSheet.tsx#L55-L57)
+
+  Accessibility
+
+  35. ✅ Every row and the overlay have a role and label: OptionsSheet.tsx:95-96
+      (src/components/OptionsSheet.tsx#L95-L96), OptionsSheet.tsx:171-172
+      (src/components/OptionsSheet.tsx#L171-L172)
+
+  Other checks
+
+  - ✅ Loading, error and empty states: this feature adds no new loads. Status
+    loading or failed hides the row, and save and share failures show alerts.
+  - ✅ UI, data and logic separated: the message logic is in lib/, saving stays
+    in the existing hook, and the screens only hold one piece of state. Share
+    and Alert are called from the component, the same way FavoriteButton does
+    it.
+  - ✅ No any, casts, @ts-ignore or console.log: the only matches are as const
+    and the word "as" in a comment.
+  - ✅ AGENTS.md: routes stay thin, there are no new packages, it runs in Expo
+    Go, and every button has a role and label.
+  - ❌ Chat export: chat-history/ has no file for this feature, and it must be
+    committed before merging.
+
+  Smaller things to tidy
+
+  - favorites.md:125 (specs/features/favorites.md#L125) still says a failing
+    favorite can't be removed until the Options menu exists, and line 41 still
+    says ⋮ does nothing.
+  - product.md:56 (specs/product.md#L56) doesn't mention search results.
+  - The options menu spec still says Status: draft.
+  - showSaveError now exists in both OptionsSheet.tsx and FavoriteButton.tsx.
+  - The plan comment doesn't mention the SafeAreaProvider fix.
+
+  Decision for you
+
+  How should #28 be handled? I recommend keeping the code and rewording the
+  criterion, with this case added as a known limitation. A network failure sorts
+  itself out once you're back online, so only an ID removed from the API stays
+  stuck, which is very rare. The alternative is to show "Unknown" cards even
+  when every favorite fails, but that changes a finished Favorites rule.
+
+  Phone test script
+
+  1. On the homepage, tap ⋮: the overlay fades, the sheet slides up, and all
+     rows sit above your Android buttons.
+  2. Tap outside, then reopen and press Android back: both animate closed.
+  3. Tap Add to favorites: the heart turns pink, the label changes and the sheet
+     stays open.
+  4. Tap Share and cancel: the sheet stays. Then send it to yourself: three
+     lines arrive.
+  5. In search, with the keyboard open, tap ⋮: only the keyboard closes. Tap it
+     again and tap Open Pokémon: Detail opens, and back returns to the results.
+  6. "Unknown" card:
+     - Online, open Favorites with at least one favorite, then go back to the
+       homepage.
+     - Turn on airplane mode.
+     - Favorite a Pokémon you haven't opened, using ⋮.
+     - Open Favorites and wait a few seconds until it shows "Unknown".
+     - Its ⋮ should have no Share row, and Remove from favorites should work.
+  7. On Favorites, remove your last favorite: "No favorites" shows behind the
+     sheet. Add it back: the card returns.
+
+  How the code works
+
+  - One sheet per screen: the homepage and Favorites each remember which
+    Pokémon's menu is open, in one piece of state. Tapping ⋮ passes { id, name }
+    up through the list to the screen. The sheet sits at screen level so it
+    survives when a card disappears.
+  - The animation: one number, progress, runs from 0 to 1 over 250 ms. The
+    overlay uses it directly as opacity, and the sheet turns it into a distance,
+    so they always move together. useNativeDriver runs it on the UI thread,
+    which keeps it smooth.
+  - Closing: every close goes through close(), which runs the number back to 0
+    and only then removes the sheet. Without that wait it would vanish
+    instantly. isClosing blocks extra taps during that time.
+  - The Android buttons fix: a Modal is a separate window. The padding was being
+    measured for the main app window, so a SafeAreaProvider inside the Modal
+    now measures the sheet's own window.
+  - The favorite row: it reuses useFavorite, the same hook as the Detail heart,
+    so both read the same SQLite data and always agree. The row waits for the
+    data to reload, so it never shows a save that failed.
+  - Share: formatShareMessage is a pure function, which makes it easy to unit
+    test. The link goes inside the message because React Native's separate url
+    field appears to be iOS-only.
+
+  Tell me how you want to handle #28, and I'll update the spec and issue. After
+  that, add the chat export and run /commit-issue 13.
+
+> #28: code should be kept and criterion reworded
+
+● Bash(cd "C:/Users/Gebruiker/Documents/GitHub/Pokedex" &&
+      d="C:/Users/Gebruiker/AppData/Local/Temp/claude/23d15d677ba5a18b/cab056dd-
+      4a99-4ca9-a4f0-e043c49f32bd/scratc…)
+  ⎿  Updated specs\features\options menu.md (+2 -1)
+      46  - [x] Removing a favorite on the Favorites page takes its card 
+          out of the grid straight away, behind the open sheet. The sheet
+           stays open and shows "Add to favorites".
+      47  - [x] Tapping "Add to favorites" in that open sheet puts the ca
+          rd back in its ID position.
+      48  - [x] Removing the last favorite shows "No favorites" behind th
+          e sheet, and the sheet stays open.
+      49 -- [x] A favorite that keeps failing can be removed through the 
+         -sheet on its "Unknown" card.                                   
+      49 +- [x] When at least one other favorite loads, a favorite that k
+         +eeps failing can be removed through the sheet on its "Unknown" 
+         +card.                                                          
+      50  
+      51  **Share**
+      52  
+     ...
+      136  ## Known limitations
+      137  
+      138  - Forms without a HOME image (e.g. ID `10083`) still share the
+           ir link, and that link gives a 404.
+      139 +- If every favorite fails, Favorites shows its full error page
+          + with no cards, so no favorite can be removed there. This clea
+          +rs up once the connection is back, but favorites whose IDs hav
+          +e all left the API stay stuck.                                
+      140  
+      141  ## Open questions
+      142  
+
+● #28 is reworded in both the spec (specs/features/options%20menu.md) and issue
+  #13 (https://github.com/Lucas-Light/Pokedex/issues/13), with no code changes.
+  It now reads:
+
+  ▎ When at least one other favorite loads, a favorite that keeps failing can be
+  ▎ removed through the sheet on its "Unknown" card.
+
+  I also added the all-favorites-fail case to the spec's known limitations, so
+  all 35 criteria now match the code.
+
+  Before you commit:
+  1. Run step 6 of the phone script if you haven't yet. The reworded criterion
+     and "no Share on Unknown cards" are ticked, but that step is the real test
+     for both.
+  2. Export this chat to chat-history/, for example as Feature Options Menu.txt,
+     matching the other files there.
+  3. Run /commit-issue 13.
+
+  The other tidy-ups from the review are still open: the outdated lines in
+  favorites.md, the product.md wording, and the spec's draft status. Do you want
+  those fixed in this commit? They're text-only changes.

@@ -17,4 +17,7 @@ export const spacing = {
   detailSection: 24,
   pillRadius: 99,
   evolutionCardHeight: 80,
+  sheetRowHeight: 56,
+  sheetRowPadding: 16,
+  sheetRowGap: 24,
 } as const;
