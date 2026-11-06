@@ -83,3 +83,5 @@ Every load has a loading and an error state. No `any`, no `as` casts (`as const`
 ## Learned rules
 
 Corrections from review, added with `/learn`.
+
+- Give every button an `accessibilityRole` and `accessibilityLabel`, even when the spec does not mention them, because screen readers can not name an icon-only button otherwise.

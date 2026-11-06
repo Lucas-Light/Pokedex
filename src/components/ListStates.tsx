@@ -13,7 +13,12 @@ export function ErrorMessage({ message, onRetry }: ErrorMessageProps) {
   return (
     <View style={styles.error}>
       <Text style={styles.message}>{message}</Text>
-      <Pressable style={styles.retry} onPress={onRetry}>
+      <Pressable
+        style={styles.retry}
+        onPress={onRetry}
+        accessibilityRole="button"
+        accessibilityLabel="Retry"
+      >
         <Text style={styles.retryText}>Retry</Text>
       </Pressable>
     </View>

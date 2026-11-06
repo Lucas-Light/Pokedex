@@ -5,6 +5,7 @@ export const colors = {
   text: "#0E0940",
   textInactive: "rgba(14, 9, 64, 0.6)",
   primary: "#5631E8",
+  favorite: "#FF4F68",
   onPrimary: "#FFFFFF",
   placeholderText: "rgba(0, 0, 0, 0.3)",
   placeholderIcon: "#D5D5E8",

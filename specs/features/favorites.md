@@ -1,6 +1,6 @@
 # Feature: favorites
 
-> Issue: #? · Status: draft
+> Issue: #7 · Status: complete
 
 ## Goal
 
@@ -12,53 +12,53 @@ Each one testable on the phone (and, where possible, in a unit test on the hook 
 
 **Heart on Detail**
 
-- [ ] A Pokémon that is not a favorite shows `assets/icons/Favorites.svg` (outline) in `#0E0940`.
-- [ ] A favorite shows `assets/icons/Favorites_Active.svg` (filled) in `#FF4F68`.
-- [ ] Tapping the outline heart saves the Pokémon as a favorite straight away, with no confirmation, and the heart turns filled.
-- [ ] Tapping the filled heart removes the favorite straight away, with no confirmation or undo, and the heart turns outline.
-- [ ] After removing a favorite, the heart stays on the page and tapping it again adds the Pokémon back.
-- [ ] The heart stays hidden until both the Pokémon and its favorite status have loaded, so the wrong heart never flashes.
-- [ ] The heart stays hidden on Detail's loading and error states, as in the detail page spec.
-- [ ] The heart works the same on every Detail page, however it was opened (list, search, evolution card or Favorites).
-- [ ] The heart only changes after the save succeeded. If saving fails, the heart stays as it was and a native alert shows "Could not save favorite" with an OK button.
+- [x] A Pokémon that is not a favorite shows `assets/icons/Favorites.svg` (outline) in `#0E0940`.
+- [x] A favorite shows `assets/icons/Favorites_Active.svg` (filled) in `#FF4F68`.
+- [x] Tapping the outline heart saves the Pokémon as a favorite straight away, with no confirmation, and the heart turns filled.
+- [x] Tapping the filled heart removes the favorite straight away, with no confirmation or undo, and the heart turns outline.
+- [x] After removing a favorite, the heart stays on the page and tapping it again adds the Pokémon back.
+- [x] The heart stays hidden until both the Pokémon and its favorite status have loaded, so the wrong heart never flashes.
+- [x] The heart stays hidden on Detail's loading and error states, as in the detail page spec.
+- [x] The heart works the same on every Detail page, however it was opened (list, search, evolution card or Favorites).
+- [x] The heart only changes after the save succeeded. If saving fails, the heart stays as it was and a native alert shows "Could not save favorite" with an OK button.
 
 **Saving**
 
-- [ ] Favorites are stored in SQLite as the Pokémon ID only.
-- [ ] Favorites are still there after closing and reopening the app.
-- [ ] A Pokémon can only be a favorite once. *(unit test)*
-- [ ] Alternate forms can be favorites (ID `10001`, `deoxys-attack`).
+- [x] Favorites are stored in SQLite as the Pokémon ID only.
+- [x] Favorites are still there after closing and reopening the app.
+- [x] A Pokémon can only be a favorite once. *(unit test)*
+- [x] Alternate forms can be favorites (ID `10001`, `deoxys-attack`).
 
 **Favorites page**
 
-- [ ] The Favorites tab shows the title "My favorites" in the same style and position as "All Pokémon", and no search bar.
-- [ ] Favorites show in the same 2-column grid and cards as the homepage.
-- [ ] Favorites are ordered by Pokémon ID, lowest first: `25`, `1025`, `10001`. *(unit test)*
-- [ ] A Pokémon favorited on Detail is on the Favorites page, in its ID position, when the user gets there.
-- [ ] A Pokémon removed on Detail is gone from the Favorites page when the user gets back there.
-- [ ] Tapping a card opens Detail for that Pokémon.
-- [ ] A Detail page opened from Favorites returns to Favorites, also after opening several Pokémon through evolution cards.
-- [ ] Tapping a card's ⋮ button does nothing: no menu opens and Detail does not open.
+- [x] The Favorites tab shows the title "My favorites" in the same style as "All Pokémon", at the top of the page with the same side margin and the same gap to the grid, and no search bar.
+- [x] Favorites show in the same 2-column grid and cards as the homepage.
+- [x] Favorites are ordered by Pokémon ID, lowest first: `25`, `1025`, `10001`. *(unit test)*
+- [x] A Pokémon favorited on Detail is on the Favorites page, in its ID position, when the user gets there.
+- [x] A Pokémon removed on Detail is gone from the Favorites page when the user gets back there.
+- [x] Tapping a card opens Detail for that Pokémon.
+- [x] A Detail page opened from Favorites returns to Favorites, also after opening several Pokémon through evolution cards.
+- [x] Tapping a card's ⋮ button does nothing: no menu opens and Detail does not open.
 
 **Card states**
 
-- [ ] While a Pokémon's request is running, its card shows only the ID badge: no image, no name and no ⋮.
-- [ ] A card that is still loading can be tapped and opens Detail.
-- [ ] Each card fills in its image, name and ⋮ as soon as its own request finishes, without waiting for the others.
-- [ ] When a request fails, the card shows the ID badge, the image, the name "Unknown" and the ⋮ button.
-- [ ] An "Unknown" card can be tapped and opens Detail.
-- [ ] A favorite whose data is still in the cache keeps its name if a new request for it fails, and does not count as failed. *(unit test)*
+- [x] While a Pokémon's request is running, its card shows only the ID badge: no image, no name and no ⋮.
+- [x] A card that is still loading can be tapped and opens Detail.
+- [x] Each card fills in its image, name and ⋮ as soon as its own request finishes, without waiting for the others.
+- [x] When a request fails, the card shows the ID badge, the image, the name "Unknown" and the ⋮ button.
+- [x] An "Unknown" card can be tapped and opens Detail.
+- [x] A favorite whose data is still in the cache keeps its name if a new request for it fails, and does not count as failed. *(unit test)*
 
 **Page states**
 
-- [ ] While the favorite IDs load from SQLite, one centered spinner shows below the title.
-- [ ] With no favorites, the text "No favorites" shows centered below the title, with no button and no Pokémon requests.
-- [ ] Removing the last favorite shows "No favorites".
-- [ ] If some requests fail, the other cards stay visible. Once no requests are running, the bottom of the list shows "Could not load all favorites" and a Retry button. *(unit test on the state logic)*
-- [ ] Tapping that Retry requests only the failed Pokémon. Their cards go back to showing only the badge, and the message disappears while they load.
-- [ ] If every request fails, the page shows "Could not load favorites" and a Retry button instead of the grid. *(unit test on the state logic)*
-- [ ] If reading the favorites from SQLite fails, the page shows the same "Could not load favorites" and a Retry button.
-- [ ] Tapping Retry on the full-page error requests the data again.
+- [x] While the favorite IDs load from SQLite, one centered spinner shows below the title.
+- [x] With no favorites, the text "No favorites" shows centered below the title, with no button and no Pokémon requests.
+- [x] Removing the last favorite shows "No favorites".
+- [x] If some requests fail, the other cards stay visible. Once no requests are running, the bottom of the list shows "Could not load all favorites" and a Retry button. *(unit test on the state logic)*
+- [x] Tapping that Retry requests only the failed Pokémon. Their cards go back to showing only the badge, and the message disappears while they load.
+- [x] If every request fails, the page shows "Could not load favorites" and a Retry button instead of the grid. *(unit test on the state logic)*
+- [x] If reading the favorites from SQLite fails, the page shows the same "Could not load favorites" and a Retry button.
+- [x] Tapping Retry on the full-page error requests the data again.
 
 ## Screens & UI
 
@@ -66,7 +66,7 @@ Each one testable on the phone (and, where possible, in a unit test on the hook 
   - `src/app/(tabs)/favorites.tsx` — Favorites page, replaces the empty page
   - `src/app/pokemon/[id].tsx` — Detail, unchanged route, the heart now works
 - Figma frame: no separate frame needed. The page looks exactly like the homepage ([Home](https://www.figma.com/design/dsgGXcu5WELIvRW90m5308/Pok%C3%A9mon-Code-Challenge?node-id=1-2)), with a different title and no search bar.
-- Top to bottom: "My favorites" title, card grid, bottom tab bar.
+- Top to bottom: "My favorites" title, card grid, bottom tab bar. With no search bar, the title moves up to the top of the page.
 - Replaces "Favorite heart (visual only)" in the detail page spec.
 
 | Element | Design |
@@ -88,7 +88,7 @@ Each one testable on the phone (and, where possible, in a unit test on the hook 
   - `['favorites']` — the IDs from SQLite
   - `['pokemon', 'detail', id]` — shared with Detail, with `id` as a string, so opening a favorite reuses its data
 - Fields used: `id`, `name`
-- Stored in SQLite: yes — one table with the Pokémon ID as primary key, read in ID order. No other Pokémon data.
+- Stored in SQLite: yes — one table with the Pokémon ID as primary key, read in ID order. No other Pokémon data. The primary key is tested on the phone, because real SQLite does not run in Jest. The unit tests cover `toFavoriteIds`.
 - Package: `expo-sqlite`, not installed yet.
 - Offline: no persistence added. Data only lives in the TanStack Query cache, as in `specs/product.md`. With no connection a card can stay on badge-only for several seconds, while the default retries run.
 
@@ -106,7 +106,7 @@ Each one testable on the phone (and, where possible, in a unit test on the hook 
   - `src/components/DetailBar.tsx`, `src/components/PokemonDetail.tsx` — working heart
   - `src/components/Icon.tsx` — filled heart icon
 - Data (API + queries): `src/db/favorites.ts`, `src/hooks/useFavorites.ts`
-- Logic (pure functions): `src/lib/favorites.ts` — page state from the request results (all failed, some failed, none failed)
+- Logic (pure functions): `src/lib/favorites.ts` — ID order and no duplicates (`toFavoriteIds`), page state from the request results (all failed, some failed, none failed)
 - Theme: `src/theme/colors.ts` — `#FF4F68`
 
 ## Out of scope

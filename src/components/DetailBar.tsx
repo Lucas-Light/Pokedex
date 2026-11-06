@@ -2,6 +2,7 @@ import { router } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { FavoriteButton } from "@/components/FavoriteButton";
 import { Icon } from "@/components/Icon";
 import { colors } from "@/theme/colors";
 import { fonts } from "@/theme/fonts";
@@ -10,10 +11,11 @@ import { spacing } from "@/theme/spacing";
 type DetailBarProps = {
   /** Shown between the buttons once the big name has scrolled out of view. */
   name?: string;
-  showHeart?: boolean;
+  /** The Pokémon the heart belongs to. Without it, the bar has no heart. */
+  favoriteId?: number;
 };
 
-export function DetailBar({ name, showHeart = false }: DetailBarProps) {
+export function DetailBar({ name, favoriteId }: DetailBarProps) {
   const insets = useSafeAreaInsets();
 
   return (
@@ -30,8 +32,7 @@ export function DetailBar({ name, showHeart = false }: DetailBarProps) {
         <Text style={styles.name} numberOfLines={1} ellipsizeMode="tail">
           {name}
         </Text>
-        {/* Visual only. The Favorites feature makes it work. */}
-        {showHeart && <Icon name="favorites" color={colors.text} />}
+        {favoriteId !== undefined && <FavoriteButton id={favoriteId} />}
       </View>
     </View>
   );
