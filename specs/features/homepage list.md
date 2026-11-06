@@ -1,6 +1,6 @@
 # Feature: homepage list
 
-> Issue: #1 · Status: draft
+> Issue: #1 · Status: complete
 
 ## Goal
 
@@ -12,44 +12,44 @@ Each one testable on the phone (and, where possible, in a unit test on the hook 
 
 **List and paging**
 
-- [ ] Opening the app shows the homepage with the first 20 entries from PokeAPI, in API order, in a 2-column grid.
-- [ ] Scrolling near the bottom of the list loads the next 20 entries automatically, without a button.
-- [ ] While a next page loads, a small spinner shows at the bottom of the list and the loaded cards stay visible.
-- [ ] No entry appears twice after scrolling through several pages.
-- [ ] All 1351 entries can be reached, including alternate forms (the entry after ID 1025 is ID 10001, `deoxys-attack`).
-- [ ] When the API returns `next: null`, no more pages are requested and no footer spinner shows.
+- [x] Opening the app shows the homepage with the first 20 entries from PokeAPI, in API order, in a 2-column grid.
+- [x] Scrolling near the bottom of the list loads the next 20 entries automatically, without a button.
+- [x] While a next page loads, a small spinner shows at the bottom of the list and the loaded cards stay visible.
+- [x] No entry appears twice after scrolling through several pages.
+- [x] All 1351 entries can be reached, including alternate forms (the entry after ID 1025 is ID 10001, `deoxys-attack`).
+- [x] When the API returns `next: null`, no more pages are requested and no footer spinner shows.
 
 **Card**
 
-- [ ] Each card shows the Pokémon's image, ID badge, name and ⋮ button, as in the Figma design.
-- [ ] The image is loaded from `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/{id}.png`, with the ID taken from the result's `url`.
-- [ ] If an image can't load (e.g. ID 10083 returns 404), the card shows a muted Pokéball-style placeholder icon in the image area and keeps its size, badge and name.
-- [ ] The badge shows the real API ID padded to at least 3 digits and widens to fit: `1` → `001`, `25` → `025`, `1025` → `1025`, `10001` → `10001`. *(unit test)*
-- [ ] Names are shown with each word capitalized and hyphens replaced by spaces: `bulbasaur` → `Bulbasaur`, `mr-mime` → `Mr Mime`, `squawkabilly-green-plumage` → `Squawkabilly Green Plumage`. *(unit test)*
-- [ ] A name that doesn't fit stays on one line and is cut off with an ellipsis.
+- [x] Each card shows the Pokémon's image, ID badge, name and ⋮ button, as in the Figma design.
+- [x] The image is loaded from `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/{id}.png`, with the ID taken from the result's `url`.
+- [x] If an image can't load (e.g. ID 10083 returns 404), the card shows a muted Pokéball-style placeholder icon in the image area and keeps its size, badge and name.
+- [x] The badge shows the real API ID padded to at least 3 digits and widens to fit: `1` → `001`, `25` → `025`, `1025` → `1025`, `10001` → `10001`. *(unit test)*
+- [x] Names are shown with each word capitalized and hyphens replaced by spaces: `bulbasaur` → `Bulbasaur`, `mr-mime` → `Mr Mime`, `squawkabilly-green-plumage` → `Squawkabilly Green Plumage`. *(unit test)*
+- [x] A name that doesn't fit stays on one line and is cut off with an ellipsis.
 
 **Navigation**
 
-- [ ] Tapping a card opens the Detail route for that Pokémon's ID, which shows an empty page.
-- [ ] The device's back action returns from Detail to the list.
-- [ ] A bottom tab bar shows Pokémons and Favorites, with Pokémons active on the homepage.
-- [ ] Tapping Favorites opens an empty page with Favorites active, and tapping Pokémons returns to the list.
+- [x] Tapping a card opens the Detail route for that Pokémon's ID, which shows an empty page.
+- [x] The device's back action returns from Detail to the list.
+- [x] A bottom tab bar shows Pokémons and Favorites, with Pokémons active on the homepage.
+- [x] Tapping Favorites opens an empty page with Favorites active, and tapping Pokémons returns to the list.
 
 **Visual-only elements**
 
-- [ ] The search bar shows the placeholder "Search for Pokémon..", and tapping it does nothing (no keyboard opens).
-- [ ] Tapping a card's ⋮ button does nothing: no menu opens and Detail does not open.
+- [x] The search bar shows the placeholder "Search for Pokémon..", and tapping it does nothing (no keyboard opens).
+- [x] Tapping a card's ⋮ button does nothing: no menu opens and Detail does not open.
 
 **States**
 
-- [ ] While the first page loads, one centered spinner shows in the list area.
-- [ ] If the first page fails, the list area shows an error message and a Retry button. Tapping Retry shows the spinner and requests the page again.
-- [ ] If a later page fails, the loaded cards stay visible and the bottom of the list shows a small error message and a Retry button. Tapping Retry requests that page again.
-- [ ] If a successful first response has no results, the list area shows "No Pokémon found" with no button.
+- [x] While the first page loads, one centered spinner shows in the list area.
+- [x] If the first page fails, the list area shows an error message and a Retry button. Tapping Retry shows the spinner and requests the page again.
+- [x] If a later page fails, the loaded cards stay visible and the bottom of the list shows a small error message and a Retry button. Tapping Retry requests that page again.
+- [x] If a successful first response has no results, the list area shows "No Pokémon found" with no button.
 
 **Fonts**
 
-- [ ] Cabinet Grotesk, Rubik, Inter and Roboto are bundled and loaded with Expo Font, and text uses the fonts listed under Screens & UI.
+- [x] Cabinet Grotesk, Rubik, Inter and Roboto are bundled and loaded with Expo Font, and text uses the fonts listed under Screens & UI.
 
 ## Screens & UI
 
@@ -114,5 +114,7 @@ The Figma mock-up uses pixel sprites, but images follow `product.md` (HOME rende
 
 ## Open questions
 
-- Do the search bar and "All Pokémon" title stay fixed at the top, or scroll away with the cards? The Figma frame is static, so it doesn't show this.
-- Is Cabinet Grotesk from Fontshare OK to bundle in this project? Its licence should be checked before the font file is added.
+None. Answered while planning #1:
+
+- The search bar and "All Pokémon" title stay fixed at the top, and only the cards scroll.
+- Cabinet Grotesk from Fontshare may be bundled. Only the 800 weight file is added.
