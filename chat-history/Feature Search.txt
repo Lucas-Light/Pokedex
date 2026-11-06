@@ -1,0 +1,1836 @@
+
+> /spec-feature search
+
+  Ran 2 shell commands (ctrl+o to expand)
+
+● The API side is clear. Next I'm checking what the homepage already does with
+  the search bar, so my questions fit the existing code.
+
+  Ran 2 shell commands (ctrl+o to expand)
+
+● Nothing's written yet. Here's what the API and the current code show, then my
+  first three questions.
+
+  What the API returns
+
+  ┌───────────────────────────┬─────────────────────────────────────────────┐
+  │           Check           │                   Result                    │
+  ├───────────────────────────┼─────────────────────────────────────────────┤
+  │                           │ 200, all 1351 entries in one response. It's │
+  │ GET /pokemon?limit=100000 │  about 93 KB and took about 0.08s here.     │
+  │                           │ Each entry only has name and url.           │
+  ├───────────────────────────┼─────────────────────────────────────────────┤
+  │ GET /pokemon?name=pika    │ 403, so there's no server-side search       │
+  │                           │ parameter                                   │
+  ├───────────────────────────┼─────────────────────────────────────────────┤
+  │ GET /pokemon/pika         │ 404, because this lookup only takes an      │
+  │                           │ exact name or ID                            │
+  ├───────────────────────────┼─────────────────────────────────────────────┤
+  │ GET /pokemon/pikachu and  │ 200                                         │
+  │ /pokemon/25               │                                             │
+  └───────────────────────────┴─────────────────────────────────────────────┘
+
+  - Search has to run on the phone: the app filters that full list itself, which
+    matches the endpoint already in product.md. Because the filtering is local,
+    typing doesn't trigger any requests. The only load or error state comes
+    from fetching the list once.
+  - Alternate forms are in the list: 326 of the 1351 entries have IDs of 10001
+    or higher. pika matches 17 entries (pikachu, pikachu-rock-star,
+    pikachu-belle…).
+  - Names use hyphens: 402 names contain one, and cards show them with spaces. A
+    user sees "Mr Mime", but the data says mr-mime, so typing mr mime would
+    find nothing unless the search handles that.
+  - Some images are missing: IDs 10080 and 10264 return 404, for example. The
+    existing card placeholder already covers this.
+
+  What the code does now
+
+  - SearchBar is a plain Text with no input, so it has to become a real text
+    field. This replaces the homepage criterion "tapping it does nothing".
+  - PokemonGrid fetches its own paged data, so it will need to be able to show
+    search results too. The cards can be reused as they are.
+
+  Questions
+
+  1. What should a search match?
+  - a) Letters anywhere in the name (my pick): char finds Charmander and
+    Charizard, but also Chimchar, Charjabug and Pecharunt.
+  - b) Start of the name only: char finds only names starting with those
+    letters, so Chimchar and Pecharunt drop out.
+
+  Should it also find by ID, so 25 finds Pikachu? If so, should that be an exact
+  match only? Matching any ID containing "25" gives 35 results. I'd make it
+  exact, or leave ID search out.
+
+  I also suggest ignoring upper/lower case and treating spaces as hyphens, so MR
+  MIME finds mr-mime. Is that OK?
+
+  2. When do results appear, and when is the full list fetched?
+  - Results: I'd update them with every letter typed, with no search button and
+    no minimum length. The alternative is to search only when the keyboard's
+    search key is pressed.
+  - Fetching: I'd fetch the list the first time the search bar is tapped, so
+    opening the app costs nothing extra. If that fetch is still running when
+    someone types, they'd see a spinner. The alternative is to fetch it at app
+    start, which makes results instant but downloads 93 KB even if search is
+    never used.
+
+  3. What does the screen look like during a search?
+  - Figma: does the design have a search or results frame? I can't open it from
+    here, so please describe it or share a screenshot if it does.
+  - Title: does "All Pokémon" stay, or does it change to something like "Search
+    results"?
+  - Clearing: should there be an ✕ button in the bar to clear the search? I'd
+    add one, and clearing would bring back the normal list at the same scroll
+    position.
+  - Results: I'd show them in the same 2-column grid, all at once with no
+    paging, since there are at most 1351 and the list only renders what's on
+    screen. Is that OK?
+
+> 1. Only letters anywhere in the name and ignore lower/higher case and spaces
+  as hyphens. 2. Update on each letter typed and fetch list when searchbar
+  tapped. 3. The search results replace the current grid tiles while typing and
+  the list only renders what is on screen. When typing the "All Pokémon" title
+  is hidden and the seach icon transforms into a back icon (stored in the
+  icons folder) that when tapped will stop the searching and go back to the
+  full list.
+
+● I'll check that the back icon exists and how the icons are wired up before the
+  next questions.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● assets/icons/Back.svg exists but isn't registered in Icon.tsx yet, so that's a
+  small addition. No ✕ button then, since the back icon does that job. These
+  three questions should cover what's left.
+
+  1. When does search mode start and end?
+
+  My suggestion:
+  - Tapping the bar: opens the keyboard and starts the fetch, but the screen
+    stays the same (full list, title, search icon).
+  - First letter typed: search mode starts, so the title hides, the search icon
+    becomes the back icon, and results replace the grid.
+  - Deleting every letter by hand: search mode ends, so the full list, title and
+    search icon come back. The keyboard stays open.
+  - Tapping back: clears the text, closes the keyboard and shows the full list
+    at the scroll position it had before.
+
+  Is that right? And should Android's system back button do the same as the back
+  icon during a search? I'd say yes. Otherwise, it would leave the screen or
+  the app instead of ending the search.
+
+  2. What shows for loading, error and no results?
+
+  My suggestion:
+  - Loading: if the list is still being fetched when someone types, one centered
+    spinner shows in the grid area. Results appear on their own once it's done,
+    using whatever is in the bar by then.
+  - Error: the grid area shows "Could not load Pokémon" and a Retry button, the
+    same as the homepage. The typed text stays. If the fetch failed before
+    anything was typed, the user sees nothing until they type, and then they see
+    this error.
+  - No results: "No Pokémon found" with no button, the same as the homepage. The
+    title stays hidden and the back icon stays visible.
+
+  Is that OK, or do you want different wording, such as No results for "xyz"?
+
+  3. How do results behave in the details?
+
+  - Order: API order, so char lists Charmander first and the alternate forms
+    last. OK?
+  - Leaving and coming back: if someone taps a result, opens Detail and goes
+    back, I'd keep the search text and results. The same goes for switching to
+    Favorites and back. OK?
+  - Scrolling: should scrolling the results close the keyboard? I'd say yes, so
+    more results are visible.
+  - Spaces at the ends: I'd ignore them, so mr  searches for mr, and a query of
+    only spaces counts as empty. OK?
+  - Accents: the API has flabebe, but the games spell it Flabébé. Should é match
+    e? It's a small addition, and without it, typing flabébé gives "No Pokémon
+    found". I'd add it, but it's your call since you didn't ask for it.
+
+> 1. Your suggestions are correct, except that the android back button should
+  only close the keyboard and not clear the search. Also tapping outside the
+  search bar should close the keyboard so you can scroll throug hthe search
+  results. 2. Suggestions approved. 3. All suggestions approved
+
+● Those answers cover it. Before I write the spec, I'm checking the example
+  values against the real data so every criterion uses a true result.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Write(specs\features\search.md)
+  ⎿  Wrote 118 lines to specs\features\search.md
+      1 # Feature: search
+      2
+      3 > Issue: #? · Status: draft
+      4
+      5 ## Goal
+      6
+      7 As a Pokédex user, I want to search all Pokémon by name from the
+        homepage, so that I can find one without scrolling through the wh
+        ole list.
+      8
+     … +110 lines (ctrl+o to expand)
+
+● Update(specs\features\search.md)
+  ⎿  Added 2 lines, removed 1 line
+      115  
+      116  ## Open questions
+      117  
+      118 -None.                                                         
+      118 +- While the keyboard is open, does tapping a result only close
+          + the keyboard, or also open Detail?                           
+      119 +- During a search with the keyboard already closed, what does 
+          +the Android back button do?                                   
+
+● I've written specs/features/search.md, but two questions are still open, and
+  both are listed in the spec. The example results in the matching and results
+  criteria (such as char giving 10 and pika giving 17) come from running that
+  matching logic on the real API list. specs/product.md didn't need changing,
+  because its feature table already links to this spec and its search endpoint
+  is correct. The issue number stays #? until /create-issue.
+
+  Open questions
+
+  1. Should tapping a result with the keyboard open also open Detail?
+     - Close the keyboard only: this is the literal reading of "tapping outside
+       closes the keyboard", but it means a second tap to open the Pokémon.
+     - Close the keyboard and open Detail (my pick): it's one tap, and it can't
+       get in the way of scrolling, because scrolling already closes the
+       keyboard.
+  2. What should Android's back button do during a search when the keyboard is
+     already closed?
+     - Normal behaviour (my pick): the back button does what it does on the
+       homepage now, which on this tab usually means leaving the app. It's the
+       simplest option and fits "only close the keyboard".
+     - End the search: it acts like the back icon, so the user can't leave the
+       app by accident in the middle of a search.
+
+  Please check these additions
+  - Typed text style: I set it to Inter 400 16 in #0E0940, which is the
+    placeholder font in the dark text colour. The Figma design wasn't available
+    to me, so correct this if it specifies something else.
+  - Out of scope: besides ID search and the ✕ button, I listed search on the
+    Favorites tab, search history and suggestions, and keeping the search after
+    the app closes. You didn't mention these, so remove any you do want.
+
+  Once you've answered the two questions, I'll update the spec and you can run
+  /create-issue search.
+
+> 1. Close the keyboard only. 2. Normal behaviour. 3. Additions: Typed text
+  style is indeed Inter like you stated. Out of scope is correct.
+
+● Update(specs\features\search.md)
+  ⎿  Added 1 line, removed 1 line
+      34  - [ ] Results are in API order: for `char`, `charmander` comes 
+          first and `charizard-gmax` comes last.
+      35  - [ ] All matches are in one list without paging, and the list 
+          only renders what is on screen.
+      36  - [ ] Alternate forms are included: `pika` returns 17 results.
+      37 -- [ ] Tapping a result opens the Detail route for that Pokémon'
+         -s ID.                                                          
+      37 +- [ ] With the keyboard closed, tapping a result opens the Deta
+         +il route for that Pokémon's ID.                                
+      38  - [ ] Tapping a result's ⋮ button does the same as on the homep
+          age.
+      39  
+      40  **Ending a search**
+
+● Update(specs\features\search.md)
+  ⎿  Added 2 lines
+      47  
+      48  - [ ] Scrolling the results closes the keyboard.
+      49  - [ ] Tapping outside the search bar closes the keyboard, and t
+          he text and results stay.
+      50 +- [ ] While the keyboard is open, tapping a result or its ⋮ but
+         +ton only closes the keyboard: Detail does not open.            
+      51  - [ ] While the keyboard is open, the Android back button only 
+          closes it, and the text and results stay.
+      52 +- [ ] During a search with the keyboard closed, the Android bac
+         +k button keeps its normal behaviour and does not end the search
+         + first.                                                        
+      53  
+      54  **Leaving and returning**
+      55  
+
+● Update(specs\features\search.md)
+  ⎿  Added 1 line, removed 2 lines
+      117  
+      118  ## Open questions
+      119  
+      120 -- While the keyboard is open, does tapping a result only close
+          - the keyboard, or also open Detail?                           
+      121 -- During a search with the keyboard already closed, what does 
+          -the Android back button do?                                   
+      120 +None.                                                         
+
+● specs/features/search.md is finished, with no open questions left. Here's what
+  changed:
+
+  - Tapping a result: with the keyboard open, tapping a result only closes the
+    keyboard, so Detail needs a second tap. With the keyboard closed, it opens
+    Detail.
+  - ⋮ button: I applied the same rule here, so with the keyboard open it also
+    only closes the keyboard. You only mentioned results, but a tap on ⋮ is also
+    a tap outside the search bar.
+  - Android back button: with the keyboard closed, it keeps its normal behaviour
+    and doesn't end the search first.
+
+  The typed text style and the out-of-scope list stay as they were. Nothing is
+  committed.
+
+  The next step is /create-issue search.
+
+> /create-issue search
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● No feature label exists, so I'll create the issue without one. I'm also
+  switching the spec link to a full URL, since relative links don't work
+  reliably in issue bodies.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Bash(cd "C:/Users/Gebruiker/Documents/GitHub/Pokedex" && sed -i 's/^> Issue:
+      #? · Status: draft/> Issue: #3 · Status: draft/' specs/features/search.md
+      && sed -i 's/^…)
+  ⎿  Updated specs\features\search.md (+1 -1)
+      1  # Feature: search
+      2  
+      3 -> Issue: #? · Status: draft                                     
+      3 +> Issue: #3 · Status: draft                                     
+      4  
+      5  ## Goal
+      6  
+  ⎿  Updated specs\product.md (+1 -1)
+      33  | # | Feature | Spec | Issue |
+      34  |---|---|---|---|
+      35  | 1 | Homepage list | [specs/features/homepage list.md](feature
+          s/homepage%20list.md) | #1 |
+      36 -| 2 | Search | [specs/features/search.md](features/search.md) |
+         - #? |                                                          
+      36 +| 2 | Search | [specs/features/search.md](features/search.md) |
+         + #3 |                                                          
+      37  | 3 | Detail | [specs/features/detail.md](features/detail.md) |
+           #? |
+      38  | 4 | Favorites | [specs/features/favorites.md](features/favori
+          tes.md) | #? |
+      39  | 5 | Compare | [specs/features/compare.md](features/compare.md
+          ) | #? |
+
+● The issue is created: https://github.com/Lucas-Light/Pokedex/issues/3
+
+  - Issue number: #3 is now in the header of specs/features/search.md and in the
+    feature table in specs/product.md.
+  - Label: the repo has no feature label, so the issue doesn't have one.
+  - Spec link: the link in the issue will give a 404 until
+    specs/features/search.md is committed and pushed to main.
+  - Uncommitted files: assets/icons/Back.svg is also untracked, and the search
+    feature needs it, so it has to be committed too. Nothing has been committed
+    yet.
+
+  The next step is /plan-issue 3.
+
+> Any reason issue search is #3 and not #2?
+
+● Yes: GitHub uses one shared number sequence for issues and pull requests in a
+  repo. Issue #1 was the homepage list, and #2 went to the pull request that
+  merged it (the "Merge pull request #2 from Lucas-Light/feature/homepage-list"
+  commit in your history). That made #3 the next free number.
+
+  So nothing went wrong, and no number was skipped. If you open a PR for search,
+  it will probably become #4, and the next feature issue #5, so the numbers
+  won't line up with the feature table's order. That's why the table has its own
+  # column alongside the issue numbers.
+
+> /plan-issue 3
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● The SDK is 58, so I'm checking the docs for that version, plus the React
+  Native APIs this feature relies on: TextInput, keyboard handling in lists, and
+  how tab screens stay mounted.
+
+● Fetch(https://docs.expo.dev/llms.txt)  ⎿  Received 56.3KB (200 OK)
+
+● Fetch(https://docs.expo.dev/versions/v58.0.0/)
+  ⎿  Received 30.6KB (200 OK)
+
+● Fetch(https://reactnative.dev/docs/scrollview)
+  ⎿  Received 97.3KB (200 OK)
+
+● Fetch(https://reactnative.dev/docs/textinput)
+  ⎿  Received 105KB (200 OK)
+
+● Fetch(https://reactnative.dev/docs/keyboard)
+  ⎿  Received 42.7KB (200 OK)
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● The keyboard setting you picked matches React Native's default, where children
+  don't receive taps. I'm doing one last check on the SDK 58 router changes and
+  whether tab screens stay mounted, since keeping the search text depends on
+  it.
+
+● Fetch(https://docs.expo.dev/router/migrate/sdk-57-to-58.md)
+  ⎿  Received 39.6KB (200 OK)
+
+● Fetch(https://docs.expo.dev/router/advanced/tabs.md)
+  ⎿  Received 13KB (200 OK)
+
+  Made 1 scratchpad edit +112, ran 2 shell commands (ctrl+o to expand)
+
+● The plan is posted on the issue:
+  https://github.com/Lucas-Light/Pokedex/issues/3#issuecomment-6685578385. No
+  code has changed. The comment also explains how each of the 33 acceptance
+  criteria will be met, so here's a shorter version.
+
+  Approach
+
+  A new usePokemonSearch hook holds the typed text and the full-list query. The
+  query starts on the first tap of the bar and runs once. Filtering is a pure
+  function in src/lib/pokemon.ts. No new dependencies are needed, and it all
+  runs in Expo Go.
+
+  - Scroll position: the normal list stays mounted, and the results sit on top
+    of it in an opaque layer. The list never unmounts, so it keeps its position
+    without extra code.
+  - Keyboard: your choices mostly match React Native's defaults, which close the
+    keyboard and don't pass the tap on to cards. Android's back button needs no
+    code at all. The only additions are keyboardDismissMode="on-drag" and a
+    tap-outside handler for areas outside the lists.
+
+  Files
+
+  ┌───────┬─────────────────────────────┬───────────────────────────────────┐
+  │       │             New             │              Changed              │
+  ├───────┼─────────────────────────────┼───────────────────────────────────┤
+  │       │ PokemonCardList.tsx,        │ SearchBar.tsx, PokemonGrid.tsx,   │
+  │ UI    │ ListStates.tsx,             │ Icon.tsx, (tabs)/index.tsx        │
+  │       │ SearchResults.tsx           │                                   │
+  ├───────┼─────────────────────────────┼───────────────────────────────────┤
+  │ Data  │ usePokemonSearch.ts         │ api/pokemon.ts, usePokemonList.ts │
+  ├───────┼─────────────────────────────┼───────────────────────────────────┤
+  │ Logic │                             │ lib/pokemon.ts, pokemon-test.ts   │
+  ├───────┼─────────────────────────────┼───────────────────────────────────┤
+  │       │                             │ specs/features/search.md (Code    │
+  │ Docs  │                             │ layout, plus your two answers     │
+  │       │                             │ below)                            │
+  └───────┴─────────────────────────────┴───────────────────────────────────┘
+
+  Tasks
+
+  - [ ] Add the matching functions and move PokemonListItem to lib
+  - [ ] Add unit tests for every Matching criterion
+  - [ ] Add ALL_POKEMON_URL
+  - [ ] Add usePokemonSearch
+  - [ ] Register Back.svg in Icon.tsx
+  - [ ] Turn SearchBar into a real text input with the back icon
+  - [ ] Extract ListStates and PokemonCardList, and check the homepage still
+    behaves the same
+  - [ ] Add SearchResults with its loading, error and empty states
+  - [ ] Connect it all in HomeScreen
+  - [ ] Apply the two choices below
+  - [ ] Update the spec's Code layout section
+  - [ ] Run npx jest, npx expo lint and npx tsc --noEmit
+  - [ ] Test every criterion on a phone in Expo Go
+
+  Things to watch on the phone
+
+  - Keeping the search after switching tabs: the docs don't confirm that tab
+    screens stay mounted, and SDK 58 changed how unfocused screens are handled.
+  - flabébé: the accent handling runs on Hermes on the phone, not Node as in the
+    unit tests.
+
+  Two choices for you
+
+  The spec doesn't cover either of these:
+
+  1. Should the results jump back to the top when the text changes? Without
+     this, someone who scrolled down and then types another letter stays at that
+     offset. I recommend jumping to the top so the best matches are visible.
+  2. What should tapping a tab do with the keyboard open? I recommend closing
+     the keyboard and switching tabs, so it doesn't stay open on Favorites. The
+     alternative is that the tap only closes the keyboard, like tapping a card.
+
+  Answer these and say "go", or send corrections and I'll update the comment.
+
+> Remaining choices: 1. Yes. 2. Closing keyboard and switching tabs
+
+● You've answered both choices, so I'll record them in the plan comment.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● I've updated the plan comment
+  (https://github.com/Lucas-Light/Pokedex/issues/3#issuecomment-6685578385) with
+  both decisions:
+
+  1. Text changes: the results jump back to the top on every text change, and
+     this is now its own task.
+  2. Tab tap with the keyboard open: the keyboard closes and the tab switches.
+
+  The spec update task now also adds both decisions to search.md as acceptance
+  criteria, so the spec stays the source of truth. That edit happens during the
+  build, so the spec itself hasn't changed yet.
+
+  Say "go" when you're ready for me to start building, or run /build-issue 3.
+
+> /build-issue 3
+
+● I'm starting by confirming the approved plan is still the latest comment. I'm
+  also checking two things it relies on: that a retry puts the query back into
+  its loading state, and how the existing tests end. A small helper will tick
+  off tasks in the comment as I go.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Retrying does return to pending when there's no data, but git status came back
+  empty even though the spec and Back.svg were uncommitted earlier. I'll find
+  out why before changing anything.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● That's fine: you committed those files yourself in 7c9a336 and pushed them, so
+  the issue's spec link works now too. On to the build, starting with the
+  matching logic and its tests.
+
+● Bash(cd "C:/Users/Gebruiker/Documents/GitHub/Pokedex" &&
+      S="C:/Users/Gebruiker/AppData/Local/Temp/claude/23d15d677ba5a18b/8f260eae-
+      0b92-4bbf-8980-13c554319cfe/scratc…)
+  ⎿  Updated src\lib\__tests__\pokemon-test.ts (+71 -0)
+       52      expect(formatBadge(id)).toBe(expected);
+       53    });
+       54  });
+       55 +                                                              
+       56 +describe("toListItem", () => {                                
+       57 +  it("takes the ID from the URL and keeps the name", () => {  
+       58 +    expect(                                                   
+       59 +      toListItem({ name: "pikachu", url: "https://pokeapi.co/a
+          +pi/v2/pokemon/25/" }),                                        
+       60 +    ).toEqual({ id: 25, name: "pikachu" });                   
+       61 +  });                                                         
+       62 +});                                                           
+       63 +                                                              
+       64 +describe("normalizeSearchQuery", () => {                      
+       65 +  it.each([                                                   
+       66 +    ["char", "char"],                                         
+       67 +    ["CHAR", "char"],                                         
+       68 +    ["mr mime", "mr-mime"],                                   
+       69 +    ["MR MIME", "mr-mime"],                                   
+       70 +    ["mr-mime", "mr-mime"],                                   
+       71 +    ["mr ", "mr"],                                            
+       72 +    ["  mr  mime  ", "mr-mime"],                              
+       73 +    ["flabébé", "flabebe"],                                   
+       74 +    ["   ", ""],                                              
+       75 +    ["", ""],                                                 
+       76 +  ])("turns %j into %j", (query, expected) => {               
+       77 +    expect(normalizeSearchQuery(query)).toBe(expected);       
+       78 +  });                                                         
+       79 +});                                                           
+       80 +                                                              
+       81 +describe("filterPokemonByName", () => {                       
+       82 +  const items: PokemonListItem[] = [                          
+       83 +    { id: 4, name: "charmander" },                            
+       84 +    { id: 25, name: "pikachu" },                              
+       85 +    { id: 122, name: "mr-mime" },                             
+       86 +    { id: 390, name: "chimchar" },                            
+       87 +    { id: 669, name: "flabebe" },                             
+       88 +    { id: 866, name: "mr-rime" },                             
+       89 +    { id: 1025, name: "pecharunt" },                          
+       90 +    { id: 10168, name: "mr-mime-galar" },                     
+       91 +    { id: 10196, name: "charizard-gmax" },                    
+     … 34 more lines (ctrl+o to expand)
+  ⎿  Updated src\lib\pokemon.ts (+24 -0)
+      1 +export type PokemonListItem = {                                 
+      2 +  id: number;                                                   
+      3 +  name: string;                                                 
+      4 +};                                                              
+      5 +                                                                
+      6  const IMAGE_BASE_URL =
+      7    "https://raw.githubusercontent.com/PokeAPI/sprites/master/spri
+         tes/pokemon/other/home";
+      8  
+     ...
+      29  export function formatBadge(id: number): string {
+      30    return String(id).padStart(3, "0");
+      31  }
+      32 +                                                               
+      33 +export function toListItem(result: { name: string; url: string 
+         +}): PokemonListItem {                                          
+      34 +  return { id: getIdFromUrl(result.url), name: result.name };  
+      35 +}                                                              
+      36 +                                                               
+      37 +/** Turns typed text into the form API names use: `MR Mimé ` be
+         +comes `mr-mime`. */                                            
+      38 +export function normalizeSearchQuery(query: string): string {  
+      39 +  return query                                                 
+      40 +    .trim()                                                    
+      41 +    .toLowerCase()                                             
+      42 +    .normalize("NFD")                                          
+      43 +    .replace(/[̀-ͯ]/g, "")                                       
+      44 +    .replace(/s+/g, "-");                                      
+      45 +}                                                              
+      46 +                                                               
+      47 +export function filterPokemonByName(items: PokemonListItem[], q
+         +uery: string): PokemonListItem[] {                             
+      48 +  const normalized = normalizeSearchQuery(query);              
+      49 +  return items.filter((item) => item.name.includes(normalized))
+         +;                                                              
+      50 +}                                                              
+  ⎿  (timeout 3m)
+
+● 20 tests failed even though my script ticked both tasks, so those ticks are
+  wrong. The old type in usePokemonList.ts also means my multi-line replacements
+  didn't apply, likely due to Windows line endings. I'm unticking those tasks
+  first, then fixing it.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● The files use CRLF line endings, so the replacements matched nothing and
+  failed silently. I'm rewriting the script to normalise line endings and fail
+  on any replacement that doesn't apply, and it will only tick off once the
+  tests pass.
+
+  Ran 2 shell commands (ctrl+o to expand)
+
+● The tests caught a real bug: the backslashes in both regexes were lost when
+  the script wrote the file, so \s+ became a plain s+. I'll fix that directly in
+  the file.
+
+  Read 1 file (ctrl+o to expand)
+
+● Update(src\lib\pokemon.ts)
+  ⎿  Added 1 line, removed 1 line
+      41      .toLowerCase()
+      42      .normalize("NFD")
+      43      .replace(/[̀-ͯ]/g, "")
+      44 -    .replace(/s+/g, "-");                                      
+      44 +    .replace(/\s+/g, "-");                                     
+      45  }
+      46  
+      47  export function filterPokemonByName(items: PokemonListItem[], q
+          uery: string): PokemonListItem[] {
+
+● Update(src\lib\pokemon.ts)
+  ⎿  Error editing file
+
+  Ran 1 shell command (ctrl+o to expand)
+● All 33 tests pass, and I'm replacing the raw combining characters on line 43
+  with an explicit list so the code isn't fragile; the API constant, hook and
+  icon come next.
+
+● Bash(cd "C:/Users/Gebruiker/Documents/GitHub/Pokedex" &&
+      S="C:/Users/Gebruiker/AppData/Local/Temp/claude/23d15d677ba5a18b/8f260eae-
+      0b92-4bbf-8980-13c554319cfe/scratc…)
+  ⎿  Updated src\lib\pokemon.ts (+1 -1)
+      40      .trim()
+      41      .toLowerCase()
+      42      .normalize("NFD")
+      43 -    .replace(/[̀-ͯ]/g, "")                                       
+      43 +    .replace(/[\u0300-\u036f]/g, "")                           
+      44      .replace(/\s+/g, "-");
+      45  }
+      46  
+
+  Read 5 files (ctrl+o to expand)
+
+● Next up are the data layer, the icon, and the search bar as a real input, with
+  its padding and icon also focusing the input so the later tap-outside handler
+  won't close the keyboard.
+
+● Update(src\api\pokemon.ts)
+  ⎿  Added 1 line
+      1  export const FIRST_PAGE_URL = "https://pokeapi.co/api/v2/pokemon
+         ?limit=20&offset=0";
+      2 +export const ALL_POKEMON_URL = "https://pokeapi.co/api/v2/pokemo
+        +n?limit=100000";                                                
+      3  
+      4  export type PokemonListResult = {
+      5    name: string;
+
+● Write(src\hooks\usePokemonSearch.ts)
+  ⎿  Wrote 39 lines to src\hooks\usePokemonSearch.ts
+       1 import { useQuery } from "@tanstack/react-query";
+       2 import { useMemo, useState } from "react";
+       3
+       4 import { ALL_POKEMON_URL, fetchPokemonPage, type PokemonListResp
+         onse } from "@/api/pokemon";
+       5 import {
+       6   filterPokemonByName,
+       7   normalizeSearchQuery,
+       8   type PokemonListItem,
+       9   toListItem,
+     … +30 lines (ctrl+o to expand)
+
+● Update(src\components\Icon.tsx)
+  ⎿  Added 1 line
+       6  
+       7  const icons = {
+       8    search: { source: require("@/assets/icons/Search.svg"), width
+          : 18, height: 18 },
+       9 +  back: { source: require("@/assets/icons/Back.svg"), width: 16
+         +, height: 16 },                                                
+      10    pokeball: { source: require("@/assets/icons/Pokeball.svg"), w
+          idth: 20, height: 20 },
+      11    favorites: { source: require("@/assets/icons/Favorites.svg"),
+           width: 20, height: 19 },
+      12    options: { source: require("@/assets/icons/Options.svg"), wid
+          th: 3, height: 15 },
+
+● Write(src\components\SearchBar.tsx)
+  ⎿  Added 47 lines, removed 10 lines
+       1 -import { StyleSheet, Text, View } from "react-native";         
+       1 +import { useRef } from "react";                                
+       2 +import { Keyboard, Pressable, StyleSheet, TextInput } from "rea
+         +ct-native";                                                    
+       3  
+       4  import { Icon } from "@/components/Icon";
+       5  import { colors, shadows } from "@/theme/colors";
+       6  import { fonts } from "@/theme/fonts";
+       7  import { spacing } from "@/theme/spacing";
+       8  
+       8 -export function SearchBar() {                                  
+       9 +type SearchBarProps = {                                        
+      10 +  value: string;                                               
+      11 +  isSearching: boolean;                                        
+      12 +  onChangeText: (text: string) => void;                        
+      13 +  onFocus: () => void;                                         
+      14 +  onBack: () => void;                                          
+      15 +};                                                             
+      16 +                                                               
+      17 +export function SearchBar({ value, isSearching, onChangeText, o
+         +nFocus, onBack }: SearchBarProps) {                            
+      18 +  const input = useRef<TextInput>(null);                       
+      19 +                                                               
+      20 +  function handleBack() {                                      
+      21 +    Keyboard.dismiss();                                        
+      22 +    onBack();                                                  
+      23 +  }                                                            
+      24 +                                                               
+      25    return (
+      10 -    <View style={styles.bar}>                                  
+      11 -      <Icon name="search" color={colors.text} />               
+      12 -      <Text style={styles.placeholder} numberOfLines={1}>      
+      13 -        Search for Pokémon..                                   
+      14 -      </Text>                                                  
+      15 -    </View>                                                    
+      26 +    // The whole bar counts as the search bar, so its padding a
+         +nd icon focus the input too.                                   
+      27 +    <Pressable style={styles.bar} onPress={() => input.current?
+         +.focus()} accessible={false}>                                  
+      28 +      {isSearching ? (                                         
+      29 +        <Pressable                                             
+      30 +          onPress={handleBack}                                 
+      31 +          hitSlop={12}                                         
+      32 +          accessibilityRole="button"                           
+      33 +          accessibilityLabel="Stop searching"                  
+      34 +        >                                                      
+      35 +          <Icon name="back" color={colors.text} />             
+      36 +        </Pressable>                                           
+      37 +      ) : (                                                    
+      38 +        <Icon name="search" color={colors.text} />             
+      39 +      )}                                                       
+      40 +      <TextInput                                               
+      41 +        ref={input}                                            
+      42 +        style={styles.input}                                   
+      43 +        value={value}                                          
+      44 +        onChangeText={onChangeText}                            
+      45 +        onFocus={onFocus}                                      
+      46 +        placeholder="Search for Pokémon.."                     
+      47 +        placeholderTextColor={colors.placeholderText}          
+      48 +        autoCorrect={false}                                    
+      49 +        autoCapitalize="none"                                  
+      50 +      />                                                       
+      51 +    </Pressable>                                               
+      52    );
+      53  }
+      54  
+     ...
+      65      borderRadius: spacing.radius,
+      66      boxShadow: shadows.soft,
+      67    },
+      32 -  placeholder: {                                               
+      68 +  input: {                                                     
+      69      flex: 1,
+      70 +    padding: 0,                                                
+      71      fontFamily: fonts.input,
+      72      fontSize: 16,
+      36 -    color: colors.placeholderText,                             
+      73 +    color: colors.text,                                        
+      74    },
+      75  });
+
+● Write(src\components\ListStates.tsx)
+  ⎿  Wrote 75 lines to src\components\ListStates.tsx
+       1 import { ActivityIndicator, Pressable, StyleSheet, Text, View }
+         from "react-native";
+       2
+       3 import { colors } from "@/theme/colors";
+       4 import { fonts } from "@/theme/fonts";
+       5 import { spacing } from "@/theme/spacing";
+       6
+       7 type ErrorMessageProps = {
+       8   message: string;
+       9   onRetry: () => void;
+     … +66 lines (ctrl+o to expand)
+
+● Write(src\components\PokemonCardList.tsx)
+  ⎿  Wrote 49 lines to src\components\PokemonCardList.tsx
+       1 import type { ReactElement, Ref } from "react";
+       2 import { FlatList, StyleSheet, useWindowDimensions } from "react
+         -native";
+       3
+       4 import { PokemonCard } from "@/components/PokemonCard";
+       5 import type { PokemonListItem } from "@/lib/pokemon";
+       6 import { spacing } from "@/theme/spacing";
+       7
+       8 type PokemonCardListProps = {
+       9   data: PokemonListItem[];
+     … +40 lines (ctrl+o to expand)
+
+● Write(src\components\PokemonGrid.tsx)
+  ⎿  Added 12 lines, removed 95 lines
+       1 -import {                                                       
+       2 -  ActivityIndicator,                                           
+       3 -  FlatList,                                                    
+       4 -  Pressable,                                                   
+       5 -  StyleSheet,                                                  
+       6 -  Text,                                                        
+       7 -  useWindowDimensions,                                         
+       8 -  View,                                                        
+       9 -} from "react-native";                                         
+       1 +import { ActivityIndicator, StyleSheet, View } from "react-nati
+         +ve";                                                           
+       2  
+      11 -import { PokemonCard } from "@/components/PokemonCard";        
+       3 +import {                                                       
+       4 +  CenteredError,                                               
+       5 +  CenteredMessage,                                             
+       6 +  CenteredSpinner,                                             
+       7 +  ErrorMessage,                                                
+       8 +} from "@/components/ListStates";                              
+       9 +import { PokemonCardList } from "@/components/PokemonCardList";
+      10  import { usePokemonList } from "@/hooks/usePokemonList";
+      11  import { colors } from "@/theme/colors";
+      14 -import { fonts } from "@/theme/fonts";                         
+      12  import { spacing } from "@/theme/spacing";
+      13  
+      17 -type ErrorMessageProps = {                                     
+      18 -  message: string;                                             
+      19 -  onRetry: () => void;                                         
+      20 -};                                                             
+      21 -                                                               
+      22 -function ErrorMessage({ message, onRetry }: ErrorMessageProps) 
+         -{                                                              
+      23 -  return (                                                     
+      24 -    <View style={styles.error}>                                
+      25 -      <Text style={styles.message}>{message}</Text>            
+      26 -      <Pressable style={styles.retry} onPress={onRetry}>       
+      27 -        <Text style={styles.retryText}>Retry</Text>            
+      28 -      </Pressable>                                             
+      29 -    </View>                                                    
+      30 -  );                                                           
+      31 -}                                                              
+      32 -                                                               
+      14  export function PokemonGrid() {
+      15    const {
+      16      data,
+     ...
+      21      isFetchingNextPage,
+      22      isFetchNextPageError,
+      23    } = usePokemonList();
+      43 -  const { width } = useWindowDimensions();                     
+      24  
+      25    if (isPending) {
+      46 -    return (                                                   
+      47 -      <View style={styles.center}>                             
+      48 -        <ActivityIndicator size="large" color={colors.primary} 
+         -/>                                                             
+      49 -      </View>                                                  
+      50 -    );                                                         
+      26 +    return <CenteredSpinner />;                                
+      27    }
+      28  
+      29    if (!data) {
+      54 -    return (                                                   
+      55 -      <View style={styles.center}>                             
+      56 -        <ErrorMessage message="Could not load Pokémon" onRetry=
+         -{() => refetch()} />                                           
+      57 -      </View>                                                  
+      58 -    );                                                         
+      30 +    return <CenteredError message="Could not load Pokémon" onRe
+         +try={() => refetch()} />;                                      
+      31    }
+      32  
+      33    if (data.length === 0) {
+      62 -    return (                                                   
+      63 -      <View style={styles.center}>                             
+      64 -        <Text style={styles.message}>No Pokémon found</Text>   
+      65 -      </View>                                                  
+      66 -    );                                                         
+      34 +    return <CenteredMessage message="No Pokémon found" />;     
+      35    }
+      36  
+      69 -  const cardWidth = (width - spacing.gridMargin * 2 - spacing.g
+         -ridGap) / 2;                                                   
+      70 -                                                               
+      37    function loadNextPage() {
+      38      // After a failed page only the Retry button may request it
+           again.
+      39      if (hasNextPage && !isFetchingNextPage && !isFetchNextPageE
+          rror) {
+     ...
+       56      return undefined;
+       57    }
+       58  
+       93 -  return (                                                    
+       94 -    <FlatList                                                 
+       95 -      data={data}                                             
+       96 -      numColumns={2}                                          
+       97 -      keyExtractor={(item) => String(item.id)}                
+       98 -      renderItem={({ item }) => <PokemonCard id={item.id} name
+          -={item.name} width={cardWidth} />}                            
+       99 -      columnWrapperStyle={styles.row}                         
+      100 -      contentContainerStyle={styles.content}                  
+      101 -      onEndReached={loadNextPage}                             
+      102 -      onEndReachedThreshold={0.5}                             
+      103 -      ListFooterComponent={renderFooter()}                    
+      104 -      showsVerticalScrollIndicator={false}                    
+      105 -    />                                                        
+      106 -  );                                                          
+       59 +  return <PokemonCardList data={data} onEndReached={loadNextPa
+          +ge} footer={renderFooter()} />;                               
+       60  }
+       61  
+       62  const styles = StyleSheet.create({
+      110 -  center: {                                                   
+      111 -    flex: 1,                                                  
+      112 -    alignItems: "center",                                     
+      113 -    justifyContent: "center",                                 
+      114 -    padding: spacing.gridMargin,                              
+      115 -  },                                                          
+      116 -  content: {                                                  
+      117 -    paddingHorizontal: spacing.gridMargin,                    
+      118 -    paddingTop: 4,                                            
+      119 -    paddingBottom: spacing.gridGap,                           
+      120 -    gap: spacing.gridGap,                                     
+      121 -  },                                                          
+      122 -  row: {                                                      
+      123 -    gap: spacing.gridGap,                                     
+      124 -  },                                                          
+       63    footer: {
+       64      paddingVertical: spacing.gridGap,
+       65    },
+      128 -  error: {                                                    
+      129 -    alignItems: "center",                                     
+      130 -    gap: 12,                                                  
+      131 -  },                                                          
+      132 -  message: {                                                  
+      133 -    fontFamily: fonts.body,                                   
+      134 -    fontSize: 16,                                             
+      135 -    color: colors.text,                                       
+      136 -    textAlign: "center",                                      
+      137 -  },                                                          
+      138 -  retry: {                                                    
+      139 -    paddingVertical: 8,                                       
+      140 -    paddingHorizontal: 16,                                    
+      141 -    backgroundColor: colors.primary,                          
+      142 -    borderRadius: spacing.radius,                             
+      143 -  },                                                          
+      144 -  retryText: {                                                
+      145 -    fontFamily: fonts.body,                                   
+      146 -    fontSize: 16,                                             
+      147 -    color: colors.onPrimary,                                  
+      148 -  },                                                          
+       66  });
+
+● Write(src\components\SearchResults.tsx)
+  ⎿  Wrote 40 lines to src\components\SearchResults.tsx
+       1 import { useEffect, useRef } from "react";
+       2 import { type FlatList, Keyboard } from "react-native";
+       3
+       4 import { CenteredError, CenteredMessage, CenteredSpinner } from
+         "@/components/ListStates";
+       5 import { PokemonCardList } from "@/components/PokemonCardList";
+       6 import type { PokemonListItem } from "@/lib/pokemon";
+       7
+       8 type SearchResultsProps = {
+       9   text: string;
+     … +31 lines (ctrl+o to expand)
+
+● Write(src\app\(tabs)\index.tsx)
+  ⎿  Added 52 lines, removed 6 lines
+       1 -import { StyleSheet, Text, View } from "react-native";         
+       1 +import { useFocusEffect } from "expo-router";                  
+       2 +import { useCallback } from "react";                           
+       3 +import { Keyboard, Pressable, StyleSheet, Text, View } from "re
+         +act-native";                                                   
+       4  import { useSafeAreaInsets } from "react-native-safe-area-conte
+          xt";
+       5  
+       6  import { PokemonGrid } from "@/components/PokemonGrid";
+       7  import { SearchBar } from "@/components/SearchBar";
+       8 +import { SearchResults } from "@/components/SearchResults";    
+       9 +import { usePokemonSearch } from "@/hooks/usePokemonSearch";   
+      10  import { colors } from "@/theme/colors";
+      11  import { fonts } from "@/theme/fonts";
+      12  import { spacing } from "@/theme/spacing";
+      13  
+      14  export default function HomeScreen() {
+      15    const insets = useSafeAreaInsets();
+      16 +  const search = usePokemonSearch();                           
+      17 +  const { isSearching } = search;                              
+      18  
+      19 +  // Closes the keyboard when a tab tap leaves this screen.    
+      20 +  useFocusEffect(useCallback(() => () => Keyboard.dismiss(), []
+         +));                                                            
+      21 +                                                               
+      22    return (
+      14 -    <View style={[styles.screen, { paddingTop: insets.top + 16 
+         -}]}>                                                           
+      15 -      <SearchBar />                                            
+      16 -      <Text style={styles.title}>All Pokémon</Text>            
+      17 -      <PokemonGrid />                                          
+      18 -    </View>                                                    
+      23 +    <Pressable                                                 
+      24 +      style={[styles.screen, { paddingTop: insets.top + 16 }]} 
+      25 +      onPress={() => Keyboard.dismiss()}                       
+      26 +      accessible={false}                                       
+      27 +    >                                                          
+      28 +      <SearchBar                                               
+      29 +        value={search.text}                                    
+      30 +        isSearching={isSearching}                              
+      31 +        onChangeText={search.setText}                          
+      32 +        onFocus={search.requestList}                           
+      33 +        onBack={search.clear}                                  
+      34 +      />                                                       
+      35 +      {!isSearching && <Text style={styles.title}>All Pokémon</
+         +Text>}                                                         
+      36 +      <View style={styles.listArea}>                           
+      37 +        {/* Stays mounted under the results, so it keeps its sc
+         +roll position. */}                                             
+      38 +        <View                                                  
+      39 +          style={styles.listArea}                              
+      40 +          accessibilityElementsHidden={isSearching}            
+      41 +          importantForAccessibility={isSearching ? "no-hide-des
+         +cendants" : "auto"}                                            
+      42 +        >                                                      
+      43 +          <PokemonGrid />                                      
+      44 +        </View>                                                
+      45 +        {isSearching && (                                      
+      46 +          <View style={styles.results}>                        
+      47 +            <SearchResults                                     
+      48 +              text={search.text}                               
+      49 +              results={search.results}                         
+      50 +              isPending={search.isPending}                     
+      51 +              onRetry={search.retry}                           
+      52 +            />                                                 
+      53 +          </View>                                              
+      54 +        )}                                                     
+      55 +      </View>                                                  
+      56 +    </Pressable>                                               
+      57    );
+      58  }
+      59  
+     ...
+      71      lineHeight: 28.8,
+      72      color: colors.text,
+      73    },
+      74 +  listArea: {                                                  
+      75 +    flex: 1,                                                   
+      76 +  },                                                           
+      77 +  results: {                                                   
+      78 +    ...StyleSheet.absoluteFill,                                
+      79 +    paddingTop: 12,                                            
+      80 +    backgroundColor: colors.background,                        
+      81 +  },                                                           
+      82  });
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Lint and tests pass. tsc found one real issue: in RN 0.88 TextInput isn't the
+  type of its own ref any more. I'll look up the type it actually exports.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Bash(cd "C:/Users/Gebruiker/Documents/GitHub/Pokedex" &&
+      S="C:/Users/Gebruiker/AppData/Local/Temp/claude/23d15d677ba5a18b/8f260eae-
+      0b92-4bbf-8980-13c554319cfe/scratc…)
+  ⎿  Updated specs\features\search.md (+122 -120)
+        1 -# Feature: search                                             
+        2 -                                                              
+        3 -> Issue: #3 · Status: draft                                   
+        4 -                                                              
+        5 -## Goal                                                       
+        6 -                                                              
+        7 -As a Pokédex user, I want to search all Pokémon by name from t
+          -he homepage, so that I can find one without scrolling through 
+          -the whole list.                                               
+        8 -                                                              
+        9 -## Acceptance criteria                                        
+       10 -                                                              
+       11 -Each one testable on the phone (and, where possible, in a unit
+          - test on the hook or service).                                
+       12 -                                                              
+       13 -**Starting a search**                                         
+       14 -                                                              
+       15 -- [ ] Tapping the search bar opens the keyboard. The full list
+          -, the "All Pokémon" title and the search icon stay as they are
+          -.                                                             
+       16 -- [ ] The first tap on the search bar requests the full list (
+          -`limit=100000`). Opening the app without tapping the search ba
+          -r does not request it.                                        
+       17 -- [ ] Typing the first letter starts search mode: the title is
+          - hidden, the search icon becomes the back icon, and the result
+          -s replace the grid tiles.                                     
+       18 -- [ ] Results update with every letter typed or deleted, witho
+          -ut a search button and without a minimum length.              
+       19 -- [ ] Typing does not send a request per letter: the full list
+          - is requested once and filtered on the phone.                 
+       20 -                                                              
+       21 -**Matching** *(unit test)*                                    
+       22 -                                                              
+       23 -- [ ] A Pokémon matches when the query appears anywhere in its
+          - name: `char` returns 10 results, including `chimchar` and `pe
+          -charunt`.                                                     
+       24 -- [ ] Upper and lower case are ignored: `CHAR` gives the same 
+          -results as `char`.                                            
+       25 -- [ ] Spaces count as hyphens: `mr mime`, `MR MIME` and `mr-mi
+          -me` all return `mr-mime` and `mr-mime-galar`.                 
+       26 -- [ ] Spaces at the start and end of the query are ignored: `m
+          -r ` searches for `mr` and returns 3 results.                  
+       27 -- [ ] A query of only spaces counts as empty and does not star
+          -t search mode.                                                
+       28 -- [ ] Accents are ignored: `flabébé` returns `flabebe`.       
+       29 -- [ ] IDs are not searched: `25` does not return Pikachu.     
+       30 -                                                              
+       31 -**Results**                                                   
+       32 -                                                              
+       33 -- [ ] Results use the same 2-column grid and cards as the home
+          -page, including the ID badge, name, image and image placeholde
+          -r.                                                            
+       34 -- [ ] Results are in API order: for `char`, `charmander` comes
+          - first and `charizard-gmax` comes last.                       
+       35 -- [ ] All matches are in one list without paging, and the list
+          - only renders what is on screen.                              
+       36 -- [ ] Alternate forms are included: `pika` returns 17 results.
+       37 -- [ ] With the keyboard closed, tapping a result opens the Det
+          -ail route for that Pokémon's ID.                              
+       38 -- [ ] Tapping a result's ⋮ button does the same as on the home
+          -page.                                                         
+       39 -                                                              
+       40 -**Ending a search**                                           
+     … 202 more lines (ctrl+o to expand)
+  ⎿  Updated src\components\SearchBar.tsx (+75 -75)
+       1 -import { useRef } from "react";                                
+       2 -import { Keyboard, Pressable, StyleSheet, TextInput } from "rea
+         -ct-native";                                                    
+       3 -                                                               
+       4 -import { Icon } from "@/components/Icon";                      
+       5 -import { colors, shadows } from "@/theme/colors";              
+       6 -import { fonts } from "@/theme/fonts";                         
+       7 -import { spacing } from "@/theme/spacing";                     
+       8 -                                                               
+       9 -type SearchBarProps = {                                        
+      10 -  value: string;                                               
+      11 -  isSearching: boolean;                                        
+      12 -  onChangeText: (text: string) => void;                        
+      13 -  onFocus: () => void;                                         
+      14 -  onBack: () => void;                                          
+      15 -};                                                             
+      16 -                                                               
+      17 -export function SearchBar({ value, isSearching, onChangeText, o
+         -nFocus, onBack }: SearchBarProps) {                            
+      18 -  const input = useRef<TextInput>(null);                       
+      19 -                                                               
+      20 -  function handleBack() {                                      
+      21 -    Keyboard.dismiss();                                        
+      22 -    onBack();                                                  
+      23 -  }                                                            
+      24 -                                                               
+      25 -  return (                                                     
+      26 -    // The whole bar counts as the search bar, so its padding a
+         -nd icon focus the input too.                                   
+      27 -    <Pressable style={styles.bar} onPress={() => input.current?
+         -.focus()} accessible={false}>                                  
+      28 -      {isSearching ? (                                         
+      29 -        <Pressable                                             
+      30 -          onPress={handleBack}                                 
+      31 -          hitSlop={12}                                         
+      32 -          accessibilityRole="button"                           
+      33 -          accessibilityLabel="Stop searching"                  
+      34 -        >                                                      
+      35 -          <Icon name="back" color={colors.text} />             
+      36 -        </Pressable>                                           
+      37 -      ) : (                                                    
+      38 -        <Icon name="search" color={colors.text} />             
+      39 -      )}                                                       
+      40 -      <TextInput                                               
+     … 110 more lines (ctrl+o to expand)
+  ⎿  (timeout 6m 40s)
+
+● Everything passes, including a full Android bundle build. I'll tick every task
+  except the phone test, which I can't do from here.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● The search feature is built, but it hasn't been run on a phone yet, so only
+  the 7 Matching criteria are actually verified. Lint, tsc and all 33 unit tests
+  pass, and an Android bundle builds. Nothing is committed.
+
+  What changed
+
+  ┌───────┬──────────────────────────────┬──────────────────────────────────┐
+  │       │             New              │             Changed              │
+  ├───────┼──────────────────────────────┼──────────────────────────────────┤
+  │       │ PokemonCardList.tsx,         │ SearchBar.tsx, PokemonGrid.tsx,  │
+  │ UI    │ ListStates.tsx,              │ Icon.tsx, (tabs)/index.tsx       │
+  │       │ SearchResults.tsx            │                                  │
+  ├───────┼──────────────────────────────┼──────────────────────────────────┤
+  │ Data  │ usePokemonSearch.ts          │ api/pokemon.ts,                  │
+  │       │                              │ usePokemonList.ts                │
+  ├───────┼──────────────────────────────┼──────────────────────────────────┤
+  │ Logic │                              │ lib/pokemon.ts, pokemon-test.ts  │
+  ├───────┼──────────────────────────────┼──────────────────────────────────┤
+  │ Docs  │                              │ specs/features/search.md         │
+  └───────┴──────────────────────────────┴──────────────────────────────────┘
+
+  The spec now has your two decisions as new criteria, so it has 35 in total. I
+  left its checkboxes unticked until the phone test is done.
+
+  Acceptance criteria
+
+  - Verified (7): all of Matching, by unit tests. The accent check still needs a
+    phone run, because the phone runs Hermes instead of Node.
+  - Built but not verified (28): everything else. These depend on the running
+    app, so they need your phone test.
+
+  Test on your phone
+
+  Most likely to fail, so try these first:
+  1. Scroll position: scroll far down the list, search, then tap back. The list
+     should be where you left it. Repeat, but delete the letters by hand.
+  2. Tabs: search, switch to Favorites and come back. The text and results
+     should still be there, and the keyboard should have closed.
+  3. Accents: type flabébé, which should find Flabebe.
+  4. Android back: press it with the keyboard open, which should only close the
+     keyboard. Then tap the bar again, and the keyboard should reopen.
+  5. Homepage: check that paging, the footer spinner and Retry still work,
+     because I moved that code. I ticked that task from the code alone, without
+     running it.
+
+  Then the rest:
+  - Search: char gives 10 results, with Charizard Gmax last. MR MIME gives 2,
+    pika gives 17, and zzzz shows "No Pokémon found".
+  - Keyboard: with it open, tapping a card or ⋮ only closes it. Tapping the
+    title area and scrolling also close it.
+  - Jump to top: scroll down the results, then type a letter. The list should go
+    back to the top.
+  - Errors: turn on airplane mode before the first tap on the bar, then type.
+    After a few seconds of spinner, because the query retries automatically, you
+    should see the error and Retry.
+  - Network: in the DevTools Network tab, limit=100000 should appear once, and
+    only after the first tap.
+
+  Small additions beyond the plan
+
+  - Search bar: tapping its padding or the search icon also focuses the input.
+    Otherwise the tap-outside handler would close the keyboard there.
+  - Retry: it also closes the keyboard, because it's a tap outside the bar.
+  - Back icon: it has a screen reader label, "Stop searching".
+  - Results spacing: there's a 12px gap between the bar and the results, since
+    the title is hidden. That number is my guess, so adjust it if it looks off.
+  - Full list: scrolling it also closes the keyboard, because both lists share
+    one component.
+
+  Worth knowing
+
+  - Task ticks: apart from the first two, I ticked the tasks in one batch at the
+    end, not after each task as you asked.
+  - Tests along the way: the first two ticks went in too early while tests were
+    failing, so I removed them and re-ticked once the tests passed. Those
+    failures also exposed a broken regex in my edit, which is fixed.
+  - Branch: the work is sitting uncommitted on main, while the homepage used a
+    feature branch. You may want feature/search before committing.
+
+  Tell me what you find on the phone. Once it's working, the next step is
+  /review-issue 3.
+
+> /code-review 3
+  ⎿  Interrupted · What should Claude do instead?
+
+> /review-issue 3
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Lint, types and tests are clean, and the scan's three hits are harmless. I'm
+  now confirming two possible edge-case bugs in the React Native and router
+  sources.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Not ready to commit yet. The code follows the spec and project rules, but I
+  found two small keyboard bugs. Most of the behaviour also hasn't been run on a
+  phone. I didn't change any code.
+
+  Checks
+
+  ┌──────────────────┬───────────────────────────────┐
+  │      Check       │            Output             │
+  ├──────────────────┼───────────────────────────────┤
+  │ npx expo lint    │ exit 0, no errors or warnings │
+  ├──────────────────┼───────────────────────────────┤
+  │ npx tsc --noEmit │ exit 0, no errors             │
+  ├──────────────────┼───────────────────────────────┤
+  │ npx jest         │ 33 of 33 tests pass           │
+  └──────────────────┴───────────────────────────────┘
+
+  The two bugs
+
+  ❌ 1. Tapping the bar's padding or icon may not reopen the keyboard
+  (SearchBar.tsx:27 (src/components/SearchBar.tsx#L27))
+  - Cause: Android's back button closes the keyboard, but the input probably
+    stays focused. React Native's focus() does nothing on an input it already
+    counts as focused (TextInputState.js).
+  - Effect: tapping the text area itself should still work, but the icon and
+    padding wouldn't. This breaks "Tapping the search bar opens the keyboard".
+  - Certainty: the focus() behaviour is confirmed in the source. That the input
+    stays focused needs a phone check.
+  - Fix: call blur() before focus() if it's already focused. It's a small change
+    in a file the plan already covers.
+
+  ❌ 2. Tapping the Pokémons tab while already on it leaves the keyboard open
+  (index.tsx:20 (src/app/(tabs)/index.tsx#L20))
+  - Cause: useFocusEffect only runs when the screen loses focus, and tapping the
+    active tab doesn't change focus. The tab bar is also outside the screen's
+    tap-outside Pressable. Both are confirmed in the source.
+  - Effect: this breaks "Tapping outside the search bar closes the keyboard",
+    but only where the tab bar is visible above the keyboard, which depends on
+    the device.
+  - Fix: add a tabPress listener in src/app/(tabs)/_layout.tsx, which would also
+    replace the useFocusEffect. That file isn't in the plan, so I need your OK.
+
+  Acceptance criteria
+
+  ✅ means the code does this when read, and 🧪 means a unit test also proves
+  it. Everything except the 🧪 rows still needs the phone test.
+
+  Criterion: Starting a search
+  Where:
+  ────────────────────────────────────────
+  Criterion: Tap opens keyboard, screen stays the same
+  ❌ bug 1
+  Where: SearchBar.tsx:27 (src/components/SearchBar.tsx#L27)
+  ────────────────────────────────────────
+  Criterion: First tap requests the list, app start doesn't
+  ✅
+  Where: usePokemonSearch.ts:24 (src/hooks/usePokemonSearch.ts#L24)
+  ────────────────────────────────────────
+  Criterion: First letter starts search mode
+  ✅
+  Where: index.tsx:35 (src/app/(tabs)/index.tsx#L35), index.tsx:45
+    (src/app/(tabs)/index.tsx#L45)
+  ────────────────────────────────────────
+  Criterion: Results update on every letter
+  ✅
+  Where: usePokemonSearch.ts:27 (src/hooks/usePokemonSearch.ts#L27)
+  ────────────────────────────────────────
+  Criterion: No request per letter
+  ✅
+  Where: usePokemonSearch.ts:21 (src/hooks/usePokemonSearch.ts#L21)
+  ────────────────────────────────────────
+  Criterion: Matching
+  Where:
+  ────────────────────────────────────────
+  Criterion: Letters anywhere in the name
+  ✅ 🧪
+  Where: pokemon.ts:49 (src/lib/pokemon.ts#L49)
+  ────────────────────────────────────────
+  Criterion: Case ignored
+  ✅ 🧪
+  Where: pokemon.ts:41 (src/lib/pokemon.ts#L41)
+  ────────────────────────────────────────
+  Criterion: Spaces count as hyphens
+  ✅ 🧪
+  Where: pokemon.ts:44 (src/lib/pokemon.ts#L44)
+  ────────────────────────────────────────
+  Criterion: Spaces at the ends ignored
+  ✅ 🧪
+  Where: pokemon.ts:40 (src/lib/pokemon.ts#L40)
+  ────────────────────────────────────────
+  Criterion: Only spaces counts as empty
+  ✅ 🧪
+  Where: usePokemonSearch.ts:32 (src/hooks/usePokemonSearch.ts#L32)
+  ────────────────────────────────────────
+  Criterion: Accents ignored
+  ✅ 🧪
+  Where: pokemon.ts:42-43 (src/lib/pokemon.ts#L42-L43)
+  ────────────────────────────────────────
+  Criterion: IDs not searched
+  ✅ 🧪
+  Where: pokemon.ts:49 (src/lib/pokemon.ts#L49)
+  ────────────────────────────────────────
+  Criterion: Results
+  Where:
+  ────────────────────────────────────────
+  Criterion: Same grid and cards
+  ✅
+  Where: SearchResults.tsx:39 (src/components/SearchResults.tsx#L39)
+  ────────────────────────────────────────
+  Criterion: API order
+  ✅
+  Where: pokemon.ts:49 (src/lib/pokemon.ts#L49)
+  ────────────────────────────────────────
+  Criterion: One list, renders what's on screen
+  ✅
+  Where: PokemonCardList.tsx:20 (src/components/PokemonCardList.tsx#L20)
+  ────────────────────────────────────────
+  Criterion: Alternate forms, pika gives 17
+  ✅
+  Where: usePokemonSearch.ts:13 (src/hooks/usePokemonSearch.ts#L13)
+  ────────────────────────────────────────
+  Criterion: Text change jumps to the top
+  ✅
+  Where: SearchResults.tsx:18-20 (src/components/SearchResults.tsx#L18-L20)
+  ────────────────────────────────────────
+  Criterion: Keyboard closed, tap opens Detail
+  ✅
+  Where: PokemonCard.tsx:24 (src/components/PokemonCard.tsx#L24)
+  ────────────────────────────────────────
+  Criterion: ⋮ same as the homepage
+  ✅
+  Where: PokemonCard.tsx:46 (src/components/PokemonCard.tsx#L46)
+  ────────────────────────────────────────
+  Criterion: Ending a search
+  Where:
+  ────────────────────────────────────────
+  Criterion: Back icon clears and closes the keyboard
+  ✅
+  Where: SearchBar.tsx:20-23 (src/components/SearchBar.tsx#L20-L23)
+  ────────────────────────────────────────
+  Criterion: Deleting all letters ends search, keyboard stays open
+  ✅
+  Where: usePokemonSearch.ts:32 (src/hooks/usePokemonSearch.ts#L32)
+  ────────────────────────────────────────
+  Criterion: Scroll position kept
+  ✅
+  Where: index.tsx:37-44 (src/app/(tabs)/index.tsx#L37-L44)
+  ────────────────────────────────────────
+  Criterion: Keyboard
+  Where:
+  ────────────────────────────────────────
+  Criterion: Scrolling closes it
+  ✅
+  Where: PokemonCardList.tsx:32 (src/components/PokemonCardList.tsx#L32)
+  ────────────────────────────────────────
+  Criterion: Tapping outside closes it
+  ❌ bug 2
+  Where: index.tsx:25 (src/app/(tabs)/index.tsx#L25)
+  ────────────────────────────────────────
+  Criterion: Result or ⋮ only closes the keyboard
+  ✅
+  Where: PokemonCardList.tsx:34 (src/components/PokemonCardList.tsx#L34)
+  ────────────────────────────────────────
+  Criterion: Tapping a tab closes it and switches
+  ✅
+  Where: index.tsx:20 (src/app/(tabs)/index.tsx#L20)
+  ────────────────────────────────────────
+  Criterion: Android back with keyboard open
+  ✅ system behaviour
+  Where: no code
+  ────────────────────────────────────────
+  Criterion: Android back with keyboard closed
+  ✅ system behaviour
+  Where: no code
+  ────────────────────────────────────────
+  Criterion: Leaving and returning
+  Where:
+  ────────────────────────────────────────
+  Criterion: Detail and back keeps the search
+  ✅
+  Where: usePokemonSearch.ts:17 (src/hooks/usePokemonSearch.ts#L17)
+  ────────────────────────────────────────
+  Criterion: Favorites and back keeps the search
+  ✅ docs don't confirm it, check on phone
+  Where: usePokemonSearch.ts:17 (src/hooks/usePokemonSearch.ts#L17)
+  ────────────────────────────────────────
+  Criterion: States
+  Where:
+  ────────────────────────────────────────
+  Criterion: Spinner while loading, then current results
+  ✅
+  Where: SearchResults.tsx:27 (src/components/SearchResults.tsx#L27)
+  ────────────────────────────────────────
+  Criterion: Error and Retry, text stays
+  ✅
+  Where: SearchResults.tsx:31 (src/components/SearchResults.tsx#L31)
+  ────────────────────────────────────────
+  Criterion: Failed before typing shows nothing
+  ✅
+  Where: index.tsx:45 (src/app/(tabs)/index.tsx#L45)
+  ────────────────────────────────────────
+  Criterion: Retry shows the spinner and requests again
+  ✅
+  Where: usePokemonSearch.ts:36 (src/hooks/usePokemonSearch.ts#L36)
+  ────────────────────────────────────────
+  Criterion: No match message, back icon stays
+  ✅
+  Where: SearchResults.tsx:35 (src/components/SearchResults.tsx#L35)
+
+  Other checks
+
+  Check: Loading, error and empty for every load
+  ✅
+  Notes: Full list: SearchResults.tsx:27-37
+    (src/components/SearchResults.tsx#L27-L37). Paged list:
+  PokemonGrid.tsx:25-35
+     (src/components/PokemonGrid.tsx#L25-L35). Images use the existing card
+    placeholder.
+  ────────────────────────────────────────
+  Check: UI, data and logic not mixed
+  ✅
+  Notes: Matching is in lib, fetching in api, the query in hooks, and the
+  display
+    in components.
+  ────────────────────────────────────────
+  Check: No any, as casts, @ts-ignore or console.log
+  ✅
+  Notes: The scan's only hits are an import, a comment and a test name.
+  ────────────────────────────────────────
+  Check: Screens stay thin
+  ⚠️
+  Notes: index.tsx (src/app/(tabs)/index.tsx) has no logic, but it now holds the
+
+    layer layout too. It could move to a component, though that's not required.
+  ────────────────────────────────────────
+  Check: Nothing outside the spec
+  ⚠️
+  Notes: The "Stop searching" label and hiding the list from screen readers
+    aren't in the spec, and Accessibility isn't ticked in product.md. Both are
+    harmless, but either keep them and add them to the spec, or remove them.
+  ────────────────────────────────────────
+  Check: Other AGENTS.md rules
+  ✅
+  Notes: Expo Go only, no new packages, no ios/ or android/ folders, SDK 58 docs
+
+    checked, nothing committed.
+
+  Phone test script
+
+  1. Fresh start: open the app, tap the bar and check that nothing else changes.
+     limit=100000 should appear once in the Network tab.
+  2. Matching: type char (10 results, Charizard Gmax last), then try MR MIME
+     (2), flabébé (1) and zzzz ("No Pokémon found").
+  3. Scroll position: clear the search, scroll far down, search, then tap back.
+     The list should be where you left it.
+  4. Keyboard: type pika. Tap a card and the keyboard should close without
+     opening Detail. Tap the card again and Detail should open.
+  5. Back from Detail: go back. The text and results should still be there.
+  6. Tabs: tap the bar so the keyboard opens, then tap Favorites and come back.
+     Repeat, but tap Pokémons while already on it (bug 2).
+  7. Android back: with the keyboard open, press back. The search should stay.
+     Then tap the search icon or padding (bug 1).
+  8. Jump to top: type a, scroll down, tap the bar and add a letter. The list
+     should go back to the top.
+  9. Error: restart the app in airplane mode, tap the bar and type a letter. You
+     should see a spinner, then the error. Turn airplane mode off and tap
+     Retry.
+  10. Homepage: scroll through several pages to check that paging still works.
+
+  How the code works
+
+  - Why the search runs on the phone: PokeAPI can't search by part of a name, so
+    the app downloads all 1351 names once (about 93 KB) and filters them
+    locally. That's why typing never triggers a request.
+  - normalizeSearchQuery: it turns what people type into the format the API
+    uses, so MR Mimé  becomes mr-mime. Matching is then just a check for whether
+    a name contains that text. This is plain logic with no React in it, which
+    makes it easy to unit test.
+  - usePokemonSearch: this hook is the brain of the feature. It remembers the
+    typed text and whether the bar has been tapped. enabled: listRequested keeps
+    the query switched off until that first tap. The query key doesn't include
+    the text, so a new letter never starts a new request.
+  - Derived state: isSearching and results aren't stored. They're calculated
+    from the text on every render, so they can't get out of step with what's in
+    the bar. That's also why results appear on their own once a slow fetch
+    finishes.
+  - The layer trick: the full list is never removed. The results are drawn on
+    top of it in an opaque layer, like laying a sheet of paper over a page.
+    Because the list stays where it is, it keeps its scroll position with no
+    extra code.
+  - Keyboard behaviour: keyboardShouldPersistTaps="never" is React Native's rule
+    that a tap on a list with the keyboard open only closes the keyboard.
+    on-drag closes it when scrolling. The outer Pressable handles taps outside
+    the lists.
+  - SearchResults: it checks four situations in order: still loading, failed,
+    nothing found, or results to show. Only one can be on screen at a time.
+
+  Next step
+
+  Should I fix both bugs? Bug 2 means editing src/app/(tabs)/_layout.tsx, which
+  isn't in the plan, so that needs your OK. Also tell me whether to keep the
+  accessibility additions. After that, run the phone test, then /commit-issue 3.
+
+> Make the following changes: Fix the first bug where tapping the bar's padding
+  or icon may not reopen the keyboard. For the second bug we change it to
+  where the keyboard goes over the tabs hiding them.
+
+● Both changes are clear. For the second one, tabBarHideOnKeyboard is the
+  documented option. With the tab bar hidden, tabs can't be tapped while the
+  keyboard is open, so the useFocusEffect and the "tap a tab closes the
+  keyboard" criterion no longer apply. I'll remove both and update the spec and
+  plan comment to match.
+
+  For the first bug, I'll only do the blur-then-focus when the keyboard is
+  actually closed. Otherwise tapping the padding with the keyboard open would
+  make it flicker.
+● Bash(cd "C:/Users/Gebruiker/Documents/GitHub/Pokedex" &&
+      S="C:/Users/Gebruiker/AppData/Local/Temp/claude/23d15d677ba5a18b/8f260eae-
+      0b92-4bbf-8980-13c554319cfe/scratc…)
+  ⎿  Updated specs\features\search.md (+3 -2)
+      12  
+      13  **Starting a search**
+      14  
+      15 -- [ ] Tapping the search bar opens the keyboard. The full list,
+         - the "All Pokémon" title and the search icon stay as they are. 
+      15 +- [ ] Tapping anywhere on the search bar, including its padding
+         + and icon, opens the keyboard. The full list, the "All Pokémon"
+         + title and the search icon stay as they are.                   
+      16 +- [ ] After the Android back button closed the keyboard, tappin
+         +g the search bar's padding or icon opens it again.             
+      17  - [ ] The first tap on the search bar requests the full list (`
+          limit=100000`). Opening the app without tapping the search bar 
+          does not request it.
+      18  - [ ] Typing the first letter starts search mode: the title is 
+          hidden, the search icon becomes the back icon, and the results 
+          replace the grid tiles.
+      19  - [ ] Results update with every letter typed or deleted, withou
+          t a search button and without a minimum length.
+     ...
+      50  - [ ] Scrolling the results closes the keyboard.
+      51  - [ ] Tapping outside the search bar closes the keyboard, and t
+          he text and results stay.
+      52  - [ ] While the keyboard is open, tapping a result or its ⋮ but
+          ton only closes the keyboard: Detail does not open.
+      52 -- [ ] Tapping a tab while the keyboard is open closes the keybo
+         -ard and switches to that tab.                                  
+      53 +- [ ] While the keyboard is open, the tab bar is hidden. It com
+         +es back when the keyboard closes.                              
+      54  - [ ] While the keyboard is open, the Android back button only 
+          closes it, and the text and results stay.
+      55  - [ ] During a search with the keyboard closed, the Android bac
+          k button keeps its normal behaviour and does not end the search
+           first.
+      56  
+  ⎿  Updated src\app\(tabs)\_layout.tsx (+1 -0)
+      13      <Tabs
+      14        screenOptions={{
+      15          headerShown: false,
+      16 +        tabBarHideOnKeyboard: true,                            
+      17          sceneStyle: { backgroundColor: colors.background },
+      18          tabBarActiveTintColor: colors.text,
+      19          tabBarInactiveTintColor: colors.textInactive,
+  ⎿  Updated src\app\(tabs)\index.tsx (+77 -82)
+       1 -import { useFocusEffect } from "expo-router";                  
+       2 -import { useCallback } from "react";                           
+       3 -import { Keyboard, Pressable, StyleSheet, Text, View } from "re
+         -act-native";                                                   
+       4 -import { useSafeAreaInsets } from "react-native-safe-area-conte
+         -xt";                                                           
+       5 -                                                               
+       6 -import { PokemonGrid } from "@/components/PokemonGrid";        
+       7 -import { SearchBar } from "@/components/SearchBar";            
+       8 -import { SearchResults } from "@/components/SearchResults";    
+       9 -import { usePokemonSearch } from "@/hooks/usePokemonSearch";   
+      10 -import { colors } from "@/theme/colors";                       
+      11 -import { fonts } from "@/theme/fonts";                         
+      12 -import { spacing } from "@/theme/spacing";                     
+      13 -                                                               
+      14 -export default function HomeScreen() {                         
+      15 -  const insets = useSafeAreaInsets();                          
+      16 -  const search = usePokemonSearch();                           
+      17 -  const { isSearching } = search;                              
+      18 -                                                               
+      19 -  // Closes the keyboard when a tab tap leaves this screen.    
+      20 -  useFocusEffect(useCallback(() => () => Keyboard.dismiss(), []
+         -));                                                            
+      21 -                                                               
+      22 -  return (                                                     
+      23 -    <Pressable                                                 
+      24 -      style={[styles.screen, { paddingTop: insets.top + 16 }]} 
+      25 -      onPress={() => Keyboard.dismiss()}                       
+      26 -      accessible={false}                                       
+      27 -    >                                                          
+      28 -      <SearchBar                                               
+      29 -        value={search.text}                                    
+      30 -        isSearching={isSearching}                              
+      31 -        onChangeText={search.setText}                          
+      32 -        onFocus={search.requestList}                           
+      33 -        onBack={search.clear}                                  
+      34 -      />                                                       
+      35 -      {!isSearching && <Text style={styles.title}>All Pokémon</
+         -Text>}                                                         
+      36 -      <View style={styles.listArea}>                           
+      37 -        {/* Stays mounted under the results, so it keeps its sc
+         -roll position. */}                                             
+      38 -        <View                                                  
+      39 -          style={styles.listArea}                              
+      40 -          accessibilityElementsHidden={isSearching}            
+     … 119 more lines (ctrl+o to expand)
+  ⎿  Updated src\components\SearchBar.tsx (+9 -1)
+      17  export function SearchBar({ value, isSearching, onChangeText, o
+          nFocus, onBack }: SearchBarProps) {
+      18    const input = useRef<TextInputInstance>(null);
+      19  
+      20 +  function focusInput() {                                      
+      21 +    // Android's back button closes the keyboard but keeps the 
+         +focus, and focus() skips a focused input.                      
+      22 +    if (input.current?.isFocused() && !Keyboard.isVisible()) { 
+      23 +      input.current.blur();                                    
+      24 +    }                                                          
+      25 +    input.current?.focus();                                    
+      26 +  }                                                            
+      27 +                                                               
+      28    function handleBack() {
+      29      Keyboard.dismiss();
+      30      onBack();
+     ...
+      32  
+      33    return (
+      34      // The whole bar counts as the search bar, so its padding a
+          nd icon focus the input too.
+      27 -    <Pressable style={styles.bar} onPress={() => input.current?
+         -.focus()} accessible={false}>                                  
+      35 +    <Pressable style={styles.bar} onPress={focusInput} accessib
+         +le={false}>                                                    
+      36        {isSearching ? (
+      37          <Pressable
+      38            onPress={handleBack}
+  ⎿  (timeout 5m)
+
+● Both changes are in, and lint, tsc and all 33 tests pass. Neither has been run
+  on a phone yet, and nothing is committed.
+
+  What changed
+
+  - Keyboard not reopening (SearchBar.tsx (src/components/SearchBar.tsx)):
+    tapping the padding or icon now reopens it after Android's back button
+    closed it. It only resets the focus when the input is focused and the
+    keyboard is closed, so tapping with the keyboard open won't make it flicker.
+  - Keyboard over the tabs (_layout.tsx (src/app/(tabs)/_layout.tsx)): I set
+    tabBarHideOnKeyboard: true, so the tab bar hides while the keyboard is open
+    and comes back when it closes. This fits Expo Go, because it's a JavaScript
+    option and needs no native change.
+  - Removed code (index.tsx (src/app/(tabs)/index.tsx)): the useFocusEffect is
+    gone. Its only job was closing the keyboard on a tab tap, and tabs can't be
+    tapped now while it's open.
+  - Spec and plan: I replaced the "tapping a tab closes the keyboard" criterion
+    with one about the hidden tab bar, and added one for reopening after Android
+    back. That makes 36 criteria. The plan comment
+    (https://github.com/Lucas-Light/Pokedex/issues/3#issuecomment-6685578385)
+    now records both changes, including _layout.tsx.
+
+  Changes to the phone test
+
+  Replace steps 6 and 7 of the test script with these:
+
+  6. Tabs:
+     - Tap the bar. The tab bar should disappear while the keyboard is open.
+     - Close the keyboard by tapping outside the bar. The tab bar should come
+       back.
+     - Type a search, close the keyboard, go to Favorites and come back. The
+       text and results should still be there.
+  7. Android back:
+     - With the keyboard open, press back. The search should stay.
+     - Tap the search icon or the padding. The keyboard should reopen, without a
+       flicker or the list reloading.
+
+  Also watch the bottom of the screen when the keyboard opens and closes, since
+  the tab bar disappearing changes the height of the list area. Check that
+  nothing jumps and that the normal list keeps its scroll position.
+
+  Still needs your answer
+
+  Should I keep the accessibility additions, meaning the "Stop searching" label
+  and hiding the list from screen readers during a search? They aren't in the
+  spec. I'd keep them and add one line to the spec, since they're small and
+  harmless, but you can also have me remove them.
+
+  After that and the phone test, the next step is /commit-issue 3.
+
+> Keep the accessibility additions
+
+● Bash(cd "C:/Users/Gebruiker/Documents/GitHub/Pokedex" &&
+      S="C:/Users/Gebruiker/AppData/Local/Temp/claude/23d15d677ba5a18b/8f260eae-
+      0b92-4bbf-8980-13c554319cfe/scratc…)
+  ⎿  Updated specs\features\search.md (+5 -0)
+      67  - [ ] Tapping Retry shows the spinner and requests the full lis
+          t again. On success, the results for the text in the bar appear
+          .
+      68  - [ ] If nothing matches (e.g. `zzzz`), the grid area shows "No
+           Pokémon found" with no button. The title stays hidden and the 
+          back icon stays visible.
+      69  
+      70 +**Accessibility**                                              
+      71 +                                                               
+      72 +- [ ] A screen reader announces the back icon as a button label
+         +led "Stop searching".                                          
+      73 +- [ ] During a search, a screen reader skips the full list unde
+         +r the results.                                                 
+      74 +                                                               
+      75  ## Screens & UI
+      76  
+      77  - Route(s): `src/app/(tabs)/index.tsx` — no new route.
+
+● The accessibility additions stay. I added an Accessibility section to
+  specs/features/search.md with two new criteria, so the code and spec match
+  again and the spec now has 38. Only the spec changed, so no code or checks
+  were affected.
+
+  You can add one step to the phone test if you want to check these: turn on
+  TalkBack or VoiceOver and search for something. The back icon should be read
+  as a "Stop searching" button, and swiping through should skip the full list
+  underneath.
+
+  Run the phone test next, then /commit-issue 3. The work is still uncommitted
+  on main, so create feature/search first if you want to follow the same branch
+  flow as the homepage.
+
+> /commit-issue 3
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Lint and tsc pass, and there are no secrets. All 14 changed files belong to
+  this issue. I'm committing to a new feature/search branch, not main, which
+  matches how the homepage was done.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● The work is committed as 97e3a5c on the new feature/search branch, with all 14
+  files and closes #3 in the message. It hasn't been pushed.
+
+  - Phone test: you haven't told me the results yet, so the phone task on the
+    issue and the spec's checkboxes are still unticked. Once you've tested, I
+    can tick them in a follow-up commit.
+  - Closing the issue: closes #3 only closes the issue when the commit reaches
+    main, so that happens when the PR merges, not on push.
+
+  Do you want me to push feature/search to GitHub? I can open a PR too, as you
+  did for the homepage.
+
+> Publish branch and open a PR
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● The branch is published and the PR is open:
+  https://github.com/Lucas-Light/Pokedex/pull/4
+
+  It's #4, as expected, since PRs share their numbering with issues. Merging it
+  will close issue #3.
+
+  I listed the phone test as not done in the PR, so I'd run it before merging.
+  If anything turns up, fixes can go on feature/search and they'll appear in the
+  same PR. Once it passes, I can tick the spec's checkboxes and the issue task
+  in a follow-up commit, as the homepage spec has.
