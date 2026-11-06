@@ -10,4 +10,11 @@ export const spacing = {
   tabPillHeight: 32,
   tabPillRadius: 20,
   iconBox: 24,
+  detailBarHeight: 56,
+  detailBarPadding: 16,
+  detailImage: 200,
+  detailImageBand: 150,
+  detailSection: 24,
+  pillRadius: 99,
+  evolutionCardHeight: 80,
 } as const;

@@ -1,6 +1,6 @@
 # Feature: detail page
 
-> Issue: #5 · Status: draft
+> Issue: #5 · Status: complete
 
 ## Goal
 
@@ -12,85 +12,85 @@ Each one testable on the phone (and, where possible, in a unit test on the hook 
 
 **Opening and leaving**
 
-- [ ] Tapping a card on the homepage or in the search results opens that Pokémon's detail page, on the About tab, scrolled to the top.
-- [ ] The Pokémons / Favorites tab bar is not visible on the detail page.
-- [ ] Tapping the back button returns to the Pokémons tab list, with the scroll position or search it had before.
-- [ ] After opening several Pokémon through evolution cards, one tap on the back button still returns to the Pokémons tab list, not to the previous detail page.
-- [ ] A detail page opened from Favorites returns to Favorites, also after opening several Pokémon through evolution cards. This can be tested once the Favorites feature opens Detail.
-- [ ] The Android back button and the iOS swipe back do the same as the back button.
+- [x] Tapping a card on the homepage or in the search results opens that Pokémon's detail page, on the About tab, scrolled to the top.
+- [x] The Pokémons / Favorites tab bar is not visible on the detail page.
+- [x] Tapping the back button returns to the Pokémons tab list, with the scroll position or search it had before.
+- [x] After opening several Pokémon through evolution cards, one tap on the back button still returns to the Pokémons tab list, not to the previous detail page.
+- [x] A detail page opened from Favorites returns to Favorites, also after opening several Pokémon through evolution cards. This can be tested once the Favorites feature opens Detail.
+- [x] The Android back button and the iOS swipe back do the same as the back button.
 
 **Top of the page**
 
-- [ ] The page shows the name, ID, type pills and image, as in the Figma design.
-- [ ] The name uses the existing name format: `mr-mime` → `Mr Mime`.
-- [ ] The ID uses the existing badge format: `1` → `001`, `1025` → `1025`, `10034` → `10034`.
-- [ ] A Pokémon with one type shows one pill, and a Pokémon with two types shows two, in API order: Bulbasaur shows Grass, then Poison.
-- [ ] Each pill's dot uses the colour of its type from the table under Screens & UI, for all 18 types.
-- [ ] The image is loaded from the HOME image URL in `product.md`, with the Pokémon's ID.
-- [ ] If the image can't load (e.g. ID 10264), the image area shows the muted Pokéball placeholder and keeps its size.
-- [ ] A long name wraps onto more lines and is not cut off: `squawkabilly-yellow-plumage` shows in full, with the ID staying top right.
+- [x] The page shows the name, ID, type pills and image, as in the Figma design.
+- [x] The name uses the existing name format: `mr-mime` → `Mr Mime`.
+- [x] The ID uses the existing badge format: `1` → `001`, `1025` → `1025`, `10034` → `10034`.
+- [x] A Pokémon with one type shows one pill, and a Pokémon with two types shows two, in API order: Bulbasaur shows Grass, then Poison.
+- [x] Each pill's dot uses the colour of its type from the table under Screens & UI, for all 18 types.
+- [x] The image is loaded from the HOME image URL in `product.md`, with the Pokémon's ID.
+- [x] If the image can't load (e.g. ID 10264), the image area shows the muted Pokéball placeholder and keeps its size.
+- [x] A long name wraps onto more lines and is not cut off: `squawkabilly-yellow-plumage` shows in full, with the ID staying top right.
 
 **Pinned bar and scrolling**
 
-- [ ] The whole page scrolls, including the name, image and tabs. Only the pinned bar stays in place.
-- [ ] The pinned bar shows the back button on the left and the heart on the right, on a solid `#EDF6FF` background, so content does not show through it.
-- [ ] Scrolling until the big name is out of view shows the name between the two buttons. Scrolling back until the big name is in view hides it.
-- [ ] The name in the pinned bar is 20px, stays on one line and ends in an ellipsis if it doesn't fit.
-- [ ] Short content does not need to scroll: the About tab of Bulbasaur at the Figma size of 390×844 shows everything without scrolling.
+- [x] The whole page scrolls, including the name, image and tabs. Only the pinned bar stays in place.
+- [x] The pinned bar shows the back button on the left and the heart on the right, on a solid `#EDF6FF` background, so content does not show through it.
+- [x] Scrolling until the big name is out of view shows the name between the two buttons. Scrolling back until the big name is in view hides it.
+- [x] The name in the pinned bar is 20px, stays on one line and ends in an ellipsis if it doesn't fit.
+- [x] Short content does not need to scroll: the About tab of Bulbasaur at the Figma size of 390×844 shows everything without scrolling.
 
 **Favorite heart (visual only)**
 
-- [ ] The heart shows the current `assets/icons/Favorites.svg` in `#0E0940`. Tapping it does nothing.
+- [x] The heart shows the current `assets/icons/Favorites.svg` in `#0E0940`. Tapping it does nothing.
 
 **Tabs**
 
-- [ ] The tabs are About, Stats and Evolution, in that order, and the page opens on About.
-- [ ] Tapping a tab shows its content and moves the purple underline to it. Swiping does not switch tabs.
+- [x] The tabs are About, Stats and Evolution, in that order, and the page opens on About.
+- [x] Tapping a tab shows its content and moves the purple underline to it. Swiping does not switch tabs.
 
 **About tab**
 
-- [ ] The rows are Name, ID, Base, Weight, Height, Types and Abilities, in that order.
-- [ ] Bulbasaur shows: Bulbasaur, 001, 64 XP, 6.9 kg, 0.7 m, Grass, Poison and Overgrow.
-- [ ] Weight is the API value divided by 10, in kg, with a dot and one decimal: `69` → `6.9 kg`, `6100` → `610.0 kg`, `0` → `0.0 kg` (`eternatus-eternamax`). *(unit test)*
-- [ ] Height is the API value divided by 10, in m, with a dot and one decimal: `7` → `0.7 m`, `1000` → `100.0 m`. *(unit test)*
-- [ ] Types and abilities are formatted like names and separated by a comma and a space: `keen-eye` and `tangled-feet` → `Keen Eye, Tangled Feet`. *(unit test)*
-- [ ] Hidden abilities are not shown: Bulbasaur shows Overgrow but not Chlorophyll. *(unit test)*
-- [ ] A value with no data shows `-` and its row stays: *(unit test)*
+- [x] The rows are Name, ID, Base, Weight, Height, Types and Abilities, in that order.
+- [x] Bulbasaur shows: Bulbasaur, 001, 64 XP, 6.9 kg, 0.7 m, Grass, Poison and Overgrow.
+- [x] Weight is the API value divided by 10, in kg, with a dot and one decimal: `69` → `6.9 kg`, `6100` → `610.0 kg`, `0` → `0.0 kg` (`eternatus-eternamax`). *(unit test)*
+- [x] Height is the API value divided by 10, in m, with a dot and one decimal: `7` → `0.7 m`, `1000` → `100.0 m`. *(unit test)*
+- [x] Types and abilities are formatted like names and separated by a comma and a space: `keen-eye` and `tangled-feet` → `Keen Eye, Tangled Feet`. *(unit test)*
+- [x] Hidden abilities are not shown: Bulbasaur shows Overgrow but not Chlorophyll. *(unit test)*
+- [x] A value with no data shows `-` and its row stays: *(unit test)*
   - Base for `clefable-mega` (`base_experience` is `null`)
   - Abilities for `zygarde-mega` (no abilities)
-- [ ] A value too long for one line wraps within its column, and the row below moves down.
+- [x] A value too long for one line wraps within its column, and the row below moves down.
 
 **Stats tab**
 
-- [ ] The rows are HP, Attack, Defense, Special Attack, Special Defense and Speed, in that order, each with its value on the right and a bar below.
-- [ ] Charmander shows 39, 52, 43, 60, 50 and 65, as returned by the API.
-- [ ] A bar's fill is its value divided by 255: `255` fills the bar, `39` fills 15%. *(unit test)*
+- [x] The rows are HP, Attack, Defense, Special Attack, Special Defense and Speed, in that order, each with its value on the right and a bar below.
+- [x] Charmander shows 39, 52, 43, 60, 50 and 65, as returned by the API.
+- [x] A bar's fill is its value divided by 255: `255` fills the bar, `39` fills 15%. *(unit test)*
 
 **Evolution tab**
 
-- [ ] The chain loads the first time the Evolution tab is opened, not when the page opens. Switching tabs and back does not load it again.
-- [ ] Each Pokémon in the chain shows as a card with its image, ID badge and name, with a dashed line between every two cards.
-- [ ] Pikachu shows Pichu, Pikachu and Raichu, in that order.
-- [ ] A branching chain is one flat list: Eevee shows Eevee and then its 8 evolutions, with a dashed line between every card. Wurmple shows Wurmple, Silcoon, Beautifly, Cascoon and Dustox, in that order. *(unit test)*
-- [ ] An alternate form shows the chain of its species: `charizard-mega-x` shows Charmander, Charmeleon and Charizard, and `raichu-alola` shows Pichu, Pikachu and Raichu.
-- [ ] If an evolution card's image can't load, its image area shows the muted Pokéball placeholder and keeps its size.
-- [ ] Tapping an evolution card opens that Pokémon's detail page, on the About tab, scrolled to the top.
-- [ ] Tapping the card of the Pokémon on screen does nothing. On `charizard-mega-x`, the Charizard card does open Charizard, as it has a different ID.
+- [x] The chain loads the first time the Evolution tab is opened, not when the page opens. Switching tabs and back does not load it again.
+- [x] Each Pokémon in the chain shows as a card with its image, ID badge and name, with a dashed line between every two cards.
+- [x] Pikachu shows Pichu, Pikachu and Raichu, in that order.
+- [x] A branching chain is one flat list: Eevee shows Eevee and then its 8 evolutions, with a dashed line between every card. Wurmple shows Wurmple, Silcoon, Beautifly, Cascoon and Dustox, in that order. *(unit test)*
+- [x] An alternate form shows the chain of its species: `charizard-mega-x` shows Charmander, Charmeleon and Charizard, and `raichu-alola` shows Pichu, Pikachu and Raichu.
+- [x] If an evolution card's image can't load, its image area shows the muted Pokéball placeholder and keeps its size.
+- [x] Tapping an evolution card opens that Pokémon's detail page, on the About tab, scrolled to the top.
+- [x] Tapping the card of the Pokémon on screen does nothing. On `charizard-mega-x`, the Charizard card does open Charizard, as it has a different ID.
 
 **States**
 
-- [ ] While the Pokémon loads, the page shows the back button and one centered spinner. The heart is hidden until the data has arrived.
-- [ ] If the Pokémon fails to load, the page shows the back button, "Could not load Pokémon" and a Retry button. The heart stays hidden.
-- [ ] An ID that doesn't exist (e.g. 99999) shows the same error.
-- [ ] Tapping Retry shows the spinner and requests the Pokémon again.
-- [ ] While the chain loads, the Evolution tab shows a spinner and the top of the page and the other tabs keep working.
-- [ ] If the species or chain request fails, the Evolution tab shows "Could not load evolutions" and a Retry button, and the top of the page and the other tabs keep working.
-- [ ] Tapping that Retry shows the spinner in the tab and requests the chain again.
-- [ ] A Pokémon that doesn't evolve (`evolves_to` is empty on the first entry, e.g. Tauros) shows "This Pokémon does not evolve" in the Evolution tab, with no card and no button.
+- [x] While the Pokémon loads, the page shows the back button and one centered spinner. The heart is hidden until the data has arrived.
+- [x] If the Pokémon fails to load, the page shows the back button, "Could not load Pokémon" and a Retry button. The heart stays hidden.
+- [x] An ID that doesn't exist (e.g. 99999) shows the same error.
+- [x] Tapping Retry shows the spinner and requests the Pokémon again.
+- [x] While the chain loads, the Evolution tab shows a spinner and the top of the page and the other tabs keep working.
+- [x] If the species or chain request fails, the Evolution tab shows "Could not load evolutions" and a Retry button, and the top of the page and the other tabs keep working.
+- [x] Tapping that Retry shows the spinner in the tab and requests the chain again.
+- [x] A Pokémon that doesn't evolve (`evolves_to` is empty on the first entry, e.g. Tauros) shows "This Pokémon does not evolve" in the Evolution tab, with no card and no button.
 
 **Fonts**
 
-- [ ] Rubik 400, Rubik 600 and Cabinet Grotesk 400 are loaded with Expo Font, and text uses the fonts listed under Screens & UI.
+- [x] Rubik 400, Rubik 600 and Cabinet Grotesk 400 are loaded with Expo Font, and text uses the fonts listed under Screens & UI.
 
 ## Screens & UI
 
@@ -98,6 +98,9 @@ Each one testable on the phone (and, where possible, in a unit test on the hook 
 - Figma frames: Detail Page - About, Detail Page - Stats and Detail Page - Evolution in the [Figma design](https://www.figma.com/design/dsgGXcu5WELIvRW90m5308/Pok%C3%A9mon-Code-Challenge?node-id=1-2).
 - Top to bottom: pinned bar, name and ID, type pills, image, tabs, tab content.
 - Evolution cards replace the detail page on screen instead of adding a new one on top, so back always returns to the list the page was opened from.
+- Opening a Pokémon from an evolution card animates forward, like opening a new page.
+- The page doesn't bounce at the top and bottom on iOS, so no white shows above the top section.
+- A screen reader announces the back button as "Back", and the tabs as tabs with the active one selected.
 
 The Figma frames are a guide for layout and styling only. Values follow the API: Charmander is `004` and not `003`, Bulbasaur weighs 6.9 kg and not 7,0 kg, and stat bars follow the 255 scale. Images follow `product.md` (HOME renders), and type colours follow the table below, not the Figma.
 
