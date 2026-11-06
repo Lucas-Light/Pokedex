@@ -6,6 +6,7 @@ export const colors = {
   textInactive: "rgba(14, 9, 64, 0.6)",
   primary: "#5631E8",
   favorite: "#FF4F68",
+  compareHigher: "#15803D",
   onPrimary: "#FFFFFF",
   placeholderText: "rgba(0, 0, 0, 0.3)",
   placeholderIcon: "#D5D5E8",

@@ -15,36 +15,63 @@ type PokemonCardProps = {
   /** Without a name the card is still loading and shows only its badge. */
   name?: string;
   width: number;
-  onOptions: (pokemon: PokemonListItem) => void;
+  /** Without it, the card has no ⋮ button. */
+  onOptions?: (pokemon: PokemonListItem) => void;
+  /** Replaces opening Detail, for cards in the Compare picker. */
+  onPick?: (id: number) => void;
 };
 
-export function PokemonCard({ id, name, width, onOptions }: PokemonCardProps) {
+export function PokemonCard({ id, name, width, onOptions, onPick }: PokemonCardProps) {
+  function handlePress() {
+    if (onPick) {
+      onPick(id);
+    } else {
+      router.push(`/pokemon/${id}`);
+    }
+  }
+
+  // A loading card has no name yet, so it is announced by its ID.
+  const title = name === undefined ? `Pokémon ${formatBadge(id)}` : formatName(name);
+
   return (
-    <Pressable style={[styles.card, { width }]} onPress={() => router.push(`/pokemon/${id}`)}>
+    <Pressable
+      style={[styles.card, { width }]}
+      onPress={handlePress}
+      accessibilityRole="button"
+      accessibilityLabel={`${onPick ? "Pick" : "Open"} ${title}`}
+    >
       <View style={[styles.imageArea, { height: width }]}>
         {name !== undefined && <PokemonImage id={id} placeholderBox={PLACEHOLDER_BOX} />}
       </View>
-      <View style={styles.badge}>
-        <Text style={styles.badgeText}>{formatBadge(id)}</Text>
-      </View>
+      <PokemonBadge id={id} />
       <View style={styles.nameRow}>
         {name !== undefined && (
           <>
             <Text style={styles.name} numberOfLines={1} ellipsizeMode="tail">
               {formatName(name)}
             </Text>
-            <Pressable
-              onPress={() => onOptions({ id, name })}
-              hitSlop={12}
-              accessibilityRole="button"
-              accessibilityLabel={`Options for ${formatName(name)}`}
-            >
-              <Icon name="options" color={colors.text} />
-            </Pressable>
+            {onOptions && (
+              <Pressable
+                onPress={() => onOptions({ id, name })}
+                hitSlop={12}
+                accessibilityRole="button"
+                accessibilityLabel={`Options for ${formatName(name)}`}
+              >
+                <Icon name="options" color={colors.text} />
+              </Pressable>
+            )}
           </>
         )}
       </View>
     </Pressable>
+  );
+}
+
+export function PokemonBadge({ id }: { id: number }) {
+  return (
+    <View style={styles.badge}>
+      <Text style={styles.badgeText}>{formatBadge(id)}</Text>
+    </View>
   );
 }
 

@@ -17,6 +17,9 @@ const icons = {
   options: { source: require("@/assets/icons/Options.svg"), width: 3, height: 15 },
   open: { source: require("@/assets/icons/Open.svg"), width: 18, height: 18 },
   share: { source: require("@/assets/icons/Share.svg"), width: 18, height: 20 },
+  compare: { source: require("@/assets/icons/Compare.svg"), width: 20, height: 18 },
+  plus: { source: require("@/assets/icons/Plus.svg"), width: 14, height: 14 },
+  close: { source: require("@/assets/icons/Close.svg"), width: 14, height: 14 },
 } as const;
 
 export type IconName = keyof typeof icons;

@@ -13,6 +13,7 @@ import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 
 import { queryClient } from "@/api/queryClient";
+import { CompareProvider } from "@/hooks/useCompare";
 import { colors } from "@/theme/colors";
 import { fonts } from "@/theme/fonts";
 
@@ -41,21 +42,24 @@ export default function RootLayout() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <StatusBar style="dark" />
-      <Stack
-        screenOptions={{
-          contentStyle: { backgroundColor: colors.background },
-          headerStyle: { backgroundColor: colors.background },
-          headerTintColor: colors.text,
-          headerShadowVisible: false,
-        }}
-      >
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen
-          name="pokemon/[id]"
-          options={{ headerShown: false, animationTypeForReplace: "push" }}
-        />
-      </Stack>
+      <CompareProvider>
+        <StatusBar style="dark" />
+        <Stack
+          screenOptions={{
+            contentStyle: { backgroundColor: colors.background },
+            headerStyle: { backgroundColor: colors.background },
+            headerTintColor: colors.text,
+            headerShadowVisible: false,
+          }}
+        >
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen
+            name="pokemon/[id]"
+            options={{ headerShown: false, animationTypeForReplace: "push" }}
+          />
+          <Stack.Screen name="compare/pick" options={{ headerShown: false }} />
+        </Stack>
+      </CompareProvider>
     </QueryClientProvider>
   );
 }

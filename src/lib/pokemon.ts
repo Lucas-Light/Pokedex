@@ -20,6 +20,8 @@ export type PokemonDetailData = {
   id: number;
   name: string;
   types: string[];
+  height: string;
+  weight: string;
   about: PokemonAboutRow[];
   stats: PokemonStat[];
   speciesUrl: string;
@@ -101,6 +103,8 @@ export function toPokemonDetail(pokemon: PokemonResponse): PokemonDetailData {
     id: pokemon.id,
     name: pokemon.name,
     types,
+    height: formatHeight(pokemon.height),
+    weight: formatWeight(pokemon.weight),
     about: [
       { label: "Name", value: formatName(pokemon.name) },
       { label: "ID", value: formatBadge(pokemon.id) },

@@ -1,6 +1,6 @@
 # Feature: options menu
 
-> Issue: #13 · Status: draft
+> Issue: #13 · Status: complete
 
 ## Goal
 
