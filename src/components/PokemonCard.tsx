@@ -12,7 +12,8 @@ const PLACEHOLDER_BOX = 72;
 
 type PokemonCardProps = {
   id: number;
-  name: string;
+  /** Without a name the card is still loading and shows only its badge. */
+  name?: string;
   width: number;
 };
 
@@ -20,19 +21,28 @@ export function PokemonCard({ id, name, width }: PokemonCardProps) {
   return (
     <Pressable style={[styles.card, { width }]} onPress={() => router.push(`/pokemon/${id}`)}>
       <View style={[styles.imageArea, { height: width }]}>
-        <PokemonImage id={id} placeholderBox={PLACEHOLDER_BOX} />
+        {name !== undefined && <PokemonImage id={id} placeholderBox={PLACEHOLDER_BOX} />}
       </View>
       <View style={styles.badge}>
         <Text style={styles.badgeText}>{formatBadge(id)}</Text>
       </View>
       <View style={styles.nameRow}>
-        <Text style={styles.name} numberOfLines={1} ellipsizeMode="tail">
-          {formatName(name)}
-        </Text>
-        {/* Takes the touch so Detail doesn't open. The menu comes with the Options menu feature. */}
-        <Pressable onPress={() => {}} hitSlop={12}>
-          <Icon name="options" color={colors.text} />
-        </Pressable>
+        {name !== undefined && (
+          <>
+            <Text style={styles.name} numberOfLines={1} ellipsizeMode="tail">
+              {formatName(name)}
+            </Text>
+            {/* Takes the touch so Detail doesn't open. The menu comes with the Options menu feature. */}
+            <Pressable
+              onPress={() => {}}
+              hitSlop={12}
+              accessibilityRole="button"
+              accessibilityLabel={`Options for ${formatName(name)}`}
+            >
+              <Icon name="options" color={colors.text} />
+            </Pressable>
+          </>
+        )}
       </View>
     </Pressable>
   );

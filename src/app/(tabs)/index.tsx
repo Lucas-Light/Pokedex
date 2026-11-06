@@ -1,13 +1,12 @@
-import { Keyboard, Pressable, StyleSheet, Text, View } from "react-native";
+import { Keyboard, Pressable, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { PokemonGrid } from "@/components/PokemonGrid";
+import { ScreenTitle } from "@/components/ScreenTitle";
 import { SearchBar } from "@/components/SearchBar";
 import { SearchResults } from "@/components/SearchResults";
 import { usePokemonSearch } from "@/hooks/usePokemonSearch";
 import { colors } from "@/theme/colors";
-import { fonts } from "@/theme/fonts";
-import { spacing } from "@/theme/spacing";
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
@@ -27,7 +26,7 @@ export default function HomeScreen() {
         onFocus={search.requestList}
         onBack={search.clear}
       />
-      {!isSearching && <Text style={styles.title}>All Pokémon</Text>}
+      {!isSearching && <ScreenTitle title="All Pokémon" style={styles.title} />}
       <View style={styles.listArea}>
         {/* Stays mounted under the results, so it keeps its scroll position. */}
         <View
@@ -59,12 +58,6 @@ const styles = StyleSheet.create({
   },
   title: {
     marginTop: 24,
-    marginBottom: 12,
-    marginHorizontal: spacing.gridMargin,
-    fontFamily: fonts.title,
-    fontSize: 24,
-    lineHeight: 28.8,
-    color: colors.text,
   },
   listArea: {
     flex: 1,

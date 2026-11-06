@@ -9,6 +9,11 @@ const icons = {
   back: { source: require("@/assets/icons/Back.svg"), width: 16, height: 16 },
   pokeball: { source: require("@/assets/icons/Pokeball.svg"), width: 20, height: 20 },
   favorites: { source: require("@/assets/icons/Favorites.svg"), width: 20, height: 19 },
+  favoritesActive: {
+    source: require("@/assets/icons/Favorites_Active.svg"),
+    width: 20,
+    height: 19,
+  },
   options: { source: require("@/assets/icons/Options.svg"), width: 3, height: 15 },
 } as const;
 

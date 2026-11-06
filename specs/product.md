@@ -35,7 +35,7 @@ One spec file and one GitHub issue per feature.
 | 1 | Homepage list | [specs/features/homepage list.md](features/homepage%20list.md) | #1 |
 | 2 | Search | [specs/features/search.md](features/search.md) | #3 |
 | 3 | Detail page | [specs/features/detail page.md](features/detail%20page.md) | #5 |
-| 4 | Favorites | [specs/features/favorites.md](features/favorites.md) | #? |
+| 4 | Favorites | [specs/features/favorites.md](features/favorites.md) | #7 |
 | 5 | Compare | [specs/features/compare.md](features/compare.md) | #? |
 | 6 | Options menu | [specs/features/options menu.md](features/options%20menu.md) | #? |
 

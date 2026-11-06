@@ -2,17 +2,26 @@ import type { ReactElement, Ref } from "react";
 import { FlatList, StyleSheet, useWindowDimensions } from "react-native";
 
 import { PokemonCard } from "@/components/PokemonCard";
-import type { PokemonListItem } from "@/lib/pokemon";
 import { spacing } from "@/theme/spacing";
 
-type PokemonCardListProps = {
-  data: PokemonListItem[];
-  ref?: Ref<FlatList<PokemonListItem>>;
+type PokemonCardItem = {
+  id: number;
+  name?: string;
+};
+
+type PokemonCardListProps<Item extends PokemonCardItem> = {
+  data: Item[];
+  ref?: Ref<FlatList<Item>>;
   onEndReached?: () => void;
   footer?: ReactElement;
 };
 
-export function PokemonCardList({ data, ref, onEndReached, footer }: PokemonCardListProps) {
+export function PokemonCardList<Item extends PokemonCardItem>({
+  data,
+  ref,
+  onEndReached,
+  footer,
+}: PokemonCardListProps<Item>) {
   const { width } = useWindowDimensions();
   const cardWidth = (width - spacing.gridMargin * 2 - spacing.gridGap) / 2;
 

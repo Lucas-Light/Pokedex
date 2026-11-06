@@ -65,7 +65,10 @@ function DetailPage({ pokemon }: DetailPageProps) {
 
   return (
     <View style={styles.page}>
-      <DetailBar name={isNameOutOfView ? formatName(pokemon.name) : undefined} showHeart />
+      <DetailBar
+        name={isNameOutOfView ? formatName(pokemon.name) : undefined}
+        favoriteId={pokemon.id}
+      />
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={{ paddingBottom: insets.bottom + spacing.detailSection }}
