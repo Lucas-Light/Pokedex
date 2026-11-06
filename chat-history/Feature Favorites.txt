@@ -1,0 +1,1616 @@
+
+> /spec-feature favorites
+
+  Listed 1 directory, ran 1 shell command (ctrl+o to expand)
+
+● I'll check how the existing specs and code already touch favorites, so my
+  questions don't cover anything that's already decided.
+
+  Listed 1 directory, ran 3 shell commands (ctrl+o to expand)
+
+● I haven't written anything yet. Here's what I found, then the first three
+  questions.
+
+  What I found
+
+  API
+  - GET /pokemon/{id} returns id, name, types, sprites and more, so it's a large
+    response just to get a name.
+  - Alternate forms work: 10001 returns deoxys-attack, and its image loads.
+    Favorites can therefore be any of the 1351 entries.
+  - An unknown ID returns 404 (99999).
+  - The API has no endpoint for fetching several Pokémon at once. Because SQLite
+    stores only the ID, each favorite needs its own request to get its name, so
+    30 favorites means 30 requests.
+
+  Existing app
+  - Favorites tab: src/app/(tabs)/favorites.tsx is still an empty <View />.
+  - Reusable parts: PokemonCardList and PokemonCard only need id and name, so
+    the grid can be reused. ListStates covers the spinner, error and message
+    states.
+  - Shared cache: usePokemonDetail could share its cache with Favorites, but its
+    key uses a string ID.
+  - Detail heart: it's visual-only today, and the detail page spec
+    (specs/features/detail%20page.md) leaves the working heart to this feature.
+    That spec also has an untested criterion: Detail opened from Favorites must
+    go back to Favorites.
+  - Adding favorites: "Add to favorites" in the ⋮ menu belongs to the Options
+    menu feature. Until that's built, the Detail heart is the only way to add or
+    remove a favorite, and ⋮ on Favorites tiles does nothing.
+  - Missing pieces:
+    - expo-sqlite isn't installed yet.
+    - assets/icons/Favorites.svg is a filled heart, and there's no outline
+      version.
+  - Offline: the query client uses default settings, so unused data leaves the
+    cache after 5 minutes. The product spec says Favorites shows cached data
+    offline, so in practice that may only cover Pokémon viewed in the last few
+    minutes unless we change this.
+
+  Questions
+
+  1. How should the Detail heart show "not a favorite" and "favorite"? There's
+  only the filled SVG.
+  - A (recommended): Add an outline heart for "not a favorite" and use the
+    filled heart for "favorite". This is the clearest, but you'd need to export
+    the outline from Figma, or I'd create a matching one.
+  - B: Use the same filled SVG in both states and only change the colour, for
+    example muted for "not a favorite" and #0E0940 for "favorite". This needs no
+    new asset, but it's harder to read at a glance. If you pick this, tell me
+    which colours.
+
+  2. What order should Favorites show in? This decides whether SQLite also needs
+  a timestamp.
+  - A (recommended): Newest first, so a new favorite appears at the top. This
+    needs an extra created_at column, which is still not Pokémon data, so it
+    fits "only the ID" in spirit, but the product spec wording would need a
+    small change.
+  - B: Oldest first, in the order they were added.
+  - C: By Pokémon ID, matching the homepage. This is the only option that stores
+    just the ID.
+
+  3. What should happen when only some favorites load? For example, 8 of 10
+  succeed. A failed one has no name, because we only store the ID.
+  - A (recommended): Show the loaded cards and put "Could not load all
+    favorites" with a Retry button at the bottom of the list. This matches how
+    the homepage handles a failed later page.
+  - B: Show a full-page error with Retry if any request fails. This is simpler,
+    but one failed request hides everything.
+  - C: Show a card for the failed one with its ID, image and a placeholder name.
+    The image URL only needs the ID, so this can work, but it adds a new card
+    state.
+
+  Next round I'll ask about the loading state, the empty text, removing a
+  favorite while on the Favorites tab, and the offline behaviour. I can't open
+  the Figma file from here, so I'll also need you to tell me what the Favorites
+  frame shows.
+
+> 1. I have added a Fovorites_Active.svg. The other Fovorites.svg will be used
+  for its outlined/inactive state. 2. C. 3. C, so we are able to unfavorite it
+  later once the options menu works in a later feature.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Thanks. Favorites_Active.svg is in assets/icons/, and I need to correct
+  something I told you: Favorites.svg was already an outline. I called it
+  filled, which was wrong, so your split works as is. The Favorites tab icon
+  stays on Favorites.svg.
+
+  Decisions so far
+  - Heart: the outline Favorites.svg in #0E0940 means "not a favorite", and
+    Favorites_Active.svg means "favorite". The new file is #FF4F68, but Icon
+    tints every icon with the colour it's given, so that red goes into the theme
+    as a new colour.
+  - Order: by Pokémon ID, and SQLite stores only the ID, so specs/product.md
+    stays correct.
+  - Failed favorite: it still shows a card with its ID badge and image, plus a
+    placeholder name.
+
+  Your choice of failed cards raises a conflict. The product spec says that
+  after a restart in airplane mode, Favorites "only shows an error state". If
+  every card can fall back to a placeholder, that error state would never appear
+  unless we add a rule for it.
+
+  Questions
+
+  1. What should happen when failures occur? This covers three things:
+  - a. All requests fail:
+    - A (recommended): Show the full-page error "Could not load favorites" with
+      Retry, as the product spec says. Placeholder cards only appear when some
+      requests succeed.
+    - B: Always show placeholder cards, even if all of them fail. The product
+      spec would need to change, and the page could be a grid of nameless cards.
+  - b. Placeholder name: I suggest "Unknown Pokémon". The ID badge still shows
+    which one it is.
+  - c. Retry when only some fail:
+    - A (recommended): Show "Could not load all favorites" with one Retry button
+      at the bottom of the list, which refetches only the failed ones.
+    - B: No Retry. The cards stay as placeholders until you reopen the tab or
+      restart the app.
+
+  2. What should show while favorites load? The IDs come from SQLite almost
+  instantly, so we know how many cards to show before any names arrive.
+  - A (recommended): One centered spinner until all requests finish, then the
+    full grid. This matches the homepage, but one slow request holds up the
+    whole page.
+  - B: Show all cards immediately with badge and image, and fill in each name as
+    it arrives. It feels faster, but it needs a new "name loading" card state.
+
+  3. What is on the Favorites screen? I can't open Figma, so:
+  - a. Does the Favorites frame show anything besides the 2-column grid and tab
+    bar, such as a title or search bar? Search on this tab is already out of
+    scope in the search spec. If there's a title, what does it say?
+  - b. Does Figma show an empty state? If not, I suggest the centered text "No
+    favorites yet" with no button. Is that OK?
+
+> 1. All requests fail: A. Placeholder name: "Unknown". Retry when only some
+  fail: A. 2. B, but only show the badge while the request for that pokemon is
+  still going. 3. The page looks exactly like the homepage, but has a title "My
+  favorites" and no searchbar.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● That's clear. The title will use the same style as "All Pokémon", and while a
+  request is running a card shows only its ID badge.
+
+  Offline, unless you object: I'll follow the product spec and won't add
+  anything new. A favorite still in memory keeps its name, while one that isn't
+  shows up as "Unknown", or you get the full-page error if none load. TanStack
+  Query retries a failed request a few times by default, so with no connection a
+  badge-only card can stay that way for several seconds before it fails.
+
+  These should be the last questions.
+
+  Questions
+
+  1. What should the empty state say? This one's still open from last round. If
+  there are no favorites, I suggest the centered text "No favorites yet" with no
+  button, below the "My favorites" title. Is that OK, or do you want different
+  wording?
+
+  2. How should a card behave before its data has arrived?
+  - a. While loading: "only the badge" leaves no name and no ⋮.
+    - A (recommended): The card is already tappable and opens Detail, because
+      the ID is all Detail needs. ⋮ is hidden until the request finishes.
+    - B: The card can't be tapped until the request finishes.
+  - b. A failed "Unknown" card:
+    - A (recommended): It shows the ID badge, the image and "Unknown". ⋮ is
+      visible, so the Options menu can use it later to unfavorite. Tapping opens
+      Detail as normal.
+    - B: As above, but tapping the card does nothing.
+
+    With A, Detail may show its own error page, and the Detail spec hides the
+    heart there. So until the Options menu exists, a favorite that keeps failing
+    can't be removed. That matches what you said earlier. I'll list it in the
+    spec as a known limitation.
+
+  3. How should the heart behave on Detail?
+  - a. Tapping it: The change is saved straight away, with no confirmation and
+    no undo. After you unfavorite something, its card is gone when you go back
+    to Favorites. The heart stays on that page, so you can tap it again to
+    re-add the Pokémon. Is that OK?
+  - b. Before the favorite status is known: The heart stays hidden until both
+    the Pokémon and its favorite status have loaded. This prevents a brief flash
+    of the wrong heart. Is that OK?
+  - c. If SQLite fails:
+    - Saving fails:
+      - A (recommended): The heart stays as it was and nothing else shows,
+        because the heart only changes after the save succeeds.
+      - B: The heart stays as it was and a short message appears: "Could not
+        save favorite". This needs a new message element.
+    - Reading the favorites list fails: I suggest the full-page "Could not load
+      favorites" with Retry, the same as when all requests fail. Is that OK?
+
+> 1. Show only "No favorites". 2. While loading: A. A failed "Unknown" card:
+  A. 3. All recommendations are approved, but when saving fails do B.
+
+● Write(specs\features\favorites.md)
+  ⎿  Wrote 130 lines to specs\features\favorites.md
+      1 # Feature: favorites
+      2
+      3 > Issue: #? · Status: draft
+      4
+      5 ## Goal
+      6
+      7 As a Pokédex user, I want to save Pokémon as favorites from their
+         detail page, so that I can find them again on the Favorites tab,
+         also after restarting the app.
+      8
+     … +122 lines (ctrl+o to expand)
+
+● I've written the spec to specs/features/favorites.md, with status draft, but
+  one question is still open. specs/product.md needed no changes: its feature
+  table already links this file, and /create-issue will fill in the #?.
+
+  The open question: how should "Could not save favorite" appear on Detail?
+  - A (recommended): A native alert with an OK button. It's clear, and it needs
+    no new UI.
+  - B: Text on the Detail page. It's less intrusive, but it needs a design,
+    including where it goes and when it disappears.
+
+  This is listed under Open questions in the spec, and I'll update it once you
+  choose.
+
+  Please check these details, which you didn't explicitly decide:
+  - SQLite loading: a centered spinner shows while the IDs load. It's usually
+    too quick to notice, but every load needs a loading state.
+  - Title: "My favorites" stays visible in every state, including loading, empty
+    and error.
+  - Retry: tapping Retry puts the failed cards back to badge-only, and the
+    bottom message disappears while they load.
+  - Failure messages: a card turns to "Unknown" as soon as its own request
+    fails, but the bottom Retry message waits until no requests are running. If
+    all of them fail, you may briefly see "Unknown" cards before the full-page
+    error.
+  - Heart in the detail spec: this spec replaces the "visual only" heart section
+    in detail page.md (specs/features/detail%20page.md). I didn't edit that
+    file.
+
+  Known limitations in the spec:
+  - A favorite that keeps failing can't be removed until the Options menu
+    exists.
+  - There's one request per favorite, so a long list means many requests at
+    once.
+
+  assets/icons/Favorites_Active.svg is still untracked, so make sure it's
+  included when you commit this feature. Once you've answered the alert
+  question, the next step is /create-issue favorites.
+
+> When saving favorite fails, use native alert.
+
+● Bash(python - <<'E'
+      p='specs/features/favorites.md'…)
+  ⎿  Updated specs\features\favorites.md (+3 -3)
+      20  - [ ] The heart stays hidden until both the Pokémon and its fav
+          orite status have loaded, so the wrong heart never flashes.
+      21  - [ ] The heart stays hidden on Detail's loading and error stat
+          es, as in the detail page spec.
+      22  - [ ] The heart works the same on every Detail page, however it
+           was opened (list, search, evolution card or Favorites).
+      23 -- [ ] The heart only changes after the save succeeded. If savin
+         -g fails, the heart stays as it was and the message "Could not s
+         -ave favorite" appears.                                         
+      23 +- [ ] The heart only changes after the save succeeded. If savin
+         +g fails, the heart stays as it was and a native alert shows "Co
+         +uld not save favorite" with an OK button.                      
+      24  
+      25  **Saving**
+      26  
+     ...
+       95  ## States
+       96  
+       97  - **Loading:** IDs from SQLite: one centered spinner below the
+            title. Pokémon: each card shows only its badge until its own 
+           request finishes.
+       98 -- **Error:** SQLite read or every request failed: "Could not l
+          -oad favorites" and a Retry button. Some requests failed: "Unkn
+          -own" cards, with "Could not load all favorites" and a Retry bu
+          -tton at the bottom of the list. Saving failed: the heart stays
+          - as it was and "Could not save favorite" appears. Image: Pokéb
+          -all placeholder.                                              
+       98 +- **Error:** SQLite read or every request failed: "Could not l
+          +oad favorites" and a Retry button. Some requests failed: "Unkn
+          +own" cards, with "Could not load all favorites" and a Retry bu
+          +tton at the bottom of the list. Saving failed: the heart stays
+          + as it was and a native alert shows "Could not save favorite" 
+          +with an OK button. Image: Pokéball placeholder.               
+       99  - **Empty:** "No favorites" centered below the title, no butto
+           n.
+      100  
+      101  ## Code layout
+     ...
+      127  
+      128  ## Open questions
+      129  
+      130 -- How does "Could not save favorite" appear on Detail: a nativ
+          -e alert, or text on the page?                                 
+      130 +- None.                                                       
+
+● The spec is updated: if saving fails, the heart stays as it was and a native
+  alert shows "Could not save favorite" with an OK button. That was the last
+  open question in specs/features/favorites.md, so the spec is ready.
+
+  The next step is /create-issue favorites.
+
+> /create-issue favorites
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Bash(S="C:/Users/Gebruiker/AppData/Local/Temp/claude/23d15d677ba5a18b/8ecf5fa6
+      -87fb-4b88-8f43-8aa9a7983de2/scratchpad/issue-body.md"
+      python - "$S" <<'E'…)
+  ⎿  Updated specs\features\favorites.md (+1 -1)
+      1  # Feature: favorites
+      2  
+      3 -> Issue: #? · Status: draft                                     
+      3 +> Issue: #7 · Status: draft                                     
+      4  
+      5  ## Goal
+      6  
+  ⎿  Updated specs\product.md (+1 -1)
+      35  | 1 | Homepage list | [specs/features/homepage list.md](feature
+          s/homepage%20list.md) | #1 |
+      36  | 2 | Search | [specs/features/search.md](features/search.md) |
+           #3 |
+      37  | 3 | Detail page | [specs/features/detail page.md](features/de
+          tail%20page.md) | #5 |
+      38 -| 4 | Favorites | [specs/features/favorites.md](features/favori
+         -tes.md) | #? |                                                 
+      38 +| 4 | Favorites | [specs/features/favorites.md](features/favori
+         +tes.md) | #7 |                                                 
+      39  | 5 | Compare | [specs/features/compare.md](features/compare.md
+          ) | #? |
+      40  | 6 | Options menu | [specs/features/options menu.md](features/
+          options%20menu.md) | #? |
+      41  
+
+● The issue is created: https://github.com/Lucas-Light/Pokedex/issues/7
+
+  It has the goal, all 35 acceptance criteria and a link to the spec. The number
+  #7 is now in the spec header (specs/features/favorites.md) and in the feature
+  table in specs/product.md.
+
+  - No label: the repo has no feature label, so I left it unlabelled, the same
+    as issue #5.
+  - Spec link: the link in the issue will show a 404 until
+    specs/features/favorites.md is pushed to main.
+
+  The next step is /plan-issue 7.
+
+> /plan-issue 7
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Fetch(https://docs.expo.dev/versions/v58.0.0/sdk/sqlite/)
+  ⎿  Received 94.8KB (200 OK)
+
+● Fetch(https://docs.expo.dev/llms.txt)
+  ⎿  Received 56.3KB (200 OK)
+
+● Fetch(https://reactnative.dev/docs/alert)
+  ⎿  Received 50.4KB (200 OK)
+
+  Ran 2 shell commands (ctrl+o to expand)
+
+● The shell choked on the heredoc, so nothing was posted. I'll write the plan
+  with the file tool instead, then post it.
+
+  Made 1 scratchpad edit +123, ran 1 shell command (ctrl+o to expand)
+
+● The plan is posted on issue #7
+  (https://github.com/Lucas-Light/Pokedex/issues/7#issuecomment-6692013765).
+  That comment also has the table showing how each acceptance criterion will be
+  met. No code has changed.
+
+  Two choices for you
+
+  1. Where does the title go? The spec says "same style and position as All
+  Pokémon", but on the homepage that title sits below the search bar.
+  - A (recommended): Move it to the top of the page, with the same side margin
+    and the same gap to the grid.
+  - B: Keep it at exactly the same height as on the homepage, which leaves an
+    empty gap above it.
+
+  2. How should the two SQL-related unit tests work? The spec asks for unit
+  tests on "only once" and ID order, but real SQLite doesn't run in Jest.
+  - A (recommended): A pure function toFavoriteIds sorts by number and removes
+    duplicates, and gets the unit tests. The table's primary key also enforces
+    "only once", which I'd test on the phone.
+  - B: Mock expo-sqlite. This only proves which SQL text was sent, not how it
+    behaves.
+
+  Approach
+
+  - Data: the favorite IDs live in one SQLite table, read through the query
+    ['favorites'], so the heart and the Favorites page always agree. Each
+    favorite gets its own /pokemon/{id} query, sharing its cache with Detail.
+  - Database: I'd open it with openDatabaseAsync rather than SQLiteProvider, so
+    a failed open becomes a normal error with a working Retry. The SDK 58 docs
+    confirm expo-sqlite is included in Expo Go and needs no config plugin for
+    this.
+  - States: a pure function in src/lib/favorites.ts works out the card and page
+    states, so they can be unit tested. A favorite counts as loaded whenever it
+    has data, which is how cached names survive offline.
+  - Heart: it writes to SQLite and waits for ['favorites'] to reload before it
+    changes. Taps during a save are ignored, and a failed save shows the native
+    alert.
+  - Back from Detail: this needs no new code, because router.push and
+    router.replace already return to the tab you came from.
+  - Web: not supported for this feature, because expo-sqlite needs extra setup
+    there and the app targets Expo Go.
+
+  Files
+
+  - UI, new: FavoritesGrid.tsx, FavoriteButton.tsx, ScreenTitle.tsx
+  - UI, changed:
+    - (tabs)/favorites.tsx and (tabs)/index.tsx
+    - PokemonCard.tsx and PokemonCardList.tsx
+    - DetailBar.tsx, PokemonDetail.tsx and Icon.tsx
+    - colors.ts
+    - SearchResults.tsx, only if the list's ref type needs it
+  - Data, new: src/db/favorites.ts, src/hooks/useFavorites.ts
+  - Data, changed:
+    - usePokemonDetail.ts
+    - package.json and package-lock.json
+    - app.json, if the installer adds an entry
+  - Logic, new: src/lib/favorites.ts, src/lib/__tests__/favorites-test.ts
+
+  FavoriteButton.tsx, ScreenTitle.tsx and the SearchResults.tsx change aren't in
+  the spec's code layout.
+
+  Tasks
+
+  - [ ] Create branch feature/favorites
+  - [ ] Install expo-sqlite with npx expo install expo-sqlite
+  - [ ] Add src/db/favorites.ts: table with id INTEGER PRIMARY KEY NOT NULL,
+    read, add with INSERT OR IGNORE, remove
+  - [ ] Add src/lib/favorites.ts with unit tests: ID order, no duplicates,
+    loading/loaded/failed cards, cached data not counted as failed,
+    none/some/all failed
+  - [ ] Share the query options from usePokemonDetail
+  - [ ] Add src/hooks/useFavorites.ts
+  - [ ] Add the filled heart to Icon and #FF4F68 to the theme
+  - [ ] Add FavoriteButton and use it in DetailBar and PokemonDetail; the heart
+    saves, and stays hidden until its status is known
+  - [ ] Add the loading card and the "Unknown" name to PokemonCard and
+    PokemonCardList
+  - [ ] Add ScreenTitle and use it on the homepage, with no visual change there
+  - [ ] Add FavoritesGrid with all page states, and use it in favorites.tsx
+  - [ ] Update the status of specs/features/favorites.md and tick the criteria
+  - [ ] Run tests with npx jest
+  - [ ] Run lint with npx expo lint
+  - [ ] Run typecheck with npx tsc --noEmit
+  - [ ] Test on the phone in Expo Go
+
+  SQLite failures are hard to trigger on a phone, so I'd test them by
+  temporarily throwing an error in src/db/favorites.ts and removing it
+  afterwards.
+
+  Pick your two choices, or say "go" to accept both recommendations. I'll update
+  the issue comment and wait for your "go" before writing any code.
+
+> Where does the title go: A. How should the two SQL-related unit tests work: A
+
+● Bash(S="C:/Users/Gebruiker/AppData/Local/Temp/claude/23d15d677ba5a18b/8ecf5fa6
+      -87fb-4b88-8f43-8aa9a7983de2/scratchpad"
+      gh issue view 7 --json body --jq .body > "$S/i…)  ⎿  Updated specs\features\favorites.md (+4 -4)
+      31  
+      32  **Favorites page**
+      33  
+      34 -- [ ] The Favorites tab shows the title "My favorites" in the s
+         -ame style and position as "All Pokémon", and no search bar.    
+      34 +- [ ] The Favorites tab shows the title "My favorites" in the s
+         +ame style as "All Pokémon", at the top of the page with the sam
+         +e side margin and the same gap to the grid, and no search bar. 
+      35  - [ ] Favorites show in the same 2-column grid and cards as the
+           homepage.
+      36  - [ ] Favorites are ordered by Pokémon ID, lowest first: `25`, 
+          `1025`, `10001`. *(unit test)*
+      37  - [ ] A Pokémon favorited on Detail is on the Favorites page, i
+          n its ID position, when the user gets there.
+     ...
+      66    - `src/app/(tabs)/favorites.tsx` — Favorites page, replaces t
+          he empty page
+      67    - `src/app/pokemon/[id].tsx` — Detail, unchanged route, the h
+          eart now works
+      68  - Figma frame: no separate frame needed. The page looks exactly
+           like the homepage ([Home](https://www.figma.com/design/dsgGXcu
+          5WELIvRW90m5308/Pok%C3%A9mon-Code-Challenge?node-id=1-2)), with
+           a different title and no search bar.
+      69 -- Top to bottom: "My favorites" title, card grid, bottom tab ba
+         -r.                                                             
+      69 +- Top to bottom: "My favorites" title, card grid, bottom tab ba
+         +r. With no search bar, the title moves up to the top of the pag
+         +e.                                                             
+      70  - Replaces "Favorite heart (visual only)" in the detail page sp
+          ec.
+      71  
+      72  | Element | Design |
+     ...
+      88    - `['favorites']` — the IDs from SQLite
+      89    - `['pokemon', 'detail', id]` — shared with Detail, with `id`
+           as a string, so opening a favorite reuses its data
+      90  - Fields used: `id`, `name`
+      91 -- Stored in SQLite: yes — one table with the Pokémon ID as prim
+         -ary key, read in ID order. No other Pokémon data.              
+      91 +- Stored in SQLite: yes — one table with the Pokémon ID as prim
+         +ary key, read in ID order. No other Pokémon data. The primary k
+         +ey is tested on the phone, because real SQLite does not run in 
+         +Jest. The unit tests cover `toFavoriteIds`.                    
+      92  - Package: `expo-sqlite`, not installed yet.
+      93  - Offline: no persistence added. Data only lives in the TanStac
+          k Query cache, as in `specs/product.md`. With no connection a c
+          ard can stay on badge-only for several seconds, while the defau
+          lt retries run.
+      94  
+     ...
+      106    - `src/components/DetailBar.tsx`, `src/components/PokemonDet
+           ail.tsx` — working heart
+      107    - `src/components/Icon.tsx` — filled heart icon
+      108  - Data (API + queries): `src/db/favorites.ts`, `src/hooks/useF
+           avorites.ts`
+      109 -- Logic (pure functions): `src/lib/favorites.ts` — page state 
+          -from the request results (all failed, some failed, none failed
+          -)                                                             
+      109 +- Logic (pure functions): `src/lib/favorites.ts` — ID order an
+          +d no duplicates (`toFavoriteIds`), page state from the request
+          + results (all failed, some failed, none failed)               
+      110  - Theme: `src/theme/colors.ts` — `#FF4F68`
+      111  
+      112  ## Out of scope
+
+● Both decisions are in. The plan comment
+  (https://github.com/Lucas-Light/Pokedex/issues/7#issuecomment-6692013765) now
+  has a Decisions section instead of the choices.
+
+  I also made two changes you didn't ask for, so everything matches:
+  - Title criterion: I reworded it in both the spec
+    (specs/features/favorites.md) and the issue. It now says the title goes at
+    the top of the page, with the same side margin and gap to the grid.
+  - Testing note: the spec now says toFavoriteIds gets the unit tests and the
+    primary key is tested on the phone.
+
+  No code has changed. Say "go" and I'll start building.
+
+> /build-issue 7
+
+● Bash(gh issue view 7 --json comments --jq '.comments[-1].body' | sed -n 1,20p;
+      git status --short; git branch --show-current; git checkout -b
+      feature/favorites && np…)
+  ⎿  Updated app.json (+2 -1)
+  ⎿  Updated package-lock.json (+21 -0)
+  ⎿  Updated package.json (+1 -0)
+  ⎿  (a git step in this command can move the working tree, so these may be
+     its changes, not edits) (ctrl+o to expand)
+  ⎿  (timeout 4m)
+
+● expo-sqlite 58.0.15 is installed on feature/favorites, and its config plugin
+  was added to app.json as the plan allowed. Next I'm building the database,
+  logic and tests, then the hooks.
+
+  Made 1 scratchpad edit +15 (ctrl+o to expand)
+
+● Write(src\db\favorites.ts)
+  ⎿  Wrote 36 lines to src\db\favorites.ts
+       1 import { openDatabaseAsync, type SQLiteDatabase } from "expo-sql
+         ite";
+       2
+       3 const DATABASE_NAME = "pokedex.db";
+       4
+       5 let database: Promise<SQLiteDatabase> | undefined;
+       6
+       7 async function openDatabase(): Promise<SQLiteDatabase> {
+       8   const db = await openDatabaseAsync(DATABASE_NAME);
+       9   await db.execAsync("CREATE TABLE IF NOT EXISTS favorites (id I
+     … +28 lines (ctrl+o to expand)
+
+● Write(src\lib\favorites.ts)
+  ⎿  Wrote 46 lines to src\lib\favorites.ts
+      1 const UNKNOWN_NAME = "Unknown";
+      2
+      3 /** The part of a Pokémon query that decides what its card and th
+        e page show. */
+      4 export type FavoriteQuery = {
+      5   id: number;
+      6   name: string | undefined;
+      7   isPending: boolean;
+      8   isFetching: boolean;
+      9 };
+     … +37 lines (ctrl+o to expand)
+
+● Write(src\lib\__tests__\favorites-test.ts)
+  ⎿  Wrote 79 lines to src\lib\__tests__\favorites-test.ts
+       1 import {
+       2   type FavoriteQuery,
+       3   getFavoritesStatus,
+       4   isFavoriteFailed,
+       5   toFavoriteIds,
+       6   toFavoriteItem,
+       7 } from "@/lib/favorites";
+       8
+       9 const loaded: FavoriteQuery = { id: 1, name: "bulbasaur", isPend
+         ing: false, isFetching: false };
+     … +70 lines (ctrl+o to expand)
+
+● Write(src\hooks\usePokemonDetail.ts)
+  ⎿  Added 8 lines, removed 3 lines
+       1 -import { useQuery } from "@tanstack/react-query";              
+       1 +import { queryOptions, useQuery } from "@tanstack/react-query";
+       2  
+       3  import { fetchPokemon } from "@/api/pokemon";
+       4  import { toPokemonDetail } from "@/lib/pokemon";
+       5  
+       6 -export function usePokemonDetail(id: string) {                 
+       7 -  return useQuery({                                            
+       6 +/** Shared with Favorites, so Detail and Favorites use the same
+         + cache. */                                                     
+       7 +export function pokemonDetailQuery(id: string) {               
+       8 +  return queryOptions({                                        
+       9      queryKey: ["pokemon", "detail", id],
+      10      queryFn: () => fetchPokemon(id),
+      11      select: toPokemonDetail,
+      12    });
+      13  }
+      14 +                                                               
+      15 +export function usePokemonDetail(id: string) {                 
+      16 +  return useQuery(pokemonDetailQuery(id));                     
+      17 +}                                                              
+
+● Write(src\hooks\useFavorites.ts)
+  ⎿  Wrote 68 lines to src\hooks\useFavorites.ts
+       1 import { useMutation, useQueries, useQuery, useQueryClient } fro
+         m "@tanstack/react-query";
+       2
+       3 import { addFavorite, getFavoriteIds, removeFavorite } from "@/d
+         b/favorites";
+       4 import { pokemonDetailQuery } from "@/hooks/usePokemonDetail";
+       5 import {
+       6   type FavoriteQuery,
+       7   getFavoritesStatus,
+       8   isFavoriteFailed,
+     … +60 lines (ctrl+o to expand)
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● The shell hit the same quoting problem with a long inline script. I'll check
+  what actually ran, then move the edits into a script file.
+
+  Made 1 scratchpad edit +147 (ctrl+o to expand)
+
+● Write(src\components\ScreenTitle.tsx)
+  ⎿  Wrote 25 lines to src\components\ScreenTitle.tsx
+       1 import { type StyleProp, StyleSheet, Text, type TextStyle } from
+          "react-native";
+       2
+       3 import { colors } from "@/theme/colors";
+       4 import { fonts } from "@/theme/fonts";
+       5 import { spacing } from "@/theme/spacing";
+       6
+       7 type ScreenTitleProps = {
+       8   title: string;
+       9   style?: StyleProp<TextStyle>;
+     … +16 lines (ctrl+o to expand)
+
+● Write(src\components\FavoriteButton.tsx)
+  ⎿  Wrote 37 lines to src\components\FavoriteButton.tsx
+      1 import { Alert, Pressable } from "react-native";
+      2
+      3 import { Icon } from "@/components/Icon";
+      4 import { useFavorite } from "@/hooks/useFavorites";
+      5 import { colors } from "@/theme/colors";
+      6
+      7 type FavoriteButtonProps = {
+      8   id: number;
+      9 };
+     … +28 lines (ctrl+o to expand)
+
+● Write(src\components\FavoritesGrid.tsx)
+  ⎿  Wrote 54 lines to src\components\FavoritesGrid.tsx
+       1 import { StyleSheet, View } from "react-native";
+       2
+       3 import {
+       4   CenteredError,
+       5   CenteredMessage,
+       6   CenteredSpinner,
+       7   ErrorMessage,
+       8 } from "@/components/ListStates";
+       9 import { PokemonCardList } from "@/components/PokemonCardList";
+      10 import { useFavoriteIds, useFavoritePokemon } from "@/hooks/useF
+     … +45 lines (~1 KB) (ctrl+o to expand)
+
+  Read 1 file, ran 1 shell command (ctrl+o to expand)
+
+● Nothing from the failed command ran, so the edits can be applied cleanly.
+
+● Write(src\app\(tabs)\favorites.tsx)
+  ⎿  Added 21 lines, removed 2 lines
+       1 -import { View } from "react-native";                           
+       1 +import { StyleSheet, View } from "react-native";               
+       2 +import { useSafeAreaInsets } from "react-native-safe-area-conte
+         +xt";                                                           
+       3  
+       4 +import { FavoritesGrid } from "@/components/FavoritesGrid";    
+       5 +import { ScreenTitle } from "@/components/ScreenTitle";        
+       6 +import { colors } from "@/theme/colors";                       
+       7 +                                                               
+       8  export default function FavoritesScreen() {
+       4 -  return <View />;                                             
+       9 +  const insets = useSafeAreaInsets();                          
+      10 +                                                               
+      11 +  return (                                                     
+      12 +    <View style={[styles.screen, { paddingTop: insets.top + 16 
+         +}]}>                                                           
+      13 +      <ScreenTitle title="My favorites" />                     
+      14 +      <FavoritesGrid />                                        
+      15 +    </View>                                                    
+      16 +  );                                                           
+      17  }
+      18 +                                                               
+      19 +const styles = StyleSheet.create({                             
+      20 +  screen: {                                                    
+      21 +    flex: 1,                                                   
+      22 +    backgroundColor: colors.background,                        
+      23 +  },                                                           
+      24 +});                                                            
+
+● Bash(S="C:/Users/Gebruiker/AppData/Local/Temp/claude/23d15d677ba5a18b/8ecf5fa6
+      -87fb-4b88-8f43-8aa9a7983de2/scratchpad"; python "$S/apply_ui.py" &&
+      python "$S/tick.py…)
+  ⎿  Updated src\app\(tabs)\index.tsx (+3 -10)
+       1 -import { Keyboard, Pressable, StyleSheet, Text, View } from "re
+         -act-native";                                                   
+       1 +import { Keyboard, Pressable, StyleSheet, View } from "react-na
+         +tive";                                                         
+       2  import { useSafeAreaInsets } from "react-native-safe-area-conte
+          xt";
+       3  
+       4  import { PokemonGrid } from "@/components/PokemonGrid";
+       5 +import { ScreenTitle } from "@/components/ScreenTitle";        
+       6  import { SearchBar } from "@/components/SearchBar";
+       7  import { SearchResults } from "@/components/SearchResults";
+       8  import { usePokemonSearch } from "@/hooks/usePokemonSearch";
+       9  import { colors } from "@/theme/colors";
+       9 -import { fonts } from "@/theme/fonts";                         
+      10 -import { spacing } from "@/theme/spacing";                     
+      10  
+      11  export default function HomeScreen() {
+      12    const insets = useSafeAreaInsets();
+     ...
+      26          onFocus={search.requestList}
+      27          onBack={search.clear}
+      28        />
+      30 -      {!isSearching && <Text style={styles.title}>All Pokémon</
+         -Text>}                                                         
+      29 +      {!isSearching && <ScreenTitle title="All Pokémon" style={
+         +styles.title} />}                                              
+      30        <View style={styles.listArea}>
+      31          {/* Stays mounted under the results, so it keeps its sc
+          roll position. */}
+      32          <View
+     ...
+      58    },
+      59    title: {
+      60      marginTop: 24,
+      62 -    marginBottom: 12,                                          
+      63 -    marginHorizontal: spacing.gridMargin,                      
+      64 -    fontFamily: fonts.title,                                   
+      65 -    fontSize: 24,                                              
+      66 -    lineHeight: 28.8,                                          
+      67 -    color: colors.text,                                        
+      61    },
+      62    listArea: {
+      63      flex: 1,
+  ⎿  Updated src\components\DetailBar.tsx (+5 -4)
+      2  import { Pressable, StyleSheet, Text, View } from "react-native"
+         ;
+      3  import { useSafeAreaInsets } from "react-native-safe-area-contex
+         t";
+      4  
+      5 +import { FavoriteButton } from "@/components/FavoriteButton";   
+      6  import { Icon } from "@/components/Icon";
+      7  import { colors } from "@/theme/colors";
+      8  import { fonts } from "@/theme/fonts";
+     ...
+      11  type DetailBarProps = {
+      12    /** Shown between the buttons once the big name has scrolled 
+          out of view. */
+      13    name?: string;
+      13 -  showHeart?: boolean;                                         
+      14 +  /** The Pokémon the heart belongs to. Without it, the bar has
+         + no heart. */                                                  
+      15 +  favoriteId?: number;                                         
+      16  };
+      17  
+      16 -export function DetailBar({ name, showHeart = false }: DetailBa
+         -rProps) {                                                      
+      18 +export function DetailBar({ name, favoriteId }: DetailBarProps)
+         + {                                                             
+      19    const insets = useSafeAreaInsets();
+      20  
+      21    return (
+     ...
+      32          <Text style={styles.name} numberOfLines={1} ellipsizeMo
+          de="tail">
+      33            {name}
+      34          </Text>
+      33 -        {/* Visual only. The Favorites feature makes it work. *
+         -/}                                                             
+      34 -        {showHeart && <Icon name="favorites" color={colors.text
+         -} />}                                                          
+      35 +        {favoriteId !== undefined && <FavoriteButton id={favori
+         +teId} />}                                                      
+      36        </View>
+      37      </View>
+      38    );
+  ⎿  Updated src\components\Icon.tsx (+5 -0)
+       9    back: { source: require("@/assets/icons/Back.svg"), width: 16
+          , height: 16 },
+      10    pokeball: { source: require("@/assets/icons/Pokeball.svg"), w
+          idth: 20, height: 20 },
+      11    favorites: { source: require("@/assets/icons/Favorites.svg"),
+           width: 20, height: 19 },
+      12 +  favoritesActive: {                                           
+      13 +    source: require("@/assets/icons/Favorites_Active.svg"),    
+      14 +    width: 20,                                                 
+      15 +    height: 19,                                                
+      16 +  },                                                           
+      17    options: { source: require("@/assets/icons/Options.svg"), wid
+          th: 3, height: 15 },
+      18  } as const;
+      19  
+  ⎿  Updated src\components\PokemonCard.tsx (+14 -9)
+      12  
+      13  type PokemonCardProps = {
+      14    id: number;
+      15 -  name: string;                                                
+      15 +  /** Without a name the card is still loading and shows only i
+         +ts badge. */                                                   
+      16 +  name?: string;                                               
+      17    width: number;
+      18  };
+      19  
+     ...
+      21    return (
+      22      <Pressable style={[styles.card, { width }]} onPress={() => 
+          router.push(`/pokemon/${id}`)}>
+      23        <View style={[styles.imageArea, { height: width }]}>
+      23 -        <PokemonImage id={id} placeholderBox={PLACEHOLDER_BOX} 
+         -/>                                                             
+      24 +        {name !== undefined && <PokemonImage id={id} placeholde
+         +rBox={PLACEHOLDER_BOX} />}                                     
+      25        </View>
+      26        <View style={styles.badge}>
+      27          <Text style={styles.badgeText}>{formatBadge(id)}</Text>
+      28        </View>
+      29        <View style={styles.nameRow}>
+      29 -        <Text style={styles.name} numberOfLines={1} ellipsizeMo
+         -de="tail">                                                     
+      30 -          {formatName(name)}                                   
+      31 -        </Text>                                                
+      32 -        {/* Takes the touch so Detail doesn't open. The menu co
+         -mes with the Options menu feature. */}                         
+      33 -        <Pressable onPress={() => {}} hitSlop={12}>            
+      34 -          <Icon name="options" color={colors.text} />          
+      35 -        </Pressable>                                           
+      30 +        {name !== undefined && (                               
+      31 +          <>                                                   
+      32 +            <Text style={styles.name} numberOfLines={1} ellipsi
+         +zeMode="tail">                                                 
+      33 +              {formatName(name)}                               
+      34 +            </Text>                                            
+      35 +            {/* Takes the touch so Detail doesn't open. The men
+         +u comes with the Options menu feature. */}                     
+      36 +            <Pressable onPress={() => {}} hitSlop={12}>        
+      37 +              <Icon name="options" color={colors.text} />      
+      38 +            </Pressable>                                       
+      39 +          </>                                                  
+      40 +        )}                                                     
+      41        </View>
+      42      </Pressable>
+      43    );
+  ⎿  Updated src\components\PokemonCardList.tsx (+14 -5)
+       2  import { FlatList, StyleSheet, useWindowDimensions } from "reac
+          t-native";
+       3  
+       4  import { PokemonCard } from "@/components/PokemonCard";
+       5 -import type { PokemonListItem } from "@/lib/pokemon";          
+       5  import { spacing } from "@/theme/spacing";
+       6  
+       8 -type PokemonCardListProps = {                                  
+       9 -  data: PokemonListItem[];                                     
+      10 -  ref?: Ref<FlatList<PokemonListItem>>;                        
+       7 +type PokemonCardItem = {                                       
+       8 +  id: number;                                                  
+       9 +  name?: string;                                               
+      10 +};                                                             
+      11 +                                                               
+      12 +type PokemonCardListProps<Item extends PokemonCardItem> = {    
+      13 +  data: Item[];                                                
+      14 +  ref?: Ref<FlatList<Item>>;                                   
+      15    onEndReached?: () => void;
+      16    footer?: ReactElement;
+      17  };
+      18  
+      15 -export function PokemonCardList({ data, ref, onEndReached, foot
+         -er }: PokemonCardListProps) {                                  
+      19 +export function PokemonCardList<Item extends PokemonCardItem>({
+      20 +  data,                                                        
+      21 +  ref,                                                         
+      22 +  onEndReached,                                                
+      23 +  footer,                                                      
+      24 +}: PokemonCardListProps<Item>) {                               
+      25    const { width } = useWindowDimensions();
+      26    const cardWidth = (width - spacing.gridMargin * 2 - spacing.g
+          ridGap) / 2;
+      27  
+  ⎿  … 2 more files changed
+  ⎿  (timeout 5m)
+
+● Typecheck, lint and all 69 tests pass. Those checks don't exercise Metro, so
+  I'll also build a real Android bundle to confirm the new SVG and expo-sqlite
+  imports resolve.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● The favorites feature is built on feature/favorites and nothing is committed,
+  but it hasn't run on a phone yet. All 35 acceptance criteria are coded, and
+  I've left them unticked in the spec until you've tested them. Those last two
+  tasks are still open on the issue
+  (https://github.com/Lucas-Light/Pokedex/issues/7#issuecomment-6692013765).
+
+  Checks
+
+  ┌─────────────────────────────┬───────────────────────────────────────────┐
+  │            Check            │                  Result                   │
+  ├─────────────────────────────┼───────────────────────────────────────────┤
+  │ npx tsc --noEmit            │ Passed                                    │
+  ├─────────────────────────────┼───────────────────────────────────────────┤
+  │ npx expo lint               │ Passed                                    │
+  ├─────────────────────────────┼───────────────────────────────────────────┤
+  │ npx jest                    │ 69 tests passed, including the new        │
+  │                             │ favorites tests                           │
+  ├─────────────────────────────┼───────────────────────────────────────────┤
+  │ npx expo-doctor             │ 20 of 20 checks passed                    │
+  ├─────────────────────────────┼───────────────────────────────────────────┤
+  │ Android bundle (npx expo    │ Built, so the imports resolve             │
+  │ export)                     │                                           │
+  └─────────────────────────────┴───────────────────────────────────────────┘
+
+  What changed
+
+  - New UI: FavoritesGrid.tsx (src/components/FavoritesGrid.tsx),
+    FavoriteButton.tsx (src/components/FavoriteButton.tsx), ScreenTitle.tsx
+    (src/components/ScreenTitle.tsx)
+  - Changed UI:
+    - favorites.tsx (src/app/(tabs)/favorites.tsx) and index.tsx
+      (src/app/(tabs)/index.tsx)
+    - PokemonCard.tsx (src/components/PokemonCard.tsx) and PokemonCardList.tsx
+      (src/components/PokemonCardList.tsx)
+    - DetailBar.tsx (src/components/DetailBar.tsx), PokemonDetail.tsx
+      (src/components/PokemonDetail.tsx) and Icon.tsx (src/components/Icon.tsx)
+    - colors.ts (src/theme/colors.ts)
+  - Data: new src/db/favorites.ts and useFavorites.ts
+    (src/hooks/useFavorites.ts), changed usePokemonDetail.ts
+    (src/hooks/usePokemonDetail.ts)
+  - Logic: new src/lib/favorites.ts and its tests
+    (src/lib/__tests__/favorites-test.ts)
+  - Dependencies: expo-sqlite 58.0.15 in package.json and package-lock.json
+
+  Different from the plan:
+  - The installer added expo-sqlite to the plugins in app.json, although the
+    plan said no plugin was needed. It's harmless and doctor passes.
+  - SearchResults.tsx didn't need changing.
+  - FavoriteButton is new and has screen reader labels, which the spec doesn't
+    ask for. They match the Back button.
+  - The SQLite read doesn't auto-retry, so a read failure shows its error
+    immediately.
+
+  Acceptance criteria
+
+  - Covered by unit tests: ID order, no duplicates from toFavoriteIds, cached
+    data not counting as failed, and the logic for some or all requests failing.
+  - Only checked on the phone: everything else, including the primary key,
+    restart persistence and all visible UI.
+
+  What to test on your phone
+
+  Run npx expo start and open the app in Expo Go.
+
+  1. Heart: on a Detail page, tap the outline heart. It should turn red and
+     filled, and tapping again should turn it back.
+  2. List: add 25, 1025 and 10001. Favorites should show them in that order
+     under "My favorites", at the top of the page.
+  3. Homepage: "All Pokémon" should look exactly as before, because I moved it
+     into a shared title component.
+  4. Remove: unfavorite a Pokémon, go back, and its card should be gone.
+     Removing the last one should show "No favorites".
+  5. Restart: close and reopen the app. Your favorites should still be there.
+  6. Back: open a favorite, tap through a few evolution cards, then tap back
+     once. You should land on Favorites.
+  7. Loading cards: on a slow connection, restart the app and open Favorites.
+     Cards should show only the badge at first and can already be tapped.
+  8. Offline:
+     - In airplane mode after a restart, you should see "Could not load
+       favorites" with Retry. This can take several seconds because of the
+       default retries.
+     - Turn the connection back on and tap Retry. Cards should go back to
+       badge-only, then fill in.
+  9. Some requests fail:
+     - With at least two favorites, open one on Detail, go offline and restart
+       the app. All of them will fail, so this isn't the case to test.
+     - Instead, stay in the same session: open Favorites online, go offline,
+       favorite a new Pokémon you already opened on Detail. It's easier to let
+       me add a temporary failing ID for this.
+  10. SQLite failures: these need a temporary thrown error in
+      src/db/favorites.ts, as in the plan. I can't run this on your device, so
+      tell me when you want it added and I'll remove it afterwards.
+
+  Item 9's "Unknown" card and bottom Retry are hard to trigger by hand. The
+  quickest way is a temporary favorite with a non-existent ID such as 99999,
+  added alongside a real one. Should I add temporary code for that and for the
+  SQLite failures, so you can check them on the phone?
+
+  Once it all works, tell me and I'll tick the criteria and update the spec
+  status, then you can run /review-issue 7.
+
+> All the phone tests were successful. Check the criteria.
+
+  Made 1 scratchpad edit +13 (ctrl+o to expand)
+
+● Bash(S="C:/Users/Gebruiker/AppData/Local/Temp/claude/23d15d677ba5a18b/8ecf5fa6
+      -87fb-4b88-8f43-8aa9a7983de2/scratchpad"; gh issue view 7 --json body --jq
+      .body > "$S/…)
+  ⎿  Updated specs\features\favorites.md (+36 -36)
+      1  # Feature: favorites
+      2  
+      3 -> Issue: #7 · Status: draft                                     
+      3 +> Issue: #7 · Status: complete                                  
+      4  
+      5  ## Goal
+      6  
+     ...
+      12  
+      13  **Heart on Detail**
+      14  
+      15 -- [ ] A Pokémon that is not a favorite shows `assets/icons/Favo
+         -rites.svg` (outline) in `#0E0940`.                             
+      16 -- [ ] A favorite shows `assets/icons/Favorites_Active.svg` (fil
+         -led) in `#FF4F68`.                                             
+      17 -- [ ] Tapping the outline heart saves the Pokémon as a favorite
+         - straight away, with no confirmation, and the heart turns fille
+         -d.                                                             
+      18 -- [ ] Tapping the filled heart removes the favorite straight aw
+         -ay, with no confirmation or undo, and the heart turns outline. 
+      19 -- [ ] After removing a favorite, the heart stays on the page an
+         -d tapping it again adds the Pokémon back.                      
+      20 -- [ ] The heart stays hidden until both the Pokémon and its fav
+         -orite status have loaded, so the wrong heart never flashes.    
+      21 -- [ ] The heart stays hidden on Detail's loading and error stat
+         -es, as in the detail page spec.                                
+      22 -- [ ] The heart works the same on every Detail page, however it
+         - was opened (list, search, evolution card or Favorites).       
+      23 -- [ ] The heart only changes after the save succeeded. If savin
+         -g fails, the heart stays as it was and a native alert shows "Co
+         -uld not save favorite" with an OK button.                      
+      15 +- [x] A Pokémon that is not a favorite shows `assets/icons/Favo
+         +rites.svg` (outline) in `#0E0940`.                             
+      16 +- [x] A favorite shows `assets/icons/Favorites_Active.svg` (fil
+         +led) in `#FF4F68`.                                             
+      17 +- [x] Tapping the outline heart saves the Pokémon as a favorite
+         + straight away, with no confirmation, and the heart turns fille
+         +d.                                                             
+      18 +- [x] Tapping the filled heart removes the favorite straight aw
+         +ay, with no confirmation or undo, and the heart turns outline. 
+      19 +- [x] After removing a favorite, the heart stays on the page an
+         +d tapping it again adds the Pokémon back.                      
+      20 +- [x] The heart stays hidden until both the Pokémon and its fav
+         +orite status have loaded, so the wrong heart never flashes.    
+      21 +- [x] The heart stays hidden on Detail's loading and error stat
+         +es, as in the detail page spec.                                
+      22 +- [x] The heart works the same on every Detail page, however it
+         + was opened (list, search, evolution card or Favorites).       
+      23 +- [x] The heart only changes after the save succeeded. If savin
+         +g fails, the heart stays as it was and a native alert shows "Co
+         +uld not save favorite" with an OK button.                      
+      24  
+      25  **Saving**
+      26  
+      27 -- [ ] Favorites are stored in SQLite as the Pokémon ID only.   
+      28 -- [ ] Favorites are still there after closing and reopening the
+         - app.                                                          
+      29 -- [ ] A Pokémon can only be a favorite once. *(unit test)*     
+      30 -- [ ] Alternate forms can be favorites (ID `10001`, `deoxys-att
+         -ack`).                                                         
+      27 +- [x] Favorites are stored in SQLite as the Pokémon ID only.   
+      28 +- [x] Favorites are still there after closing and reopening the
+         + app.                                                          
+      29 +- [x] A Pokémon can only be a favorite once. *(unit test)*     
+      30 +- [x] Alternate forms can be favorites (ID `10001`, `deoxys-att
+         +ack`).                                                         
+      31  
+     … 55 more lines (ctrl+o to expand)
+
+  Ran 1 shell command (ctrl+o to expand)
+● All 35 acceptance criteria are now ticked in the spec
+  (specs/features/favorites.md) and on issue #7
+  (https://github.com/Lucas-Light/Pokedex/issues/7). The spec status is
+  complete, and all 16 plan tasks are ticked. Nothing is committed.
+
+  Please check these before you hand it in: I ticked everything based on your
+  report, but some failure cases needed temporary code that I never added, and
+  no temporary code is in the repo now. If you didn't trigger these another way,
+  they're ticked without having been seen on a phone:
+  - Some requests fail: the "Unknown" card, its tap to Detail, and the bottom
+    "Could not load all favorites" with Retry.
+  - SQLite read fails: the full-page error.
+  - Saving fails: the "Could not save favorite" alert.
+
+  The logic for which page state shows when some or all requests fail is unit
+  tested, but the alert and these screens aren't. If you'd like, I can add
+  temporary code for a quick check and remove it afterwards.
+
+  The next step is /review-issue 7.
+
+> /review-issue 7
+
+  Searched for 1 pattern, ran 2 shell commands (ctrl+o to expand)
+
+● Review of issue #7
+
+  Verdict: it matches the spec, and I found no bugs in the code. There's one
+  spec gap to decide on and a few small cleanups. I haven't changed anything.
+
+  ┌──────────────────┬───────────────────────────────┐
+  │      Check       │            Output             │
+  ├──────────────────┼───────────────────────────────┤
+  │ npx expo lint    │ Passed, no errors or warnings │
+  ├──────────────────┼───────────────────────────────┤
+  │ npx tsc --noEmit │ Passed, no errors             │
+  ├──────────────────┼───────────────────────────────┤
+  │ npx jest         │ 69 of 69 tests passed         │
+  └──────────────────┴───────────────────────────────┘
+
+  Findings
+
+  Decide before you commit
+  1. Favorites can get stuck, even after the Options menu is built.
+     FavoritesGrid.tsx:36 (src/components/FavoritesGrid.tsx#L36) replaces the
+     grid with a full-page error when every request fails. If your only
+     favorite, or all of them, keeps failing, no card appears, so there's no ⋮
+     menu to remove it from. You chose "Unknown" cards for exactly this reason.
+     It follows the spec and is rare, because IDs come from the API, but the
+     known limitation (specs/features/favorites.md#L125) says the Options menu
+     will solve it, which isn't true in this case. You could change the
+     limitation text, or handle it in the Options menu spec.
+  2. Three failure paths haven't been seen on a phone, as far as I know. These
+     are the "Unknown" card with the bottom Retry, the SQLite read error and the
+     save alert. Each needed temporary code that I never added. If you tested
+     them another way, ignore this. They're marked ⚠️ below.
+
+  Small fixes
+
+  3. Spec is out of date: favorites.md:92 (specs/features/favorites.md#L92)
+     still says expo-sqlite is "not installed yet". The Code layout section
+     (line 103 (specs/features/favorites.md#L103)) is missing FavoriteButton.tsx
+     and ScreenTitle.tsx.
+  4. Older specs are out of date: the detail spec still says tapping the heart
+     "does nothing", and homepage list.md:36
+     (specs/features/homepage%20list.md#L36) still says Favorites is an empty
+     page. The favorites spec overrides the heart section, but the old text
+     remains.
+  5. Weak test: the test at favorites-test.ts:76
+     (src/lib/__tests__/favorites-test.ts#L76) uses plain loaded data, so it
+     never models a failed refresh. The isFavoriteFailed test
+     (src/lib/__tests__/favorites-test.ts) has the same limit. The logic is
+     right, but the test proves less than its name suggests.
+  6. Unneeded code: the ?., ?? true and query && checks at useFavorites.ts:33-41
+     (src/hooks/useFavorites.ts#L33-L41) aren't needed, because
+     noUncheckedIndexedAccess is off and useQueries returns one result per ID.
+  7. Duplicate type: PokemonCardItem in PokemonCardList.tsx:7
+     (src/components/PokemonCardList.tsx#L7) has the same shape as FavoriteItem
+     in lib/favorites.ts:12 (src/lib/favorites.ts#L12).
+  8. Rare edge case: if a save succeeds but the reload right after it fails, the
+     heart shows the old state until the next reload (useFavorites.ts:62
+     (src/hooks/useFavorites.ts#L62)). The save itself isn't lost.
+
+  Acceptance criteria
+
+  ✅ means met in the code and passed on your phone. ⚠️ means met in the code
+  but not confirmed on a phone.
+
+  Heart on Detail
+  - ✅ Outline heart in #0E0940: FavoriteButton.tsx:31-34
+    (src/components/FavoriteButton.tsx#L31-L34)
+  - ✅ Filled heart in #FF4F68: FavoriteButton.tsx:31-34
+    (src/components/FavoriteButton.tsx#L31-L34), colors.ts:8
+    (src/theme/colors.ts#L8)
+  - ✅ Tap adds straight away: useFavorites.ts:60
+    (src/hooks/useFavorites.ts#L60)
+  - ✅ Tap removes straight away: useFavorites.ts:60
+    (src/hooks/useFavorites.ts#L60)
+  - ✅ Heart stays and can re-add: PokemonDetail.tsx:68
+    (src/components/PokemonDetail.tsx#L68)
+  - ✅ Hidden until the status is known: FavoriteButton.tsx:19
+    (src/components/FavoriteButton.tsx#L19)
+  - ✅ Hidden on Detail's loading and error states: PokemonDetail.tsx:33
+    (src/components/PokemonDetail.tsx#L33), line 42
+    (src/components/PokemonDetail.tsx#L42)
+  - ✅ Same on every Detail page: DetailBar.tsx:35
+    (src/components/DetailBar.tsx#L35)
+  - ⚠️ Only changes after a save, and failure shows the alert:
+    useFavorites.ts:62-63 (src/hooks/useFavorites.ts#L62-L63),
+    FavoriteButton.tsx:12 (src/components/FavoriteButton.tsx#L12)
+
+  Saving
+  - ✅ Stored as ID only: db/favorites.ts:9 (src/db/favorites.ts#L9)
+  - ✅ Survives a restart: db/favorites.ts:8 (src/db/favorites.ts#L8)
+  - ✅ Only once: db/favorites.ts:9 (src/db/favorites.ts#L9), line 30
+    (src/db/favorites.ts#L30), lib/favorites.ts:20 (src/lib/favorites.ts#L20),
+    unit tested
+  - ✅ Alternate forms: db/favorites.ts:9 (src/db/favorites.ts#L9) stores plain
+    integers
+
+  Favorites page
+  - ✅ Title, no search bar: favorites.tsx:13 (src/app/(tabs)/favorites.tsx#L13)
+  - ✅ Same grid and cards: FavoritesGrid.tsx:47
+    (src/components/FavoritesGrid.tsx#L47)
+  - ✅ Ordered by ID: lib/favorites.ts:20 (src/lib/favorites.ts#L20), unit
+    tested
+  - ✅ Added favorite appears: useFavorites.ts:62
+    (src/hooks/useFavorites.ts#L62)
+  - ✅ Removed favorite disappears: useFavorites.ts:62
+    (src/hooks/useFavorites.ts#L62)
+  - ✅ Tap opens Detail: PokemonCard.tsx:22 (src/components/PokemonCard.tsx#L22)
+  - ✅ Back returns to Favorites: PokemonCard.tsx:22
+    (src/components/PokemonCard.tsx#L22) with router.replace in
+    EvolutionCard.tsx
+  - ✅ ⋮ does nothing: PokemonCard.tsx:36 (src/components/PokemonCard.tsx#L36)
+
+  Card states
+  - ✅ Badge only while loading: PokemonCard.tsx:24
+    (src/components/PokemonCard.tsx#L24), line 30
+    (src/components/PokemonCard.tsx#L30)
+  - ✅ Loading card can be tapped: PokemonCard.tsx:22
+    (src/components/PokemonCard.tsx#L22)
+  - ✅ Each card fills in by itself: useFavorites.ts:27
+    (src/hooks/useFavorites.ts#L27)
+  - ⚠️ "Unknown" card with badge, image and ⋮: lib/favorites.ts:29-31
+    (src/lib/favorites.ts#L29-L31), unit tested
+  - ⚠️ "Unknown" card can be tapped: PokemonCard.tsx:22
+    (src/components/PokemonCard.tsx#L22)
+  - ✅ Cached name survives a failed request: lib/favorites.ts:25
+    (src/lib/favorites.ts#L25), see finding 5
+
+  Page states
+  - ✅ Spinner while IDs load: FavoritesGrid.tsx:18
+    (src/components/FavoritesGrid.tsx#L18)
+  - ✅ "No favorites", with no requests: FavoritesGrid.tsx:26
+    (src/components/FavoritesGrid.tsx#L26)
+  - ✅ Removing the last favorite shows "No favorites": FavoritesGrid.tsx:26
+    (src/components/FavoritesGrid.tsx#L26)
+  - ⚠️ Some failed, shows bottom message and Retry: FavoritesGrid.tsx:40-45
+    (src/components/FavoritesGrid.tsx#L40-L45), lib/favorites.ts:36
+    (src/lib/favorites.ts#L36), unit tested
+  - ⚠️ That Retry requests only the failed ones: useFavorites.ts:38-45
+    (src/hooks/useFavorites.ts#L38-L45)
+  - ✅ Every request failed, shows full-page error: FavoritesGrid.tsx:36
+    (src/components/FavoritesGrid.tsx#L36), unit tested, see finding 1
+  - ⚠️ SQLite read failed, shows full-page error: FavoritesGrid.tsx:22
+    (src/components/FavoritesGrid.tsx#L22)
+  - ✅ Full-page Retry: FavoritesGrid.tsx:23
+    (src/components/FavoritesGrid.tsx#L23), line 37
+    (src/components/FavoritesGrid.tsx#L37)
+
+  Other checks
+
+  Loading, error and empty states
+  - ✅ Favorite IDs: spinner, error with Retry, and "No favorites"
+  - ✅ Each Pokémon: badge-only card, then "Unknown" or the full-page error. A
+    list with no IDs makes no requests.
+  - ✅ Saving: the heart can't be tapped during a save, and a failure shows the
+    alert. No empty state applies.
+  - ✅ Images: Pokéball placeholder, unchanged
+
+  Separation of UI, data and logic
+  - ✅ SQL exists only in src/db/favorites.ts
+  - ✅ Queries exist only in src/hooks/
+  - ✅ src/lib/favorites.ts has no React imports
+  - ✅ Alert stays in the component and is passed to the hook as a callback
+  - ✅ Routes stay thin
+
+  Banned patterns
+  - ✅ A search of all of src/ except the test files found no any, as casts,
+    @ts-ignore or console.log
+
+  AGENTS.md
+  - ✅ Package added with npx expo install, and expo-doctor passes
+  - ✅ SDK 58 docs checked before using expo-sqlite
+  - ✅ expo-sqlite is included in Expo Go, and it ran on your phone
+  - ✅ Plan approved before any code, lint and typecheck run, nothing committed
+  - ✅ Routes in src/app/, code in the agreed folders
+  - ❌ Minor: the screen reader labels on the heart aren't in any spec, and
+    "don't build what isn't in a spec" is the rule. I'd keep them and add one
+    line to the spec.
+
+  Phone test script
+
+  1. Open Favorites with no favorites. You should see "My favorites" and "No
+     favorites".
+  2. Open Pikachu and tap the heart. It should turn red, and Favorites should
+     show the card.
+  3. Also favorite 1025 and 10001. The order should be 25, 1025, 10001.
+  4. Close and reopen the app. All three should still be there.
+  5. Open a favorite, tap through evolution cards, then tap back once. You
+     should land on Favorites.
+  6. Unfavorite all three. You should end on "No favorites".
+  7. Add a favorite, then restart the app in airplane mode. You should get
+     "Could not load favorites". Turn the connection on and tap Retry. The card
+     should show its badge, then fill in.
+
+  How the code works, in plain language
+
+  - Saving (db/favorites.ts (src/db/favorites.ts)): the database holds one table
+    with one column, the Pokémon ID. Making that column the primary key means
+    the same ID can't be stored twice. The database opens once and is reused. If
+    opening fails, that attempt is forgotten, so Retry tries again.
+  - One source of truth (useFavorites.ts (src/hooks/useFavorites.ts)): the heart
+    and the Favorites page both read the same ['favorites'] query, so they
+    can't disagree. After a save, invalidateQueries tells TanStack Query to
+    reload that list, and both update together.
+  - Why the heart waits: it has no state of its own and only shows what's saved.
+    A failed save changes nothing, so there's nothing to undo. You just get the
+    alert.
+  - Loading every favorite: only IDs are stored, so names come from the API.
+    useQueries runs one request per ID, which lets each card fill in by itself.
+    Favorites and Detail use the same query key, so opening a favorite on Detail
+    reuses the data already fetched.
+  - Card states (lib/favorites.ts (src/lib/favorites.ts)): no name and still
+    running means loading, so the card shows only the badge. No name and
+    finished means failed, so it shows "Unknown". A name means loaded, even if a
+    later refresh failed, which is why cached names survive offline. This is
+    plain TypeScript without React, so it's easy to unit test.
+  - Page state: the page only decides once no requests are running. If none
+    failed it's fine, if some failed it adds the bottom Retry, and if all failed
+    it shows the full-page error.
+  - Retry: it refetches only the failed queries. A query with no data goes back
+    to "pending", so those cards automatically return to badge-only.
+
+  After you've decided on finding 1, I can fix the small items. Then it's ready
+  for /commit-issue 7.
+
+> /learn Even when the spec does not contain accessibility labels for buttons,
+they should always be added
+
+● Bash(tail -8 AGENTS.md | cat -A | cut -c1-120; printf '%s\n' '' '- Give every
+      button an `accessibilityRole` and `accessibilityLabel`, even when the spec
+      does not men…)
+  ⎿  Updated AGENTS.md (+2 -0)
+      83  ## Learned rules
+      84  
+      85  Corrections from review, added with `/learn`.
+      86 +                                                               
+      87 +- Give every button an `accessibilityRole` and `accessibilityLa
+         +bel`, even when the spec does not mention them, because screen 
+         +readers can not name an icon-only button otherwise.            
+
+● I've added the rule to AGENTS.md, the first one under Learned rules:
+
+   ## Learned rules
+
+   Corrections from review, added with `/learn`.
+  +
+  +- Give every button an `accessibilityRole` and `accessibilityLabel`, even
+  when the spec does not mention them, because screen readers can not name an
+  icon-only button otherwise.
+
+  This means the ❌ for the heart's labels in my review no longer applies, so
+  you can keep them.
+
+  Existing buttons that break the new rule: the ⋮ button at PokemonCard.tsx:36
+  (src/components/PokemonCard.tsx#L36) has no role or label. The Retry button in
+  ListStates.tsx (src/components/ListStates.tsx) doesn't either, though its
+  visible text can be read out. There may be more elsewhere, because I only
+  checked those two. I haven't changed them. Should I fix them as part of this
+  issue?
+
+> Add role/label to the two buttons you found
+
+  Read 2 files (ctrl+o to expand)
+
+● Update(src\components\PokemonCard.tsx)
+  ⎿  Added 6 lines, removed 1 line
+      33                {formatName(name)}
+      34              </Text>
+      35              {/* Takes the touch so Detail doesn't open. The men
+          u comes with the Options menu feature. */}
+      36 -            <Pressable onPress={() => {}} hitSlop={12}>        
+      36 +            <Pressable                                         
+      37 +              onPress={() => {}}                               
+      38 +              hitSlop={12}                                     
+      39 +              accessibilityRole="button"                       
+      40 +              accessibilityLabel={`Options for ${formatName(nam
+         +e)}`}                                                          
+      41 +            >                                                  
+      42                <Icon name="options" color={colors.text} />
+      43              </Pressable>
+      44            </>
+
+● Update(src\components\ListStates.tsx)
+  ⎿  Added 6 lines, removed 1 line
+      13    return (
+      14      <View style={styles.error}>
+      15        <Text style={styles.message}>{message}</Text>
+      16 -      <Pressable style={styles.retry} onPress={onRetry}>       
+      16 +      <Pressable                                               
+      17 +        style={styles.retry}                                   
+      18 +        onPress={onRetry}                                      
+      19 +        accessibilityRole="button"                             
+      20 +        accessibilityLabel="Retry"                             
+      21 +      >                                                        
+      22          <Text style={styles.retryText}>Retry</Text>
+      23        </Pressable>
+      24      </View>
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Both buttons now have a role and a label, and typecheck, lint and all 69 tests
+  still pass. Nothing is committed.
+
+  - ⋮ button: PokemonCard.tsx:36 (src/components/PokemonCard.tsx#L36) now has
+    role button and a label with the Pokémon's name, such as "Options for
+    Pikachu", so a screen reader can tell the cards apart. An "Unknown" card
+    reads "Options for Unknown".
+  - Retry button: ListStates.tsx:16 (src/components/ListStates.tsx#L16) now has
+    role button and the label "Retry". This covers every Retry in the app,
+    because they all use this component.
+
+> /commit-issue 7
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● The work is committed as df53d4c on feature/favorites: "Add favorites with
+  SQLite storage and a working Detail heart", ending with closes #7. Lint and
+  typecheck passed first. I staged 23 files, all for this issue, with no .env or
+  secrets among them, and nothing is left uncommitted.
+
+  Not in this commit: the review findings are still open, including the
+  stuck-favorites gap and the out-of-date spec lines such as "not installed
+  yet". You can still fix them with a follow-up commit before merging.
+
+  Should I push feature/favorites to GitHub? Issue #7 closes when this reaches
+  main, for example through a PR merge like the earlier features, not when the
+  branch is pushed.
+
+> Check any still unchecked box and update any status
+
+  Made 1 scratchpad edit +39, ran 3 shell commands (ctrl+o to expand)
+
+● Bash(python "C:/Users/Gebruiker/AppData/Local/Temp/claude/23d15d677ba5a18b/8ec
+      f5fa6-87fb-4b88-8f43-8aa9a7983de2/scratchpad/tick_rest.py"; echo
+      "script=$?"; grep -rn…)
+  ⎿  Updated specs\features\search.md (+39 -39)
+      1  # Feature: search
+      2  
+      3 -> Issue: #3 · Status: draft                                     
+      3 +> Issue: #3 · Status: complete                                  
+      4  
+      5  ## Goal
+      6  
+     ...
+      12  
+      13  **Starting a search**
+      14  
+      15 -- [ ] Tapping anywhere on the search bar, including its padding
+         - and icon, opens the keyboard. The full list, the "All Pokémon"
+         - title and the search icon stay as they are.                   
+      16 -- [ ] After the Android back button closed the keyboard, tappin
+         -g the search bar's padding or icon opens it again.             
+      17 -- [ ] The first tap on the search bar requests the full list (`
+         -limit=100000`). Opening the app without tapping the search bar 
+         -does not request it.                                           
+      18 -- [ ] Typing the first letter starts search mode: the title is 
+         -hidden, the search icon becomes the back icon, and the results 
+         -replace the grid tiles.                                        
+      19 -- [ ] Results update with every letter typed or deleted, withou
+         -t a search button and without a minimum length.                
+      20 -- [ ] Typing does not send a request per letter: the full list 
+         -is requested once and filtered on the phone.                   
+      15 +- [x] Tapping anywhere on the search bar, including its padding
+         + and icon, opens the keyboard. The full list, the "All Pokémon"
+         + title and the search icon stay as they are.                   
+      16 +- [x] After the Android back button closed the keyboard, tappin
+         +g the search bar's padding or icon opens it again.             
+      17 +- [x] The first tap on the search bar requests the full list (`
+         +limit=100000`). Opening the app without tapping the search bar 
+         +does not request it.                                           
+      18 +- [x] Typing the first letter starts search mode: the title is 
+         +hidden, the search icon becomes the back icon, and the results 
+         +replace the grid tiles.                                        
+      19 +- [x] Results update with every letter typed or deleted, withou
+         +t a search button and without a minimum length.                
+      20 +- [x] Typing does not send a request per letter: the full list 
+         +is requested once and filtered on the phone.                   
+      21  
+      22  **Matching** *(unit test)*
+      23  
+      24 -- [ ] A Pokémon matches when the query appears anywhere in its 
+         -name: `char` returns 10 results, including `chimchar` and `pech
+         -arunt`.                                                        
+      25 -- [ ] Upper and lower case are ignored: `CHAR` gives the same r
+         -esults as `char`.                                              
+      26 -- [ ] Spaces count as hyphens: `mr mime`, `MR MIME` and `mr-mim
+         -e` all return `mr-mime` and `mr-mime-galar`.                   
+      27 -- [ ] Spaces at the start and end of the query are ignored: `mr
+         - ` searches for `mr` and returns 3 results.                    
+      28 -- [ ] A query of only spaces counts as empty and does not start
+         - search mode.                                                  
+      29 -- [ ] Accents are ignored: `flabébé` returns `flabebe`.        
+      30 -- [ ] IDs are not searched: `25` does not return Pikachu.      
+      24 +- [x] A Pokémon matches when the query appears anywhere in its 
+         +name: `char` returns 10 results, including `chimchar` and `pech
+         +arunt`.                                                        
+      25 +- [x] Upper and lower case are ignored: `CHAR` gives the same r
+         +esults as `char`.                                              
+      26 +- [x] Spaces count as hyphens: `mr mime`, `MR MIME` and `mr-mim
+         +e` all return `mr-mime` and `mr-mime-galar`.                   
+      27 +- [x] Spaces at the start and end of the query are ignored: `mr
+         + ` searches for `mr` and returns 3 results.                    
+      28 +- [x] A query of only spaces counts as empty and does not start
+         + search mode.                                                  
+      29 +- [x] Accents are ignored: `flabébé` returns `flabebe`.        
+      30 +- [x] IDs are not searched: `25` does not return Pikachu.      
+      31  
+     … 70 more lines (ctrl+o to expand)
+  ⎿  Updated specs\product.md (+4 -4)
+      68  
+      69  ## Optional extras I go for
+      70  
+      71 -- [ ] Pagination                                               
+      72 -- [ ] Tests                                                    
+      71 +- [x] Pagination                                               
+      72 +- [x] Tests                                                    
+      73  - [ ] CI
+      74  - [ ] Accessibility
+      75  - [ ] Optimistic update
+      76 -- [ ] Clean TypeScript                                         
+      77 -- [ ] No warnings                                              
+      76 +- [x] Clean TypeScript                                         
+      77 +- [x] No warnings                                              
+      78  
+      79  ## Out of scope
+      80  
+
+● Everything is ticked and up to date except three optional extras in
+  specs/product.md, which I left unticked because they aren't done. My changes
+  to the two spec files aren't committed yet, while the GitHub edits are already
+  live.
+
+  Updated
+  - Search spec: all 38 boxes are ticked and the status is now complete. I
+    relied on issue #3 being closed and the feature being merged, and didn't
+    retest it. That includes its last plan task, "Test on a phone in Expo Go".
+  - Issue #3: all boxes in the body and the plan comment are ticked.
+  - Product spec extras: Pagination, Tests, Clean TypeScript and No warnings are
+    ticked. Lint shows no warnings, but I can't see runtime warnings on your
+    phone.
+
+  Issues #1, #5 and #7 and the other feature specs had nothing left to tick. The
+  two boxes in _template.md are placeholders, so I left them.
+
+  Left unticked
+  - CI: there's no .github folder, so no CI exists.
+  - Optimistic update: the favorites spec lists this as out of scope, and the
+    heart waits for the save to finish.
+  - Accessibility: this is only partly done. The card itself (PokemonCard.tsx:22
+    (src/components/PokemonCard.tsx#L22)) has no role or label, and it's a
+    tappable element. I only spot-checked this: 5 of the 10 Pressables showed a
+    label, and some of the others may be fine, such as the homepage wrapper,
+    which is deliberately not accessible.
+
+  The heading says "Optional extras I go for", so these boxes may be read as
+  claims in your hand-in, which is why I didn't tick them just to clear the
+  list. If you'd rather tick Accessibility, I can first go through the remaining
+  Pressables and add what's missing, which would also fit your new rule.
+
+  Do you want me to do that? And should I add the two spec files to the commit
+  on feature/favorites before you push?
+
+> Unticked boxes will be dealt with later. Now do: commit, publish and create
+  PR
+
+  Made 1 scratchpad edit +31, ran 2 shell commands (ctrl+o to expand)
+
+● Written for: whoever reviews this PR, such as a teacher or fellow student.
+
+  The PR is open: https://github.com/Lucas-Light/Pokedex/pull/8
+
+  - Committed and pushed: I committed the spec updates as 7b748ab and pushed
+    feature/favorites. The PR has both commits and targets main.
+  - Merge status: GitHub still showed this as "unknown" right after creating the
+    PR, so check that it's mergeable before you merge.
+  - Closing the issue: #7 closes automatically when the PR is merged.
+
+  Check before you share it: the PR description says the three forced-failure
+  screens weren't checked during the build: the SQLite error, the "Unknown" card
+  with its bottom Retry, and the save alert. If you did test them, tell me and
+  I'll update that line. It also lists the known limitations and the out-of-date
+  spec lines from the review.
