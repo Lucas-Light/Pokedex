@@ -1,10 +1,9 @@
-import { Image } from "expo-image";
 import { router } from "expo-router";
-import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { Icon } from "@/components/Icon";
-import { formatBadge, formatName, getImageUrl } from "@/lib/pokemon";
+import { PokemonImage } from "@/components/PokemonImage";
+import { formatBadge, formatName } from "@/lib/pokemon";
 import { colors, shadows } from "@/theme/colors";
 import { fonts } from "@/theme/fonts";
 import { spacing } from "@/theme/spacing";
@@ -18,22 +17,10 @@ type PokemonCardProps = {
 };
 
 export function PokemonCard({ id, name, width }: PokemonCardProps) {
-  const [imageFailed, setImageFailed] = useState(false);
-
   return (
     <Pressable style={[styles.card, { width }]} onPress={() => router.push(`/pokemon/${id}`)}>
       <View style={[styles.imageArea, { height: width }]}>
-        {imageFailed ? (
-          <Icon name="pokeball" color={colors.placeholderIcon} box={PLACEHOLDER_BOX} />
-        ) : (
-          <Image
-            source={getImageUrl(id)}
-            recyclingKey={String(id)}
-            contentFit="contain"
-            style={styles.image}
-            onError={() => setImageFailed(true)}
-          />
-        )}
+        <PokemonImage id={id} placeholderBox={PLACEHOLDER_BOX} />
       </View>
       <View style={styles.badge}>
         <Text style={styles.badgeText}>{formatBadge(id)}</Text>
@@ -63,10 +50,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.imageBackground,
     borderTopLeftRadius: spacing.radius,
     borderTopRightRadius: spacing.radius,
-  },
-  image: {
-    width: "100%",
-    height: "100%",
   },
   badge: {
     position: "absolute",

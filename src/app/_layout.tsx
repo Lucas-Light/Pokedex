@@ -1,6 +1,10 @@
 import { Inter_400Regular } from "@expo-google-fonts/inter";
 import { Roboto_500Medium } from "@expo-google-fonts/roboto";
-import { Rubik_500Medium } from "@expo-google-fonts/rubik";
+import {
+  Rubik_400Regular,
+  Rubik_500Medium,
+  Rubik_600SemiBold,
+} from "@expo-google-fonts/rubik";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
@@ -17,7 +21,10 @@ SplashScreen.preventAutoHideAsync();
 export default function RootLayout() {
   const [loaded, error] = useFonts({
     [fonts.title]: require("@/assets/fonts/CabinetGrotesk-Extrabold.otf"),
+    [fonts.titleRegular]: require("@/assets/fonts/CabinetGrotesk-Regular.otf"),
     [fonts.body]: Rubik_500Medium,
+    [fonts.bodyRegular]: Rubik_400Regular,
+    [fonts.bodySemibold]: Rubik_600SemiBold,
     [fonts.input]: Inter_400Regular,
     [fonts.tabLabel]: Roboto_500Medium,
   });
@@ -46,7 +53,7 @@ export default function RootLayout() {
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen
           name="pokemon/[id]"
-          options={{ title: "", headerBackButtonDisplayMode: "minimal" }}
+          options={{ headerShown: false, animationTypeForReplace: "push" }}
         />
       </Stack>
     </QueryClientProvider>
