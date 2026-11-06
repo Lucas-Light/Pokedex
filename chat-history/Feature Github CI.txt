@@ -1,0 +1,856 @@
+
+> /spec-feature Github CI
+
+● I'll start with the product spec, the template, and what the repo already has
+  for CI.
+
+  Searched for 1 pattern, ran 1 shell command (ctrl+o to expand)
+
+● Those matches all came from node_modules, and the repo has no .github/ yet.
+  I'm now running the project's existing tests and checks to see how they
+  behave, and checking whether any of them touch PokeAPI.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● CI should start green, since lint, typecheck, Jest (69 of 69) and expo-doctor
+  (20 of 20) all pass on main, and PokeAPI is reachable but not used by the
+  tests. I'll pin Node 22 in the spec unless you object, since nothing in the
+  repo fixes a version.
+
+● User answered Claude's questions:
+  ⎿  · When should the GitHub CI workflow run for the Pokédex repo? (Your work
+     so far goes through feature/* branches and PRs into main.) → Every push,
+     any branch
+     · Lint, typecheck and Jest tests all pass today and would be the CI checks.
+     Should CI also run expo-doctor? → Lint, typecheck, tests (Recommended)
+     · What should happen when a CI check fails on a PR into main? (main has no
+     branch protection today.) → Block the merge
+
+● One required check would also block direct pushes to main, and 941a62c looks
+  like such a push. Since admins can bypass protection by default and you are
+  the admin, I'll ask the next questions to settle that and how failures get
+  reported.
+
+● User answered Claude's questions:
+  ⎿  · Should the merge block on main apply to you as repo admin? It decides
+     whether chat exports like 'Added Favorites chat' can still be pushed
+     straight to main. → Enforce on admins (Recommended)
+     · How should the branch protection on main be switched on? It is a GitHub
+     repo setting, not a file in the repo. → Claude, during build (Recommended)
+     · How should lint, typecheck and tests appear on GitHub when something
+     fails? → One job, all steps run (Recommended)
+
+● That settles everything, so I'm writing the spec and adding it to the feature
+  table.
+
+● Write(specs\features\Github CI.md)
+  ⎿  Wrote 88 lines to specs\features\Github CI.md
+      1 # Feature: GitHub CI
+      2
+      3 > Issue: #? · Status: draft
+      4
+      5 ## Goal
+      6
+      7 As the developer of this Pokédex, I want every push to be checked
+         automatically and red code kept out of `main`, so that `main` al
+        ways passes lint, typecheck and tests.
+      8
+     … +80 lines (ctrl+o to expand)
+
+● Update(specs\product.md)
+  ⎿  Added 1 line
+      38  | 4 | Favorites | [specs/features/favorites.md](features/favori
+          tes.md) | #7 |
+      39  | 5 | Compare | [specs/features/compare.md](features/compare.md
+          ) | #? |
+      40  | 6 | Options menu | [specs/features/options menu.md](features/
+          options%20menu.md) | #? |
+      41 +| 7 | GitHub CI | [specs/features/Github CI.md](features/Github
+         +%20CI.md) | #? |                                               
+      42  
+      43  ## Technical choices
+      44  
+
+● I've written the spec at specs/features/Github CI.md
+  (specs/features/Github%20CI.md) and added it as row 7 in the feature table in
+  specs/product.md. The issue number is still #?, and nothing is committed.
+
+  What the spec says:
+  - When it runs: on every push to any branch, as one checks job on Node 22.
+  - What it checks: lint, typecheck and tests. All three run even if one fails,
+    but they're skipped if npm ci fails.
+  - Merge block: main requires checks to pass, and that applies to admins too.
+    I'll set this with gh during the build, after the workflow has run green,
+    and confirm with you right before changing the repo setting.
+  - States: a running check counts as loading and blocks merging. A red run
+    counts as the error state, and you fix it with a new push or Re-run jobs.
+    Jest finding no tests also turns the run red, so green always means tests
+    ran.
+
+  Check these before /create-issue:
+  - Chat exports: they can't go straight to main any more, so they need to be on
+    the feature branch before merging, or in their own PR. The spec says this,
+    but AGENTS.md doesn't, so you may want to add it there.
+  - Lint warnings: I listed failing on warnings as out of scope, because a step
+    only fails if its command exits with an error. Your "No warnings" extra is
+    therefore not enforced by CI. If you want it enforced, tell me and I'll
+    change the spec.
+  - Unproven on Linux: the lockfile was generated on Windows and CI runs on
+    Linux, so npm ci hasn't been tried there yet. The spec requires the first
+    run to be green, so any problem will show up there.
+
+  I left the CI box under Optional extras unticked until this is built. Next
+  step is /create-issue Github CI.
+
+> Chat exports will now be included in the feature branch. Enforce warnings on
+  CI
+
+● I'll check how expo lint can fail on warnings, and whether the code has any
+  warnings today, before I write that into the spec.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● The strict lint run passed, but it may have used the cache and hasn't been
+  shown to catch a real warning. I'm testing that with a temporary file, which
+  I'll delete afterward.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Confirmed that --max-warnings 0 catches a real warning that plain lint misses,
+  and the temporary file is removed. Next I'm updating the spec and AGENTS.md.
+
+● Update(specs\features\Github CI.md)
+  ⎿  Added 1 line, removed 1 line
+      14  
+      15  - [ ] A push to any branch starts one workflow run, visible in 
+          the repo's Actions tab.
+      16  - [ ] The run has one job, `checks`, on Node 22, which installs
+           dependencies with `npm ci`.
+      17 -- [ ] The job runs lint (`npm run lint`), typecheck (`npm run t
+         -ypecheck`) and tests (`npm test`).                             
+      17 +- [ ] The job runs lint (`npm run lint -- --max-warnings 0`), t
+         +ypecheck (`npm run typecheck`) and tests (`npm test`).         
+      18  - [ ] The first run on the feature branch is green, with no cha
+          nge to app code.
+      19  - [ ] A PR into `main` shows the `checks` result for its latest
+           commit.
+      20  
+
+● Update(specs\features\Github CI.md)
+  ⎿  Added 1 line
+      21  **Failure reporting**
+      22  
+      23  - [ ] A commit with a lint error turns the run red.
+      24 +- [ ] A commit with a lint warning and no errors turns the run 
+         +red.                                                           
+      25  - [ ] A commit with a type error turns the run red.
+      26  - [ ] A commit with a failing test turns the run red.
+      27  - [ ] One commit that breaks all three shows all three steps as
+           failed in a single run, so an earlier failure does not hide a 
+          later one.
+
+● Update(specs\features\Github CI.md)
+  ⎿  Added 1 line, removed 1 line
+      72  
+      73  ## Workflow change for chat exports
+      74  
+      75 -With `enforce_admins` on, chat exports can no longer be pushed 
+         -straight to `main`. They go on the feature branch before mergin
+         -g, or in their own PR.                                         
+      75 +With `enforce_admins` on, chat exports can no longer be pushed 
+         +straight to `main`. They are committed on the feature branch be
+         +fore merging.                                                  
+      76  
+      77  ## Out of scope
+      78  
+
+● Update(specs\features\Github CI.md)
+  ⎿  Added 1 line, removed 1 line
+      79  - A separate `pull_request` trigger. Branch pushes already repo
+          rt their status on the PR.
+      80  - `expo-doctor` in CI.
+      81  - Separate jobs or required checks per step.
+      82 -- Failing the run on lint warnings. A step fails only when its 
+         -command exits non-zero.                                        
+      82 +- Linting the `example/` folder. `expo lint` only covers its de
+         +fault directories, which include `src/`.                       
+      83  - Requiring branches to be up to date with `main` before mergin
+          g.
+      84  - EAS builds, EAS updates, deploys and test coverage reports.
+      85  - A README status badge.
+
+● Update(AGENTS.md)
+  ⎿  Added 1 line, removed 1 line
+      51  - `specs/product.md` — what the app is, plus the technical choi
+          ces (SQLite, native feature).
+      52  - `specs/features/<name>.md` — one per feature, with testable a
+          cceptance criteria. Template: `specs/features/_template.md`.
+      53  - `docs/explanation.md` — the three hand-in questions.
+      54 -- `chat-history/` — exported chats, named with the issue number
+         -.                                                              
+      54 +- `chat-history/` — exported chats, named with the issue number
+         +. Commit them on the feature branch before merging.            
+      55  
+      56  One issue per chat. Steps, each with a slash command:
+      57  
+
+● Both changes are in specs/features/Github CI.md
+  (specs/features/Github%20CI.md), and nothing is committed.
+
+  - Warnings: CI now runs npm run lint -- --max-warnings 0, and the spec has a
+    new criterion that a commit with only a lint warning turns the run red. I
+    tested this locally: the current code passes, and a temporary file with an
+    unused variable failed the strict run but passed plain lint.
+  - Chat exports: the spec now says they're committed on the feature branch
+    before merging. I also added that to the chat-history/ line in AGENTS.md, so
+    it holds for later issues too.
+
+  example/ isn't linted: expo lint doesn't cover that folder, and running ESLint
+  on the whole repo reports 31 errors and 1 warning, at least some of them in
+  example/. CI stays green because it uses expo lint, and I listed example/ as
+  out of scope in the spec.
+
+  Next step is still /create-issue Github CI.
+
+> /create-issue Github CI
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● The spec has no placeholders, and the repo has no feature label, so the issue
+  goes out without one. I'll build the body directly from the spec so the
+  criteria match it exactly.
+
+● Bash(cd "C:/Users/Gebruiker/Documents/GitHub/Pokedex"
+      S="specs/features/Github CI.md"…)  ⎿  Updated specs\features\Github CI.md (+1 -1)
+      1  # Feature: GitHub CI
+      2  
+      3 -> Issue: #? · Status: draft                                     
+      3 +> Issue: #9 · Status: draft                                     
+      4  
+      5  ## Goal
+      6  
+  ⎿  Updated specs\product.md (+1 -1)
+      38  | 4 | Favorites | [specs/features/favorites.md](features/favori
+          tes.md) | #7 |
+      39  | 5 | Compare | [specs/features/compare.md](features/compare.md
+          ) | #? |
+      40  | 6 | Options menu | [specs/features/options menu.md](features/
+          options%20menu.md) | #? |
+      41 -| 7 | GitHub CI | [specs/features/Github CI.md](features/Github
+         -%20CI.md) | #? |                                               
+      41 +| 7 | GitHub CI | [specs/features/Github CI.md](features/Github
+         +%20CI.md) | #9 |                                               
+      42  
+      43  ## Technical choices
+      44  
+
+● The issue is created: https://github.com/Lucas-Light/Pokedex/issues/9
+
+  It has the goal and all 17 acceptance criteria from the spec, plus a link to
+  it. The issue number is now in the spec header and in the table in
+  specs/product.md.
+
+  - No label: the repo has no feature label, so the issue has none, same as the
+    rule you set.
+  - Spec link: it points to main like your earlier issues, but the spec isn't
+    committed yet, so the link will 404 until this work is merged.
+
+  Next step is /plan-issue 9.
+
+> /plan-issue 9
+
+● I'll read the issue and the build and commit commands, since this plan has to
+  fit how they work. I'll also look up current GitHub Action versions rather
+  than rely on memory, and see what your earlier plans looked like.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● WebFetch is ready, so I'll check the Expo docs on linting in CI, and GitHub's
+  docs on how required checks work with protection.
+
+● Fetch(https://docs.expo.dev/guides/using-eslint/)
+  ⎿  Received 9.6KB (200 OK)
+
+● Fetch(https://docs.github.com/en/rest/branches/branch-protection#update-branch
+       -protection)
+  ⎿  Received 87KB (200 OK)
+
+● Fetch(https://docs.github.com/en/repositories/configuring-branches-and-merges-
+       in-your-repository/managing-protected-branches/about-protected-branches)
+  ⎿  Received 21.5KB (200 OK)
+
+● The spec's build order conflicts with closes #9 and with exporting the chat
+  before merging, so I've written that up as a decision for you in the plan.
+  Posting it now.
+
+  Made 1 scratchpad edit +105, ran 1 shell command (ctrl+o to expand)
+
+● The plan is posted on issue #9
+  (https://github.com/Lucas-Light/Pokedex/issues/9#issuecomment-6694959224).
+  Nothing has been built, and I'm waiting for your "go".
+
+  Approach
+
+  I'll add one file, .github/workflows/ci.yml, which runs on every push. Its
+  single checks job uses Node 22 and runs npm ci, lint, typecheck and tests. The
+  three checks run independently of each other, but all three are skipped if
+  npm ci fails. The workflow also gets read-only repo access, which isn't in the
+  spec, because it needs nothing more.
+
+  No app code changes. Most of the work is proving the behaviour on GitHub with
+  throwaway ci-probe/* branches, so broken code never sits on the feature
+  branch. I'll set branch protection with gh api.
+
+  Two decisions for you
+
+  1. Switch on protection before the final merge (recommended): this changes the
+     spec's Build order, which merges first. With that order, closes #9 would
+     close the issue before the merge block exists, and the chat export couldn't
+     include that work. The new order is workflow, failure tests, protection,
+     merge-block tests, then your final PR, which also proves a green PR can
+     merge.
+  2. Let "go" cover the pushes this build needs (recommended): /build-issue says
+     not to commit, and AGENTS.md says never to push unless asked, but CI can
+     only be tested on GitHub.
+     - "go" would allow: committing and pushing ci.yml to feature/github-ci,
+       creating and deleting ci-probe/* branches, and opening and closing
+       throwaway PRs.
+     - Still needs you: I'd ask right before switching on protection, the final
+       commit goes through /commit-issue, and you do the final merge.
+
+  Files
+
+  - UI, data, logic: none.
+  - New: .github/workflows/ci.yml.
+  - Changed: specs/features/Github CI.md (Build order and status) and
+    specs/product.md (tick the CI extra).
+  - Already changed: the spec and AGENTS.md edits, which move to the feature
+    branch with the final commit.
+  - Repo setting: branch protection on main.
+
+  Tasks
+
+  Workflow
+  - [ ] Create feature/github-ci from main, carrying the uncommitted spec
+    changes along.
+  - [ ] Update the spec's Build order (decision 1).
+  - [ ] Add ci.yml, commit only that file, and push.
+  - [ ] Confirm the first run is green with one checks job on Node 22, and all
+    steps run.
+
+  Failure tests (one ci-probe/* branch each)
+  - [ ] Lint error: run is red.
+  - [ ] Lint warning only: run is red.
+  - [ ] Type error: run is red.
+  - [ ] Failing test: run is red.
+  - [ ] All three in one commit: all three steps fail in one run.
+  - [ ] package.json out of sync with the lockfile: npm ci fails, the three
+    checks are skipped, and the run is red.
+
+  Merge block
+  - [ ] Ask you, then switch on branch protection.
+  - [ ] Read the rule back and confirm checks and enforce_admins before any test
+    that tries to reach main.
+  - [ ] Open a red PR and confirm it shows checks; gh pr merge --admin is
+    refused.
+  - [ ] Try to merge a PR while checks is running; the merge is refused.
+  - [ ] Push a local-only empty commit straight to main; the push is rejected.
+  - [ ] Close the throwaway PRs and delete all ci-probe/* branches.
+
+  Finish
+  - [ ] Tick the CI extra in specs/product.md.
+  - [ ] Run npx expo lint.
+  - [ ] Run npx tsc --noEmit.
+  - [ ] Test on phone: a quick check that the app still starts in Expo Go.
+
+  After the build (you, with /commit-issue 9)
+  - Add the chat export to the branch, commit with closes #9, and push.
+  - Open the final PR, wait for green, and merge it.
+
+  How the acceptance criteria are met
+
+  ┌───────────────────────┬─────────────────────────────────────────────────┐
+  │       Criteria        │               How they're proven                │
+  ├───────────────────────┼─────────────────────────────────────────────────┤
+  │                       │ ci.yml settings, the run logs, and the first    │
+  │ Workflow (5)          │ push containing only ci.yml. The checks result  │
+  │                       │ is seen on the throwaway PRs.                   │
+  ├───────────────────────┼─────────────────────────────────────────────────┤
+  │ Failure reporting (6) │ One test branch per criterion.                  │
+  ├───────────────────────┼─────────────────────────────────────────────────┤
+  │ Rule requires checks  │                                                 │
+  │ and applies to admins │ Read back from the GitHub API.                  │
+  │  (2)                  │                                                 │
+  ├───────────────────────┼─────────────────────────────────────────────────┤
+  │ Red or running PR     │ Merge attempts are refused, including with      │
+  │ can't merge (2)       │ --admin.                                        │
+  ├───────────────────────┼─────────────────────────────────────────────────┤
+  │ Green PR can merge    │ Your final PR.                                  │
+  │ (1)                   │                                                 │
+  ├───────────────────────┼─────────────────────────────────────────────────┤
+  │ Direct push is        │ The push of the local-only commit.              │
+  │ rejected (1)          │                                                 │
+  └───────────────────────┴─────────────────────────────────────────────────┘
+
+  Risk in the merge-block tests: they deliberately try to reach main. If
+  protection weren't active, the red PR test would put broken code on main,
+  which is why I read the rule back first.
+
+  Say "go" to accept both recommendations, or tell me what to change.
+
+> go
+
+● Thanks, I'll start with the branch and the workflow file.
+
+  Read 1 file, ran 1 shell command (ctrl+o to expand)
+
+● Write(.github\workflows\ci.yml)
+  ⎿  Wrote 34 lines to .github\workflows\ci.yml
+       1 name: CI
+       2
+       3 on:
+       4   push:
+       5
+       6 permissions:
+       7   contents: read
+       8
+       9 jobs:
+      10   checks:
+     … +24 lines (ctrl+o to expand)
+
+● Update(specs\features\Github CI.md)
+  ⎿  Added 4 lines, removed 4 lines
+      65  ## Build order
+      66  
+      67  1. Add the workflow on a feature branch and confirm it runs gre
+          en.
+      68 -2. Prove the failure criteria with throwaway commits, and remov
+         -e them before merging.                                         
+      69 -3. Merge into `main`.                                          
+      70 -4. Confirm with the user, then switch on branch protection. It 
+         -changes live repo settings.                                    
+      71 -5. Test the merge block with a throwaway PR, then close it and 
+         -delete its branch.                                             
+      68 +2. Prove the failure criteria on throwaway branches, so broken 
+         +code never sits on the feature branch.                         
+      69 +3. Confirm with the user, then switch on branch protection. It 
+         +changes live repo settings.                                    
+      70 +4. Test the merge block with throwaway PRs, then close them and
+         + delete their branches.                                        
+      71 +5. Merge the feature PR into `main`. This also proves that a gr
+         +een PR can merge.                                              
+      72  
+      73  ## Workflow change for chat exports
+      74  
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● The first run is queued, so I'll wait for it to finish.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● The first run passed on Linux, with Node 22.23.4 and lint, typecheck and tests
+  all green, so the Windows lockfile works there too. I'm building the six
+  failure tests in a separate worktree to leave your uncommitted spec changes
+  alone.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● All six are pushed. I'll wait for every run to finish, then check the result
+  of each step.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● All six behaved as specified, each failing only the step it targeted. Before
+  switching on protection I need your confirmation, as agreed, so I'll update
+  the checklist and ask now.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● User answered Claude's questions:
+  ⎿  · Switch on branch protection on main of Lucas-Light/Pokedex now? It
+     requires the `checks` status, applies to you as admin too, and has no
+     review or up-to-date requirement. From then on, nothing reaches main
+     without green CI, including your own direct pushes. It can be removed later
+     in GitHub Settings. → Yes, switch it on
+
+● Confirmed. I'll set the rule and read it back before running any test that
+  goes near main.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● The branch rule checks out: the checks requirement is tied to GitHub Actions,
+  admins are enforced, and strict up-to-date is off. Next I'll run the three
+  merge-block tests, starting with the running-check case.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● All three were refused by GitHub itself, and main hasn't moved. Now I'll
+  remove the throwaway PRs, branches and worktree, then do the finishing tasks.
+
+● Bash(cd "C:/Users/Gebruiker/Documents/GitHub/Pokedex"
+      SP="C:/Users/Gebruiker/AppData/Local/Temp/claude/23d15d677ba5a18b/e9139303
+      -aefa-400b-8443-25f57887ae73/scratchp…)
+  ⎿  Updated specs\product.md (+1 -1)
+      71  
+      72  - [x] Pagination
+      73  - [x] Tests
+      74 -- [ ] CI                                                       
+      74 +- [x] CI                                                       
+      75  - [ ] Accessibility
+      76  - [ ] Optimistic update
+      77  - [x] Clean TypeScript
+  ⎿  (timeout 3m 20s)
+● GitHub CI is built and working: 16 of the 17 acceptance criteria are proven on
+  GitHub, and 19 of the 20 plan tasks are ticked. The last criterion is that a
+  green PR can merge, which your final PR will prove. The last task is your
+  quick phone check.
+
+  What changed
+
+  - New: .github/workflows/ci.yml, committed and pushed to feature/github-ci.
+  - Not committed yet:
+    - specs/features/Github CI.md (specs/features/Github%20CI.md), now with the
+      new build order
+    - specs/product.md, with the CI extra ticked
+    - AGENTS.md, with the chat export rule
+  - Live repo setting: branch protection is on for main, requiring checks and
+    applying to admins.
+
+  Test results
+
+  ┌───────────────────────────────┬─────────────────────────────────────────┐
+  │             Test              │                 Result                  │
+  ├───────────────────────────────┼─────────────────────────────────────────┤
+  │ First run, workflow only      │ Green on Node 22.23.4, so the Windows   │
+  │                               │ lockfile works on Linux                 │
+  ├───────────────────────────────┼─────────────────────────────────────────┤
+  │ Lint error                    │ Red, only Lint failed                   │
+  ├───────────────────────────────┼─────────────────────────────────────────┤
+  │ Lint warning only             │ Red, only Lint failed                   │
+  ├───────────────────────────────┼─────────────────────────────────────────┤
+  │ Type error                    │ Red, only Typecheck failed              │
+  ├───────────────────────────────┼─────────────────────────────────────────┤
+  │ Failing test                  │ Red, only Test failed                   │
+  ├───────────────────────────────┼─────────────────────────────────────────┤
+  │ All three in one commit       │ Red, all three steps failed in one run  │
+  ├───────────────────────────────┼─────────────────────────────────────────┤
+  │ package.json out of sync with │ Red, install failed and the three       │
+  │  the lockfile                 │ checks were skipped                     │
+  ├───────────────────────────────┼─────────────────────────────────────────┤
+  │ Red PR with --admin           │ Refused: Required status check "checks" │
+  │                               │  is failing                             │
+  ├───────────────────────────────┼─────────────────────────────────────────┤
+  │ Merge while the check is      │ Refused: "checks" is in progress        │
+  │ running                       │                                         │
+  ├───────────────────────────────┼─────────────────────────────────────────┤
+  │ Direct push to main           │ Rejected with GH006                     │
+  └───────────────────────────────┴─────────────────────────────────────────┘
+
+  main didn't move during any of this. Locally, lint with --max-warnings 0, tsc
+  and all 69 tests pass. PRs #10 and #11 are closed, and all the ci-probe/*
+  branches and the temporary worktree are gone.
+
+  What's left for you
+
+  1. Phone check: run npx expo start and confirm the app still opens in Expo Go.
+     No app code changed, so this is only a quick check.
+  2. Review: /review-issue 9. The spec is still marked draft with its criteria
+     unticked; your finished specs say complete, so that can be updated then.
+  3. Commit: export this chat into chat-history/ first, then run /commit-issue
+     9. Direct pushes to main no longer work, so the export has to be on this
+     branch.
+  4. Merge: open the final PR and merge it once it's green. That proves the last
+     criterion and closes #9.
+
+> /review-issue 9
+
+● I'll run the checks again and verify the live state, rather than rely on what
+  I reported earlier.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Review of #9
+
+  The work matches the spec, with no blocking problems. One criterion is still
+  open: a green PR can merge. Your final PR will prove that.
+
+  Lint and typecheck
+
+  ┌───────────────────────────────────────────┬───────────────────┐
+  │                  Command                  │      Result       │
+  ├───────────────────────────────────────────┼───────────────────┤
+  │ npx expo lint                             │ Passes, no output │
+  ├───────────────────────────────────────────┼───────────────────┤
+  │ npx expo lint --no-cache --max-warnings 0 │ Passes, no output │
+  ├───────────────────────────────────────────┼───────────────────┤
+  │ npx tsc --noEmit                          │ Passes, no output │
+  └───────────────────────────────────────────┴───────────────────┘
+
+  Acceptance criteria
+
+  Workflow
+  - ✅ A push to any branch starts one run: ci.yml:3-4
+    (.github/workflows/ci.yml#L3-L4). Seen on the feature branch and the probe
+    branches. The first push to main happens when you merge.
+  - ✅ One checks job on Node 22 with npm ci: ci.yml:10-22
+    (.github/workflows/ci.yml#L10-L22).
+  - ✅ Lint, typecheck and tests use the exact commands: ci.yml:26
+    (.github/workflows/ci.yml#L26), :30 (.github/workflows/ci.yml#L30), :34
+    (.github/workflows/ci.yml#L34).
+  - ✅ First run is green with no app code change: commit 8ba77db contains only
+    ci.yml.
+  - ✅ A PR shows checks for its latest commit: seen on PR #10.
+
+  Failure reporting
+  - ✅ Lint error, lint warning, type error and failing test each turned the run
+    red, and only the targeted step failed.
+  - ✅ All three failures appear in one run: ci.yml:25
+    (.github/workflows/ci.yml#L25), :29 (.github/workflows/ci.yml#L29), :33
+    (.github/workflows/ci.yml#L33).
+  - ✅ When npm ci fails, the run is red and the three checks are skipped: same
+    lines.
+
+  Merge block on main
+  - ✅ Protection requires checks, and enforce_admins is on: read from GitHub
+    again just now.
+  - ✅ A red PR can't be merged, even with --admin: PR #10.
+  - ✅ A PR with checks still running can't be merged: PR #11.
+  - ✅ A direct push of an unchecked commit is rejected with GH006.
+  - ❌ A green PR can be merged: not proven yet. Your final PR proves this. It's
+    expected to work, but it hasn't happened.
+
+  Other checks
+
+  - ✅ Loading, error and empty states: the app has no new loads. The CI
+    equivalents are in the spec: running blocks the merge, red blocks the merge,
+    and no tests found turns the run red. That last one comes from Jest's
+    default behaviour and wasn't tested with a probe.
+  - ✅ UI, data and logic not mixed: no files in src/ changed.
+  - ✅ No any, as casts, @ts-ignore or console.log: no TypeScript changed.
+  - ✅ AGENTS.md rules: no code before the plan was approved, the only push was
+    covered by your "go", no new dependencies, and it still runs in Expo Go.
+  - ✅ Only planned files touched: permissions: contents: read isn't in the
+    spec, but it's in the plan you approved.
+
+  Findings
+
+  None of these block the merge.
+
+  1. Local lint is looser than CI. /commit-issue runs npx expo lint without
+     --max-warnings 0 (commit-issue.md:8 (.claude/commands/commit-issue.md#L8)).
+     A warning can pass locally and only turn red on GitHub. To fix it, add the
+     flag to that command, or to the lint script in package.json.
+  2. The spec's status needs updating. It still says draft with all 17 criteria
+     unticked. Update it to complete and tick them before the final commit. Your
+     finished specs and issues have their criteria ticked too, so the same goes
+     for the issue's checkboxes.
+  3. ubuntu-latest is moving to Ubuntu 26. GitHub adds this notice to each run.
+     It's harmless today, but a future run could behave differently without any
+     change on your side.
+  4. Two PRs can each pass alone but break main together. This is the known cost
+     of leaving "up to date with main" out of scope. The run after the merge
+     would show red on main.
+
+  Phone test
+
+  No app code changed, so this only confirms nothing broke:
+  1. Run npx expo start and scan the QR code in Expo Go.
+  2. Check that the Pokémon list loads, and scroll to load the next page.
+  3. Open a Pokémon and check that its details and evolution chain appear.
+  4. Tap the heart, open Favorites, and check that the Pokémon is there.
+
+  How the code works, in plain language
+
+  The workflow file
+  - Lines 3-4, when it runs: push with no filter means every push to any branch.
+    Branch pushes still show on a PR, because the result is attached to the
+    commit.
+  - Lines 6-7, access: the workflow can only read the repo, because it needs
+    nothing else.
+  - Lines 10-12, the job: GitHub starts a fresh Linux machine. The name checks
+    matters, because branch protection looks for exactly that name, so renaming
+    it would leave every PR waiting forever.
+  - Lines 14-18, setup: it downloads your code and installs Node 22.
+  - Lines 20-22, install: npm ci installs exactly what's in package-lock.json,
+    and fails if that file doesn't match package.json. That's what makes the
+    install repeatable.
+  - Lines 25, 29, 33, the key condition: normally GitHub stops at the first
+    failed step, and a lint error would hide your type errors. This line says
+    "run this if the install worked and nobody cancelled the run", so you see
+    every problem in one go. Without a working install there's nothing to check,
+    so the checks are skipped. The job still fails, so a skipped step can't
+    sneak through as a pass.
+  - Line 26, --max-warnings 0: ESLint normally only fails on errors. This treats
+    a single warning as a failure.
+
+  Branch protection is a GitHub setting, not a file, so you won't find it in the
+  repo:
+  - The workflow only reports a result. This rule is what acts on it, by
+    refusing to change main unless that commit has a passing checks.
+  - enforce_admins removes your own bypass as repo owner.
+
+  Why protection came before the final merge: a workflow runs from the branch
+  it's on, so it could be tested before reaching main. That let the issue close
+  only once everything was built and proven.
+
+  Tell me if you want findings 1 and 2 fixed before /commit-issue 9.
+
+> Fix finding 1 and 2
+
+● Two details before I edit:
+
+  - Finding 1: changing the lint script in package.json wouldn't fix it, because
+    the commands call npx expo lint directly. The flag has to go in the
+    commands themselves.
+  - Finding 2: I won't tick the green-PR criterion on the issue yet, because it
+    isn't proven. In the spec it can be ticked now: that file only reaches main
+    through a green PR merging, so a ticked box on main is itself the proof.
+
+● Bash(cd "C:/Users/Gebruiker/Documents/GitHub/Pokedex"
+      SP="C:/Users/Gebruiker/AppData/Local/Temp/claude/23d15d677ba5a18b/e9139303
+      -aefa-400b-8443-25f57887ae73/scratchp…)
+  ⎿  Updated .claude\commands\build-issue.md (+1 -1)
+       9  2. Work through the tasks in order. Only touch files named in t
+          he plan; if you need another file, tell me why first.
+      10  3. After each finished task, tick it in the comment (`- [x]`) v
+          ia `gh issue comment $ARGUMENTS --edit-last --body-file <tmpfil
+          e>`.
+      11  4. Use `npx expo install` for any new package. New native modul
+          e that Expo Go doesn't include? Stop and ask — the app must run
+           in Expo Go.
+      12 -5. When done run `npx expo lint` and `npx tsc --noEmit` and fix
+         - all errors.                                                   
+      12 +5. When done run `npx expo lint --max-warnings 0` and `npx tsc 
+         +--noEmit` and fix all errors.                                  
+      13  6. Report: what changed (files), which acceptance criteria are 
+          met, and what I should test on my phone. Do **not** commit.
+  ⎿  Updated .claude\commands\commit-issue.md (+1 -1)
+       5  
+       6  Commit the work for issue **#$ARGUMENTS**.
+       7  
+       8 -1. Run `npx expo lint` and `npx tsc --noEmit`. If either fails,
+         - stop and report.                                              
+       8 +1. Run `npx expo lint --max-warnings 0` and `npx tsc --noEmit`.
+         + If either fails, stop and report.                             
+       9  2. Show `git status` and make sure no `.env` or secrets are sta
+          ged.
+      10  3. Stage only files belonging to this issue (plus spec / `AGENT
+          S.md` updates).
+      11  4. Commit with a short message describing the feature, ending w
+          ith `closes #$ARGUMENTS`.
+  ⎿  Updated .claude\commands\review-issue.md (+1 -1)
+       6  Review the uncommitted work for issue **#$ARGUMENTS**. Don't ch
+          ange code — only report.
+       7  
+       8  1. Read the feature spec, the plan comment on the issue, and `g
+          it diff` + untracked files (`git status`).
+       9 -2. Run `npx expo lint` and `npx tsc --noEmit`; report the outpu
+         -t.                                                             
+       9 +2. Run `npx expo lint --max-warnings 0` and `npx tsc --noEmit`;
+         + report the output.                                            
+      10  3. Check, and list each with ✅ / ❌ and file:line:
+      11     - Every acceptance criterion from the spec.
+      12     - Loading, error and empty states for every load.
+  ⎿  Updated AGENTS.md (+1 -1)
+      15  ```bash
+      16  npx expo install <package>  # ALWAYS use instead of npm/yarn/pn
+          pm/bun add — resolves SDK-compatible versions
+      17  npx expo start              # start the dev server
+      18 -npx expo lint               # lint                             
+      18 +npx expo lint --max-warnings 0  # lint, same as CI             
+      19  npx tsc --noEmit            # typecheck
+      20  npx expo-doctor             # diagnose dependency and config is
+          sues
+      21  npx expo install --fix      # fix incompatible package versions
+  ⎿  Updated specs\features\Github CI.md (+18 -18)
+      1  # Feature: GitHub CI
+      2  
+      3 -> Issue: #9 · Status: draft                                     
+      3 +> Issue: #9 · Status: complete                                  
+      4  
+      5  ## Goal
+      6  
+     ...
+      12  
+      13  **Workflow**
+      14  
+      15 -- [ ] A push to any branch starts one workflow run, visible in 
+         -the repo's Actions tab.                                        
+      16 -- [ ] The run has one job, `checks`, on Node 22, which installs
+         - dependencies with `npm ci`.                                   
+      17 -- [ ] The job runs lint (`npm run lint -- --max-warnings 0`), t
+         -ypecheck (`npm run typecheck`) and tests (`npm test`).         
+      18 -- [ ] The first run on the feature branch is green, with no cha
+         -nge to app code.                                               
+      19 -- [ ] A PR into `main` shows the `checks` result for its latest
+         - commit.                                                       
+      15 +- [x] A push to any branch starts one workflow run, visible in 
+         +the repo's Actions tab.                                        
+      16 +- [x] The run has one job, `checks`, on Node 22, which installs
+         + dependencies with `npm ci`.                                   
+      17 +- [x] The job runs lint (`npm run lint -- --max-warnings 0`), t
+         +ypecheck (`npm run typecheck`) and tests (`npm test`).         
+      18 +- [x] The first run on the feature branch is green, with no cha
+         +nge to app code.                                               
+      19 +- [x] A PR into `main` shows the `checks` result for its latest
+         + commit.                                                       
+      20  
+      21  **Failure reporting**
+      22  
+      23 -- [ ] A commit with a lint error turns the run red.            
+      24 -- [ ] A commit with a lint warning and no errors turns the run 
+         -red.                                                           
+      25 -- [ ] A commit with a type error turns the run red.            
+      26 -- [ ] A commit with a failing test turns the run red.          
+      27 -- [ ] One commit that breaks all three shows all three steps as
+         - failed in a single run, so an earlier failure does not hide a 
+         -later one.                                                     
+      28 -- [ ] If `npm ci` fails, the run is red and the three checks ar
+         -e skipped.                                                     
+      23 +- [x] A commit with a lint error turns the run red.            
+      24 +- [x] A commit with a lint warning and no errors turns the run 
+         +red.                                                           
+      25 +- [x] A commit with a type error turns the run red.            
+      26 +- [x] A commit with a failing test turns the run red.          
+      27 +- [x] One commit that breaks all three shows all three steps as
+         + failed in a single run, so an earlier failure does not hide a 
+         +later one.                                                     
+      28 +- [x] If `npm ci` fails, the run is red and the three checks ar
+         +e skipped.                                                     
+      29  
+      30  **Merge block on `main`**
+      31  
+      32 -- [ ] Branch protection on `main` requires the `checks` status 
+         -to pass.                                                       
+      33 -- [ ] The rule also applies to admins (`enforce_admins` is on).
+     … 13 more lines (ctrl+o to expand)
+  ⎿  (timeout 2m)
+
+● Both findings are fixed, and lint with --max-warnings 0 and tsc still pass.
+  Nothing is committed yet.
+
+  Finding 1: local lint now matches CI. --max-warnings 0 is now in:
+  - commit-issue.md:8 (.claude/commands/commit-issue.md#L8)
+  - build-issue.md:12 (.claude/commands/build-issue.md#L12)
+  - review-issue.md:9 (.claude/commands/review-issue.md#L9)
+  - the commands list at AGENTS.md:18 (AGENTS.md#L18)
+
+  You only asked about /commit-issue, but the other three had the same gap, so I
+  changed them too. A warning now stops you locally before it can turn CI red.
+
+  Finding 2: status and ticks are updated.
+  - Spec: the status (specs/features/Github%20CI.md#L3) is complete, and all 17
+    criteria are ticked. The green-PR tick is ahead of the proof for now, but it
+    only reaches main if that merge succeeds.
+  - Issue #9: 16 of 17 are ticked. A PR with a green checks can be merged stays
+    open until your final PR merges. The merge closes the issue, so that box
+    needs ticking afterwards; tell me when it's merged and I'll do it.
+
+  Next steps:
+  1. Do the phone check if you haven't yet.
+  2. Export this chat into chat-history/.
+  3. Run /commit-issue 9.
+
+  The three .claude/commands files aren't in the spec or AGENTS.md updates that
+  /commit-issue stages by default, so make sure they go in that commit too.
