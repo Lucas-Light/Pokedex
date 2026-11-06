@@ -1,3 +1,8 @@
+export type PokemonListItem = {
+  id: number;
+  name: string;
+};
+
 const IMAGE_BASE_URL =
   "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home";
 
@@ -23,4 +28,23 @@ export function formatName(name: string): string {
 
 export function formatBadge(id: number): string {
   return String(id).padStart(3, "0");
+}
+
+export function toListItem(result: { name: string; url: string }): PokemonListItem {
+  return { id: getIdFromUrl(result.url), name: result.name };
+}
+
+/** Turns typed text into the form API names use: `MR Mimé ` becomes `mr-mime`. */
+export function normalizeSearchQuery(query: string): string {
+  return query
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, "-");
+}
+
+export function filterPokemonByName(items: PokemonListItem[], query: string): PokemonListItem[] {
+  const normalized = normalizeSearchQuery(query);
+  return items.filter((item) => item.name.includes(normalized));
 }

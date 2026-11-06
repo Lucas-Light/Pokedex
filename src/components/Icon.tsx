@@ -6,6 +6,7 @@ import { spacing } from "@/theme/spacing";
 
 const icons = {
   search: { source: require("@/assets/icons/Search.svg"), width: 18, height: 18 },
+  back: { source: require("@/assets/icons/Back.svg"), width: 16, height: 16 },
   pokeball: { source: require("@/assets/icons/Pokeball.svg"), width: 20, height: 20 },
   favorites: { source: require("@/assets/icons/Favorites.svg"), width: 20, height: 19 },
   options: { source: require("@/assets/icons/Options.svg"), width: 3, height: 15 },

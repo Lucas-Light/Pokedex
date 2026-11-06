@@ -5,20 +5,10 @@ import {
   fetchPokemonPage,
   type PokemonListResponse,
 } from "@/api/pokemon";
-import { getIdFromUrl } from "@/lib/pokemon";
-
-export type PokemonListItem = {
-  id: number;
-  name: string;
-};
+import { type PokemonListItem, toListItem } from "@/lib/pokemon";
 
 function toListItems(data: InfiniteData<PokemonListResponse>): PokemonListItem[] {
-  return data.pages.flatMap((page) =>
-    page.results.map((result) => ({
-      id: getIdFromUrl(result.url),
-      name: result.name,
-    })),
-  );
+  return data.pages.flatMap((page) => page.results.map(toListItem));
 }
 
 export function usePokemonList() {
