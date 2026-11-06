@@ -1,0 +1,1928 @@
+
+> /spec-feature detail page
+
+● I'll start with the specs and the existing code, then check what the API
+  actually returns.
+
+  Ran 2 shell commands (ctrl+o to expand)
+
+● The core shapes are settled, and I'm now checking the existing route stub,
+  helpers, type colours, and edge cases like alternate forms, null fields and
+  missing images.
+
+  Ran 2 shell commands (ctrl+o to expand)
+
+● Two findings already shape the spec: pokemon-species/{id} returns 404 for
+  alternate forms, and some HOME images are missing. I'm running one query
+  across all 1351 entries for null fields and type names, then checking which
+  icon and font files exist.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● The v1beta2 endpoint is up but uses different table names, so I'll retry with
+  those.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● I've read the specs and checked the API, and I haven't written anything yet.
+  There's no existing detail page spec, and src/app/pokemon/[id].tsx is still an
+  empty stub.
+
+  What the API returns
+
+  GET /pokemon/{id} has everything for the About and Stats tabs:
+
+  ┌────────────┬──────────────────────────────────┬─────────────────────────┐
+  │   Figma    │            API field             │         Example         │
+  │   field    │                                  │                         │
+  ├────────────┼──────────────────────────────────┼─────────────────────────┤
+  │ Name, ID   │ name, id                         │ bulbasaur, 1            │
+  ├────────────┼──────────────────────────────────┼─────────────────────────┤
+  │ Base       │ base_experience                  │ 64                      │
+  ├────────────┼──────────────────────────────────┼─────────────────────────┤
+  │ Weight     │ weight, in hectograms            │ 69 → 6.9 kg             │
+  ├────────────┼──────────────────────────────────┼─────────────────────────┤
+  │ Height     │ height, in decimetres            │ 7 → 0.7 m               │
+  ├────────────┼──────────────────────────────────┼─────────────────────────┤
+  │ Types      │ types[].type.name                │ 1 or 2 per Pokémon      │
+  ├────────────┼──────────────────────────────────┼─────────────────────────┤
+  │ Abilities  │ abilities[].ability.name and     │ overgrow, plus hidden   │
+  │            │ is_hidden                        │ chlorophyll             │
+  ├────────────┼──────────────────────────────────┼─────────────────────────┤
+  │ Stats      │ stats[].base_stat                │ always 6, range 1–255   │
+  └────────────┴──────────────────────────────────┴─────────────────────────┘
+
+  Evolution takes three requests in a row: /pokemon/{id}, then the species, then
+  evolution_chain.url. The chain is a nested tree of evolves_to, and each node
+  gives a species name and URL. The ID comes from that URL, and every species ID
+  has a matching Pokémon ID.
+
+  Problems I found
+
+  - product.md has an endpoint that fails for forms: pokemon-species/{id}
+    returns 404 for all 326 alternate forms (e.g. 10034, Mega Charizard X).
+    Following species.url from the Pokémon response works for all 1351 entries,
+    so I'll correct that line.
+  - Missing values on some entries:
+    - 49 have base_experience: null, such as clefable-mega.
+    - Some have no abilities at all, such as zygarde-mega.
+    - eternatus-eternamax has weight 0.
+    - Some HOME images return 404, such as 10264.
+  - Evolution chains aren't always a straight line: of 540 chains, 199 have only
+    one Pokémon (e.g. Tauros). Others branch, and Eevee has 9 evolutions.
+  - The Figma frames don't match the real data:
+    - Charmander is shown as 003, but its real ID is 004.
+    - Bulbasaur is shown as 7,0 kg, but the API gives 6.9.
+    - Only Overgrow is listed as an ability, leaving out the hidden one.
+    - The stat bars don't follow a single scale.
+  - Fonts and storage still to add: Rubik 400 and 600 and Cabinet Grotesk 400
+    aren't loaded yet, and expo-sqlite isn't installed.
+
+  Questions (round 1)
+
+  1. What should the heart do in this feature? Favorites is a separate feature
+  (#4), and SQLite isn't installed yet.
+  - A (recommended): Show the outline heart, but tapping does nothing. Favorites
+    makes it work later, the same way the search bar was visual-only on the
+    homepage.
+  - B: Leave the heart out until Favorites is built.
+  - C: Build the favourite toggle here, which pulls SQLite into this feature.
+
+  2. Can you send the other 14 type colours? The frames only give four: electric
+  #FFCF00, fire #FF4F68, grass #64BC55 and poison #AB6AC8. Real Pokémon use 18
+  types, so I still need normal, fighting, flying, ground, rock, bug, ghost,
+  steel, water, psychic, ice, dragon, dark and fairy. If the Figma file doesn't
+  have them, should I propose a set for you to approve?
+
+  3. How should the Evolution tab show branches and Pokémon that don't evolve?
+  - Branches:
+    - A (recommended): Group cards by stage, with the dashed line only between
+      stages. Eevee would be one card, a dashed line, then its 9 evolutions in a
+      list without lines between them. The catch is that with two parallel
+      branches, like Wurmple's, you can't see which Pokémon leads to which.
+    - B: Use one flat list with a dashed line between every card, which is
+      simpler but suggests Vaporeon evolves into Jolteon.
+  - No evolutions (199 chains):
+    - A (recommended): Show just that Pokémon's single card, with no extra text.
+    - B: Show a message such as "This Pokémon does not evolve".
+
+  Next rounds will cover the stat bar scale, hidden abilities, what scrolls,
+  tapping evolution cards, long names, how to show missing values, and the
+  loading and error states.
+
+> 1. A. 2. I attached a file with colors that you should use for the types.
+  Don't use the figma colours for the types. 3. Branches: B. No Evolution: B.
+
+● Got it: the heart is visual-only, your attached colours replace the Figma type
+  colours, the evolution list is flat with a dashed line between every card,
+  and non-evolving Pokémon get a message. I'll take that as the message
+  replacing the card, using the text "This Pokémon does not evolve", unless you
+  say otherwise.
+
+  Questions (round 2)
+
+  1. What value should a full stat bar represent? The Figma bars don't follow
+  one scale, so we need to pick one. The highest stat in the API is 255
+  (Blissey's HP), and 100 of the 1351 entries have at least one stat above 150.
+  - A (recommended): Full bar = 255. Every bar is comparable and nothing gets
+    cut off, but most bars look short: Charmander's HP of 39 fills 15%.
+  - B: Full bar = 150. Bars look closer to the Figma (Charmander's HP fills
+    26%), but anything above 150 shows as a full bar, so 151 and 255 look the
+    same.
+
+  2. What should the About tab show for abilities and missing values?
+  - Hidden abilities:
+    - A (recommended): Show all of them, as the API returns them: "Overgrow,
+      Chlorophyll". This also fills the row for more Pokémon, since 988 entries
+      have a hidden ability.
+    - B: Show only non-hidden abilities, which matches the Figma's "Overgrow".
+  - Missing values: For the 49 entries with no base XP and the entries with no
+    abilities, I recommend showing — in that row. The row stays, so the layout
+    doesn't change. Is that OK?
+  - Number format: I recommend always using a dot and one decimal, so 6.9 kg and
+    0.7 m. The Figma mixes 7,0 kg and 0.7 m. Is that OK?
+
+  3. What scrolls on this page? The Figma is a fixed 844-high frame, but Eevee's
+  9 evolution cards won't fit, and neither will the Stats tab on a small phone.
+  - A (recommended): The whole page scrolls, including the name, image and tabs.
+    It's simple and also works on small screens, but the tabs scroll out of
+    view on long lists.
+  - B: The top part stays fixed and only the tab content scrolls. The tabs stay
+    visible, but on a small phone only a small area is left for that content,
+    because the top takes up about 490 of the 844 points.
+  - Back and heart icons: Should these stay pinned at the top while scrolling
+    (recommended if you pick A), or scroll away with the page?
+
+  The next round should be the last one. It covers tapping evolution cards, long
+  names, and the loading and error states.
+
+> 1. A. 2. Show only non-hidden. Show a - when there is no data. Number format
+  should use dot format and one decimal, the Figma design is not accurate when
+  it comes to the exact values. 3. The whole page scrolls except for the back
+  and favorites buttons. Also add the name of the pokémon in between the two
+  buttons when scrolling down. The tabs should be hidden when on the detail
+  page.
+
+● Noted: a full bar is 255, only non-hidden abilities show, missing values show
+  -, numbers use a dot and one decimal, and the Figma is only a guide for exact
+  values. The whole page scrolls, with the back and heart buttons pinned and the
+  name appearing between them.
+
+  Questions (round 3, the last one)
+
+  1. Which tabs did you mean, and how should the pinned bar behave?
+  - Tabs: I read "tabs should be hidden" as the bottom tab bar (Pokémons /
+    Favorites), not About / Stats / Evolution. The detail route already sits
+    outside the tab layout, so that bar is already hidden there. Is that right?
+  - Name in the pinned bar: I recommend it appears once the big name has
+    scrolled out of view and disappears when the big name is back. Is that OK?
+  - Bar background: I recommend a solid #EDF6FF background behind the pinned
+    bar, so content doesn't scroll through the icons. Is that OK?
+
+  2. What happens when you tap an evolution card? The Figma doesn't show this.
+  - A (recommended): The card opens that Pokémon's detail page, starting on the
+    About tab, and back returns to the previous page. Tapping the card of the
+    Pokémon you're already viewing does nothing.
+  - B: Cards are display-only and tapping does nothing.
+
+  3. What should the loading and error states and long names look like?
+  - Page loading (recommended): Back button and centered spinner, with the heart
+    hidden until the data arrives.
+  - Page error (recommended): Back button, "Could not load Pokémon" and a Retry
+    button. This also covers an ID that doesn't exist.
+  - Evolution tab (recommended): The chain loads the first time the tab is
+    opened. It has its own spinner, plus "Could not load evolutions" and Retry
+    inside the tab, so the rest of the page keeps working.
+  - Long names: "Squawkabilly Yellow Plumage" won't fit on one line at 32 points
+    next to the ID.
+    - A (recommended): The big name wraps onto more lines, with the ID staying
+      top right. The name in the pinned bar stays on one line and ends in an
+      ellipsis.
+    - B: The big name also stays on one line with an ellipsis, which cuts off
+      the part that tells forms apart.
+
+  Unless you object, I'll also use these defaults:
+  - The page opens on About.
+  - Tabs switch by tapping only, with no swiping.
+  - A missing image shows the Pokéball placeholder, as on the homepage cards.
+
+> 1. Tabs is indeed Pokémons / Favorites, which should not show at all.
+  Suggestion for how the name in the pinned bar shows is approved, but make the
+  text size smaller to 20px. Bar background suggestion is approved. 2. A, but
+  the back button should always return to the Pokémons tab list. 3.
+  Recommendations are approved. Long names: A. Listed defaults are okay to use.
+
+● Thanks, that covers everything. Before writing the criteria, I'll check the
+  example values against the live API so each one is really testable.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Write(specs\features\detail page.md)
+  ⎿  Wrote 188 lines to specs\features\detail page.md
+      1 # Feature: detail page
+      2
+      3 > Issue: #? · Status: draft
+      4
+      5 ## Goal
+      6
+      7 As a Pokédex user, I want to open a Pokémon and see its details,
+        stats and evolutions, so that I can learn more about it than the
+        list shows.
+      8
+     … +180 lines (ctrl+o to expand)
+
+● Bash(cd "C:/Users/Gebruiker/Documents/GitHub/Pokedex" && sed -i \
+       -e 's#^  - \*\*Evolution chain (Detail):\*\* .*#  - **Evolution chain
+      (Detail):** follow `species.…)
+  ⎿  Updated specs\product.md (+3 -3)
+      21    - **List:** `https://pokeapi.co/api/v2/pokemon?limit=20&offse
+          t=0`, page by page. The Pokémon ID comes from each result's `ur
+          l`.
+      22    - **Search:** `https://pokeapi.co/api/v2/pokemon?limit=100000
+          `
+      23    - **Detail:** `https://pokeapi.co/api/v2/pokemon/{id or name}
+          /`
+      24 -  - **Evolution chain (Detail):** `https://pokeapi.co/api/v2/po
+         -kemon-species/{id}/`, then follow `evolution_chain.url` from th
+         -at response.                                                   
+      24 +  - **Evolution chain (Detail):** follow `species.url` from the
+         + Detail response, then `evolution_chain.url` from that response
+         +. `pokemon-species/{id}` returns 404 for alternate forms.      
+      25    - **Favorites:** `https://pokeapi.co/api/v2/pokemon/{id or na
+          me}/`
+      26    - **Compare:** `https://pokeapi.co/api/v2/pokemon/{id or name
+          }/`
+      27  - Images, everywhere in the app: `https://raw.githubusercontent
+          .com/PokeAPI/sprites/master/sprites/pokemon/other/home/{id}.png
+          `
+     ...
+      34  |---|---|---|---|
+      35  | 1 | Homepage list | [specs/features/homepage list.md](feature
+          s/homepage%20list.md) | #1 |
+      36  | 2 | Search | [specs/features/search.md](features/search.md) |
+           #3 |
+      37 -| 3 | Detail | [specs/features/detail.md](features/detail.md) |
+         - #? |                                                          
+      37 +| 3 | Detail page | [specs/features/detail page.md](features/de
+         +tail%20page.md) | #? |                                         
+      38  | 4 | Favorites | [specs/features/favorites.md](features/favori
+          tes.md) | #? |
+      39  | 5 | Compare | [specs/features/compare.md](features/compare.md
+          ) | #? |
+      40  | 6 | Options menu | [specs/features/options menu.md](features/
+          options%20menu.md) | #? |
+     ...
+      62  - Live data through TanStack Query.
+      63  - Every load has a loading state and an error state (list, deta
+          il, evolution chain).
+      64  - Font from the Figma design, loaded with Expo Font.
+      65 -- Follow the [Figma design](https://www.figma.com/design/dsgGXc
+         -u5WELIvRW90m5308/Pok%C3%A9mon-Code-Challenge?node-id=1-2): type
+         - colours, font, spacing, icons.                                
+      65 +- Follow the [Figma design](https://www.figma.com/design/dsgGXc
+         +u5WELIvRW90m5308/Pok%C3%A9mon-Code-Challenge?node-id=1-2): font
+         +, spacing, icons. Type colours are listed in [specs/features/de
+         +tail page.md](features/detail%20page.md).                      
+      66  - TypeScript and ESLint without errors.
+      67  - UI, data and logic are not mixed.
+      68  
+
+● The spec is written: specs/features/detail page.md
+  (specs/features/detail%20page.md). I checked its example values against the
+  live API, and nothing is committed yet.
+
+  I also made three changes to specs/product.md:
+  - Feature table: the Detail row now links to the new spec file.
+  - Evolution endpoint: it now follows species.url, because pokemon-species/{id}
+    returns 404 for alternate forms.
+  - Type colours: the constraint no longer says to take them from Figma and
+    points to your colours in the new spec instead.
+
+  A correction: I said Eevee has 9 evolutions, but it's 9 Pokémon in total:
+  Eevee plus 8 evolutions. The spec has the right number.
+
+  Decisions I made that you didn't state, so please check them:
+  - Android back and iOS swipe back: both go straight to the Pokémons list, the
+    same as the back button.
+  - Eternamax's weight: eternatus-eternamax has weight 0, which I treated as no
+    data, so it shows -.
+  - Flat list order: each branch stays together, so Wurmple shows Wurmple,
+    Silcoon, Beautifly, Cascoon, Dustox.
+  - Pinned name font: it uses Cabinet Grotesk 800 at 20px, the same font as the
+    big name.
+
+  Still open:
+  - Back from Favorites: you said back always returns to the Pokémons list, but
+    Favorites can't open Detail yet. I left it as an open question for the
+    Favorites spec: should back from there go to the Pokémons list or to
+    Favorites?
+  - Outline heart icon: assets/icons/Favorites.svg is a filled heart, so the
+    outline one is missing. Please export it from Figma before the build, or
+    tell me to draw it.
+
+  The next step is /create-issue detail page.
+
+> A weight of 0 should remain 0. When a detail page is viewed from favorites,
+  it should go back to favorites. Just use the current favorites svg. The
+  outline/filled versions will be handled in a later feature.
+
+● Bash(cd "C:/Users/Gebruiker/Documents/GitHub/Pokedex" && cat >
+      "C:/Users/Gebruiker/AppData/Local/Temp/claude/23d15d677ba5a18b/f155f251-d0
+      cb-4011-a868-571c45591f3a/sc…)
+  ⎿  Updated specs\features\detail page.md (+8 -8)
+      16  - [ ] The Pokémons / Favorites tab bar is not visible on the de
+          tail page.
+      17  - [ ] Tapping the back button returns to the Pokémons tab list,
+           with the scroll position or search it had before.
+      18  - [ ] After opening several Pokémon through evolution cards, on
+          e tap on the back button still returns to the Pokémons tab list
+          , not to the previous detail page.
+      19 +- [ ] A detail page opened from Favorites returns to Favorites,
+         + also after opening several Pokémon through evolution cards. Th
+         +is can be tested once the Favorites feature opens Detail.      
+      20  - [ ] The Android back button and the iOS swipe back do the sam
+          e as the back button.
+      21  
+      22  **Top of the page**
+     ...
+      40  
+      41  **Favorite heart (visual only)**
+      42  
+      42 -- [ ] The heart shows as an outline in `#0E0940`. Tapping it do
+         -es nothing.                                                    
+      43 +- [ ] The heart shows the current `assets/icons/Favorites.svg` 
+         +in `#0E0940`. Tapping it does nothing.                         
+      44  
+      45  **Tabs**
+      46  
+     ...
+      51  
+      52  - [ ] The rows are Name, ID, Base, Weight, Height, Types and Ab
+          ilities, in that order.
+      53  - [ ] Bulbasaur shows: Bulbasaur, 001, 64 XP, 6.9 kg, 0.7 m, Gr
+          ass, Poison and Overgrow.
+      53 -- [ ] Weight is the API value divided by 10, in kg, with a dot 
+         -and one decimal: `69` → `6.9 kg`, `6100` → `610.0 kg`. *(unit t
+         -est)*                                                          
+      54 +- [ ] Weight is the API value divided by 10, in kg, with a dot 
+         +and one decimal: `69` → `6.9 kg`, `6100` → `610.0 kg`, `0` → `0
+         +.0 kg` (`eternatus-eternamax`). *(unit test)*                  
+      55  - [ ] Height is the API value divided by 10, in m, with a dot a
+          nd one decimal: `7` → `0.7 m`, `1000` → `100.0 m`. *(unit test)
+          *
+      56  - [ ] Types and abilities are formatted like names and separate
+          d by a comma and a space: `keen-eye` and `tangled-feet` → `Keen
+           Eye, Tangled Feet`. *(unit test)*
+      57  - [ ] Hidden abilities are not shown: Bulbasaur shows Overgrow 
+          but not Chlorophyll. *(unit test)*
+      58  - [ ] A value with no data shows `-` and its row stays: *(unit 
+          test)*
+      59    - Base for `clefable-mega` (`base_experience` is `null`)
+      60    - Abilities for `zygarde-mega` (no abilities)
+      60 -  - Weight for `eternatus-eternamax` (`weight` is `0`)         
+      61  - [ ] A value too long for one line wraps within its column, an
+          d the row below moves down.
+      62  
+      63  **Stats tab**
+     ...
+       97  - Route(s): `src/app/pokemon/[id].tsx`. The route already exis
+           ts as an empty page, and it sits outside the tab layout. Its n
+           ative header is replaced by the pinned bar.
+       98  - Figma frames: Detail Page - About, Detail Page - Stats and D
+           etail Page - Evolution in the [Figma design](https://www.figma
+           .com/design/dsgGXcu5WELIvRW90m5308/Pok%C3%A9mon-Code-Challenge
+           ?node-id=1-2).
+       99  - Top to bottom: pinned bar, name and ID, type pills, image, t
+           abs, tab content.
+      100 -- Evolution cards replace the detail page on screen instead of
+          - adding a new one on top, so back always returns to the list. 
+      100 +- Evolution cards replace the detail page on screen instead of
+          + adding a new one on top, so back always returns to the list t
+          +he page was opened from.                                      
+      101  
+      102  The Figma frames are a guide for layout and styling only. Valu
+           es follow the API: Charmander is `004` and not `003`, Bulbasau
+           r weighs 6.9 kg and not 7,0 kg, and stat bars follow the 255 s
+           cale. Images follow `product.md` (HOME renders), and type colo
+           urs follow the table below, not the Figma.
+      103  
+     ...
+      106  | Screen | Top part `#EDF6FF`, white from 150 down the image, 
+           so the image overlaps the edge (at 380 from the top of the Fig
+           ma frame) |
+      107  | Pinned bar | Solid `#EDF6FF`, 56 high, below the status bar,
+            padding 16 |
+     … 27 more lines (ctrl+o to expand)
+
+● I've updated specs/features/detail page.md (specs/features/detail%20page.md)
+  with all three changes:
+
+  - Weight: a weight of 0 now shows as 0.0 kg, so eternatus-eternamax no longer
+    shows -.
+  - Back from Favorites: a detail page opened from Favorites goes back to
+    Favorites, even after tapping through evolution cards. You can only test
+    this once the Favorites feature opens Detail, and the criterion says so.
+  - Heart icon: it now uses the current assets/icons/Favorites.svg in #0E0940.
+    Outline and filled versions are listed as out of scope, for a later feature.
+
+  There are no open questions left in the spec, and nothing is committed. The
+  next step is /create-issue detail page.
+
+> /create-issue detail page
+
+● The spec changed on disk since I last read it, so I'll read the current
+  version and check the labels first.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● The spec has no placeholders, and there's no feature label on the repo, so the
+  issue goes out without one. I'll build the body straight from the spec so the
+  criteria match exactly.
+
+● Bash(cd "C:/Users/Gebruiker/Documents/GitHub/Pokedex";
+      S="C:/Users/Gebruiker/AppData/Local/Temp/claude/23d15d677ba5a18b/f155f251-
+      d0cb-4011-a868-571c45591f3a/scratchp…)
+  ⎿  Updated specs\features\detail page.md (+1 -1)
+      1  # Feature: detail page
+      2  
+      3 -> Issue: #? · Status: draft                                     
+      3 +> Issue: #5 · Status: draft                                     
+      4  
+      5  ## Goal
+      6  
+  ⎿  Updated specs\product.md (+1 -1)
+      34  |---|---|---|---|
+      35  | 1 | Homepage list | [specs/features/homepage list.md](feature
+          s/homepage%20list.md) | #1 |
+      36  | 2 | Search | [specs/features/search.md](features/search.md) |
+           #3 |
+      37 -| 3 | Detail page | [specs/features/detail page.md](features/de
+         -tail%20page.md) | #? |                                         
+      37 +| 3 | Detail page | [specs/features/detail page.md](features/de
+         +tail%20page.md) | #5 |                                         
+      38  | 4 | Favorites | [specs/features/favorites.md](features/favori
+          tes.md) | #? |
+      39  | 5 | Compare | [specs/features/compare.md](features/compare.md
+          ) | #? |
+      40  | 6 | Options menu | [specs/features/options menu.md](features/
+          options%20menu.md) | #? |
+  ⎿  (timeout 1m)
+
+● The issue is created, but the spec link returned 404. That could just be
+  because the repo is private, so I'll check before calling it fine.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● The issue is created: https://github.com/Lucas-Light/Pokedex/issues/5
+
+  - Issue body: it has the goal, all the acceptance criteria as - [ ] items, and
+    a link to the spec. The link works: my check returned 404 only because the
+    repo is private, and the spec is on main.
+  - Label: none added, because the repo has no feature label.
+  - Issue number: #5 is now in the header of specs/features/detail page.md
+    (specs/features/detail%20page.md) and in the table in specs/product.md.
+    Those two edits aren't committed yet.
+
+  The next step is /plan-issue 5.
+
+> /plan-issue 5
+
+● I'll start with the issue and the code this feature touches, and fetch the
+  docs for this SDK version alongside.
+  Ran 2 shell commands (ctrl+o to expand)
+
+● The docs back up the navigation approach and the code matches my expectations.
+  Next I'll check whether Cabinet Grotesk 400 is already available and confirm
+  the exact API names.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Now I'll post the plan to the issue.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● The shell choked on that heredoc, so nothing was posted. I'll write the plan
+  with the file tool instead and post from there.
+
+  Made 1 scratchpad edit +115, ran 1 shell command (ctrl+o to expand)
+
+● The plan is posted on issue #5
+  (https://github.com/Lucas-Light/Pokedex/issues/5#issuecomment-6690023936), and
+  no code has been changed. Here's a shortened version; the full files list and
+  the acceptance criteria table with what to test on the phone are in the
+  comment.
+
+  Approach
+
+  - Screen: the route stays thin and renders one PokemonDetail component with
+    key={id}, so a new Pokémon always starts on About at the top. The native
+    header is replaced by our own pinned bar above a ScrollView.
+  - Back: evolution cards use router.replace, so there's only ever one detail
+    page on the stack. The back button, Android back and iOS swipe then all
+    return to whatever opened Detail, including Favorites later, with no special
+    cases.
+  - Data: usePokemonDetail fetches the Pokémon, and useEvolutionChain does the
+    species and chain requests in one query. The Evolution tab only mounts when
+    opened, and staleTime: Infinity stops it reloading when you switch back.
+  - Pinned name: it's driven by the scroll offset compared to the big name's
+    measured position, with no Reanimated.
+  - Image overlap: a background band sits behind the top 150 of the image, so
+    the edge moves down when a long name wraps.
+  - Dashed line: it's built from small Views, because React Native's dashed
+    borders aren't reliable on a single side.
+
+  Files
+
+  - UI:
+    - New: PokemonDetail, DetailBar, DetailHeader, DetailTabs, AboutTab,
+      StatsTab, EvolutionTab, EvolutionCard and PokemonImage.
+    - Changed: pokemon/[id].tsx, _layout.tsx, PokemonCard (no visual change) and
+      the theme files.
+  - Data:
+    - New: usePokemonDetail and useEvolutionChain.
+    - Changed: src/api/pokemon.ts.
+  - Logic: new formatters, getStatPercent, flattenEvolutionChain and
+    toPokemonDetail in src/lib/pokemon.ts, with unit tests.
+
+  Tasks
+
+  Logic and data
+  - [ ] Add weight, height, base XP, list and ability formatting, with unit
+    tests
+  - [ ] Add getStatPercent and stat labels, with unit tests
+  - [ ] Add flattenEvolutionChain, with unit tests for Pikachu, Eevee, Wurmple
+    and Tauros
+  - [ ] Add toPokemonDetail, with unit tests for the entries with missing values
+  - [ ] Add response types and fetch functions
+  - [ ] Add usePokemonDetail and useEvolutionChain
+
+  Theme and setup
+  - [ ] Add the 18 type colours and the new colours, fonts and spacing
+  - [ ] Load the 3 new fonts
+  - [ ] Switch off the native header for pokemon/[id]
+
+  UI
+  - [ ] Move the image and placeholder into PokemonImage, and check the homepage
+    looks the same
+  - [ ] Build DetailBar, DetailHeader and DetailTabs
+  - [ ] Build AboutTab and StatsTab
+  - [ ] Build EvolutionCard and EvolutionTab with their states
+  - [ ] Build PokemonDetail with the page states and scrolling
+  - [ ] Show the name in the pinned bar on scroll
+  - [ ] Wire up the route
+
+  Checks
+  - [ ] npx jest passes
+  - [ ] npx expo lint passes
+  - [ ] npx tsc --noEmit passes
+  - [ ] Test on phone in Expo Go
+
+  Before you say "go"
+
+  Cabinet Grotesk 400 isn't in the repo. The ID needs it, but only the Extrabold
+  file is bundled. I recommend you download it from Fontshare and add it as
+  assets/fonts/CabinetGrotesk-Regular.otf. If you'd rather I try downloading it
+  during the build, tell me.
+
+  Two other things to know:
+  - An ID that doesn't exist shows the spinner for about 7 seconds before the
+    error, because of the default retries. The list behaves the same way, so I
+    left it.
+  - The work will go on a feature/detail-page branch.
+
+  I'll wait for your "go" or any corrections.
+
+> Download the font during the build
+
+● I'll update the plan comment with that choice.
+
+  Made 3 scratchpad edits +5 -6, ran 1 shell command (ctrl+o to expand)
+
+● I've updated the plan comment
+  (https://github.com/Lucas-Light/Pokedex/issues/5#issuecomment-6690023936):
+  downloading Cabinet Grotesk 400 from Fontshare is now a build task, and the
+  plan no longer has an open choice.
+
+  I haven't started on any code yet. Say "go" when you're ready for me to build
+  it, or run /build-issue 5.
+
+> /build-issue 5
+
+● I'll start by confirming the approved plan and spec are unchanged, then create
+  the branch and try the font download, since that's the only external
+  dependency.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● The plan is unchanged, the branch is ready, and Fontshare has the Regular OTF,
+  so I'll install that file now. I'll also add a small helper for ticking
+  tasks, then open the files I'm about to edit.
+
+  Made 1 scratchpad edit +17 (ctrl+o to expand)
+
+● Bash(cd "C:/Users/Gebruiker/Documents/GitHub/Pokedex";
+      S="C:/Users/Gebruiker/AppData/Local/Temp/claude/23d15d677ba5a18b/f155f251-
+      d0cb-4011-a868-571c45591f3a/scratchp…)
+  ⎿  1 file changed (binary, mode only or too large to show)
+
+  Read 9 files (ctrl+o to expand)
+
+● The font is in place (it comes with Fontshare's free licence, and the project
+  already agreed to bundling it). Now the logic layer: the API types, the pure
+  functions and their tests.
+
+● Update(src\api\pokemon.ts)
+  ⎿  Added 1 line
+      1  export const FIRST_PAGE_URL = "https://pokeapi.co/api/v2/pokemon
+         ?limit=20&offset=0";
+      2  export const ALL_POKEMON_URL = "https://pokeapi.co/api/v2/pokemo
+         n?limit=100000";
+      3 +const POKEMON_URL = "https://pokeapi.co/api/v2/pokemon";        
+      4  
+      5  export type PokemonListResult = {
+      6    name: string;
+
+● Update(src\api\pokemon.ts)
+  ⎿  Added 61 lines
+      12    results: PokemonListResult[];
+      13  };
+      14  
+      15 +export type PokemonAbility = {                                 
+      16 +  is_hidden: boolean;                                          
+      17 +  ability: { name: string };                                   
+      18 +};                                                             
+      19 +                                                               
+      20 +export type PokemonResponse = {                                
+      21 +  id: number;                                                  
+      22 +  name: string;                                                
+      23 +  base_experience: number | null;                              
+      24 +  height: number;                                              
+      25 +  weight: number;                                              
+      26 +  types: { type: { name: string } }[];                         
+      27 +  abilities: PokemonAbility[];                                 
+      28 +  stats: { base_stat: number; stat: { name: string } }[];      
+      29 +  species: { url: string };                                    
+      30 +};                                                             
+      31 +                                                               
+      32 +type PokemonSpeciesResponse = {                                
+      33 +  evolution_chain: { url: string };                            
+      34 +};                                                             
+      35 +                                                               
+      36 +export type EvolutionChainLink = {                             
+      37 +  species: PokemonListResult;                                  
+      38 +  evolves_to: EvolutionChainLink[];                            
+      39 +};                                                             
+      40 +                                                               
+      41 +type EvolutionChainResponse = {                                
+      42 +  chain: EvolutionChainLink;                                   
+      43 +};                                                             
+      44 +                                                               
+      45 +export async function fetchPokemon(id: string): Promise<Pokemon
+         +Response> {                                                    
+      46 +  const response = await fetch(`${POKEMON_URL}/${id}`);        
+      47 +  if (!response.ok) {                                          
+      48 +    throw new Error(`Could not load Pokémon ${id} (status ${res
+         +ponse.status})`);                                              
+      49 +  }                                                            
+      50 +  return response.json();                                      
+      51 +}                                                              
+      52 +                                                               
+      53 +async function fetchSpecies(url: string): Promise<PokemonSpecie
+         +sResponse> {                                                   
+      54 +  const response = await fetch(url);                           
+      55 +  if (!response.ok) {                                          
+      56 +    throw new Error(`Could not load species (status ${response.
+         +status})`);                                                    
+      57 +  }                                                            
+      58 +  return response.json();                                      
+      59 +}                                                              
+      60 +                                                               
+      61 +async function fetchChain(url: string): Promise<EvolutionChainR
+         +esponse> {                                                     
+      62 +  const response = await fetch(url);                           
+      63 +  if (!response.ok) {                                          
+      64 +    throw new Error(`Could not load evolutions (status ${respon
+         +se.status})`);                                                 
+      65 +  }                                                            
+      66 +  return response.json();                                      
+      67 +}                                                              
+      68 +                                                               
+      69 +/** The species URL comes from the Pokémon: `pokemon-species/{i
+         +d}` is a 404 for alternate forms. */                           
+      70 +export async function fetchEvolutionChain(speciesUrl: string): 
+         +Promise<EvolutionChainLink> {                                  
+      71 +  const species = await fetchSpecies(speciesUrl);              
+      72 +  const { chain } = await fetchChain(species.evolution_chain.ur
+         +l);                                                            
+      73 +  return chain;                                                
+      74 +}                                                              
+      75 +                                                               
+      76  export async function fetchPokemonPage(url: string): Promise<Po
+          kemonListResponse> {
+      77    const response = await fetch(url);
+      78    if (!response.ok) {
+
+● Update(src\lib\pokemon.ts)
+  ⎿  Added 2 lines
+      1 +import type { EvolutionChainLink, PokemonAbility, PokemonRespons
+        +e } from "@/api/pokemon";                                       
+      2 +                                                                
+      3  export type PokemonListItem = {
+      4    id: number;
+      5    name: string;
+
+● Update(src\lib\pokemon.ts)
+  ⎿  Added 23 lines
+       5    name: string;
+       6  };
+       7  
+       8 +export type PokemonAboutRow = {                                
+       9 +  label: string;                                               
+      10 +  value: string;                                               
+      11 +};                                                             
+      12 +                                                               
+      13 +export type PokemonStat = {                                    
+      14 +  label: string;                                               
+      15 +  value: number;                                               
+      16 +  percent: number;                                             
+      17 +};                                                             
+      18 +                                                               
+      19 +export type PokemonDetailData = {                              
+      20 +  id: number;                                                  
+      21 +  name: string;                                                
+      22 +  types: string[];                                             
+      23 +  about: PokemonAboutRow[];                                    
+      24 +  stats: PokemonStat[];                                        
+      25 +  speciesUrl: string;                                          
+      26 +};                                                             
+      27 +                                                               
+      28 +const MISSING_VALUE = "-";                                     
+      29 +const MAX_STAT = 255;                                          
+      30 +                                                               
+      31  const IMAGE_BASE_URL =
+      32    "https://raw.githubusercontent.com/PokeAPI/sprites/master/spr
+          ites/pokemon/other/home";
+      33  
+
+● Update(src\lib\pokemon.ts)
+  ⎿  Added 60 lines
+       59    return { id: getIdFromUrl(result.url), name: result.name };
+       60  }
+       61  
+       62 +/** The API gives weight in hectograms. */                    
+       63 +export function formatWeight(weight: number): string {        
+       64 +  return `${(weight / 10).toFixed(1)} kg`;                    
+       65 +}                                                             
+       66 +                                                              
+       67 +/** The API gives height in decimetres. */                    
+       68 +export function formatHeight(height: number): string {        
+       69 +  return `${(height / 10).toFixed(1)} m`;                     
+       70 +}                                                             
+       71 +                                                              
+       72 +export function formatBaseExperience(baseExperience: number | 
+          +null): string {                                               
+       73 +  return baseExperience === null ? MISSING_VALUE : `${baseExpe
+          +rience} XP`;                                                  
+       74 +}                                                             
+       75 +                                                              
+       76 +export function formatList(names: string[]): string {         
+       77 +  return names.length > 0 ? names.map(formatName).join(", ") :
+          + MISSING_VALUE;                                               
+       78 +}                                                             
+       79 +                                                              
+       80 +export function getVisibleAbilities(abilities: PokemonAbility[
+          +]): string[] {                                                
+       81 +  return abilities.filter((item) => !item.is_hidden).map((item
+          +) => item.ability.name);                                      
+       82 +}                                                             
+       83 +                                                              
+       84 +export function getStatLabel(name: string): string {          
+       85 +  return name === "hp" ? "HP" : formatName(name);             
+       86 +}                                                             
+       87 +                                                              
+       88 +export function getStatPercent(value: number): number {       
+       89 +  return Math.round((value / MAX_STAT) * 100);                
+       90 +}                                                             
+       91 +                                                              
+       92 +/** Depth first, so each evolution comes straight after the Po
+          +kémon it evolves from. */                                     
+       93 +export function flattenEvolutionChain(link: EvolutionChainLink
+          +): PokemonListItem[] {                                        
+       94 +  return [toListItem(link.species), ...link.evolves_to.flatMap
+          +(flattenEvolutionChain)];                                     
+       95 +}                                                             
+       96 +                                                              
+       97 +export function toPokemonDetail(pokemon: PokemonResponse): Pok
+          +emonDetailData {                                              
+       98 +  const types = pokemon.types.map((item) => item.type.name);  
+       99 +                                                              
+      100 +  return {                                                    
+      101 +    id: pokemon.id,                                           
+      102 +    name: pokemon.name,                                       
+      103 +    types,                                                    
+      104 +    about: [                                                  
+      105 +      { label: "Name", value: formatName(pokemon.name) },     
+      106 +      { label: "ID", value: formatBadge(pokemon.id) },        
+      107 +      { label: "Base", value: formatBaseExperience(pokemon.bas
+          +e_experience) },                                              
+      108 +      { label: "Weight", value: formatWeight(pokemon.weight) }
+          +,                                                             
+      109 +      { label: "Height", value: formatHeight(pokemon.height) }
+          +,                                                             
+      110 +      { label: "Types", value: formatList(types) },           
+      111 +      { label: "Abilities", value: formatList(getVisibleAbilit
+          +ies(pokemon.abilities)) },                                    
+      112 +    ],                                                        
+      113 +    stats: pokemon.stats.map((item) => ({                     
+      114 +      label: getStatLabel(item.stat.name),                    
+      115 +      value: item.base_stat,                                  
+      116 +      percent: getStatPercent(item.base_stat),                
+      117 +    })),                                                      
+      118 +    speciesUrl: pokemon.species.url,                          
+      119 +  };                                                          
+      120 +}                                                             
+      121 +                                                              
+      122  /** Turns typed text into the form API names use: `MR Mimé ` b
+           ecomes `mr-mime`. */
+      123  export function normalizeSearchQuery(query: string): string {
+      124    return query
+
+● Update(src\lib\__tests__\pokemon-test.ts)
+  ⎿  Added 10 lines
+       1 +import type { EvolutionChainLink, PokemonResponse } from "@/api
+         +/pokemon";                                                     
+       2  import {
+       3    filterPokemonByName,
+       4 +  flattenEvolutionChain,                                       
+       5    formatBadge,
+       6 +  formatBaseExperience,                                        
+       7 +  formatHeight,                                                
+       8 +  formatList,                                                  
+       9    formatName,
+      10 +  formatWeight,                                                
+      11    getIdFromUrl,
+      12    getImageUrl,
+      13 +  getStatLabel,                                                
+      14 +  getStatPercent,                                              
+      15 +  getVisibleAbilities,                                         
+      16    normalizeSearchQuery,
+      17    type PokemonListItem,
+      18    toListItem,
+      19 +  toPokemonDetail,                                             
+      20  } from "@/lib/pokemon";
+      21  
+      22  describe("getIdFromUrl", () => {
+
+  Made 1 scratchpad edit +176 (ctrl+o to expand)
+
+● Bash(cd "C:/Users/Gebruiker/Documents/GitHub/Pokedex";
+      S="C:/Users/Gebruiker/AppData/Local/Temp/claude/23d15d677ba5a18b/f155f251-
+      d0cb-4011-a868-571c45591f3a/scratchp…)
+  ⎿  Updated src\lib\__tests__\pokemon-test.ts (+175 -0)
+      137      expect(names("zzzz")).toEqual([]);
+      138    });
+      139  });
+      140 +                                                              
+      141 +describe("formatWeight", () => {                              
+      142 +  it("converts hectograms to kg with one decimal", () => {    
+      143 +    expect(formatWeight(69)).toBe("6.9 kg");                  
+      144 +    expect(formatWeight(6100)).toBe("610.0 kg");              
+      145 +  });                                                         
+      146 +                                                              
+      147 +  it("keeps a weight of 0", () => {                           
+      148 +    expect(formatWeight(0)).toBe("0.0 kg");                   
+      149 +  });                                                         
+      150 +});                                                           
+      151 +                                                              
+      152 +describe("formatHeight", () => {                              
+      153 +  it("converts decimetres to m with one decimal", () => {     
+      154 +    expect(formatHeight(7)).toBe("0.7 m");                    
+      155 +    expect(formatHeight(1000)).toBe("100.0 m");               
+      156 +  });                                                         
+      157 +});                                                           
+      158 +                                                              
+      159 +describe("formatBaseExperience", () => {                      
+      160 +  it("adds XP", () => {                                       
+      161 +    expect(formatBaseExperience(64)).toBe("64 XP");           
+      162 +  });                                                         
+      163 +                                                              
+      164 +  it("shows a dash without data", () => {                     
+      165 +    expect(formatBaseExperience(null)).toBe("-");             
+      166 +  });                                                         
+      167 +});                                                           
+      168 +                                                              
+      169 +describe("formatList", () => {                                
+      170 +  it("formats names and separates them with a comma", () => { 
+      171 +    expect(formatList(["keen-eye", "tangled-feet"])).toBe("Kee
+          +n Eye, Tangled Feet");                                        
+      172 +  });                                                         
+      173 +                                                              
+      174 +  it("shows a dash for an empty list", () => {                
+      175 +    expect(formatList([])).toBe("-");                         
+      176 +  });                                                         
+     … 138 more lines (ctrl+o to expand)
+  ⎿  (timeout 3m)
+
+● All 54 tests pass. Next are the hooks, theme, fonts and route setup, then the
+  UI components.
+
+● Write(src\hooks\usePokemonDetail.ts)
+  ⎿  Wrote 12 lines to src\hooks\usePokemonDetail.ts
+       1 import { useQuery } from "@tanstack/react-query";
+       2
+       3 import { fetchPokemon } from "@/api/pokemon";
+       4 import { toPokemonDetail } from "@/lib/pokemon";
+       5
+       6 export function usePokemonDetail(id: string) {
+       7   return useQuery({
+       8     queryKey: ["pokemon", "detail", id],
+       9     queryFn: () => fetchPokemon(id),
+      10     select: toPokemonDetail,
+     … +2 lines (ctrl+o to expand)
+
+● Write(src\hooks\useEvolutionChain.ts)  ⎿  Wrote 14 lines to src\hooks\useEvolutionChain.ts
+       1 import { useQuery } from "@tanstack/react-query";
+       2
+       3 import { fetchEvolutionChain } from "@/api/pokemon";
+       4 import { flattenEvolutionChain } from "@/lib/pokemon";
+       5
+       6 export function useEvolutionChain(speciesUrl: string) {
+       7   return useQuery({
+       8     queryKey: ["pokemon", "evolution", speciesUrl],
+       9     queryFn: () => fetchEvolutionChain(speciesUrl),
+      10     select: flattenEvolutionChain,
+     … +4 lines (ctrl+o to expand)
+
+● Update(src\theme\colors.ts)
+  ⎿  Added 3 lines
+       8    onPrimary: "#FFFFFF",
+       9    placeholderText: "rgba(0, 0, 0, 0.3)",
+      10    placeholderIcon: "#D5D5E8",
+      11 +  typePill: "rgba(14, 9, 64, 0.08)",                           
+      12 +  tabBorder: "#DBDAE6",                                        
+      13 +  statTrack: "#F3F3F7",                                        
+      14  } as const;
+      15  
+      16  export const shadows = {
+
+● Update(src\theme\colors.ts)
+  ⎿  Added 22 lines
+      13    statTrack: "#F3F3F7",
+      14  } as const;
+      15  
+      16 +/** Keyed by the type name in the API. */                      
+      17 +export const typeColors: Record<string, string> = {            
+      18 +  normal: "#A8A77A",                                           
+      19 +  fire: "#EE8130",                                             
+      20 +  water: "#6390F0",                                            
+      21 +  electric: "#F7D02C",                                         
+      22 +  grass: "#7AC74C",                                            
+      23 +  ice: "#96D9D6",                                              
+      24 +  fighting: "#C22E28",                                         
+      25 +  poison: "#A33EA1",                                           
+      26 +  ground: "#E2BF65",                                           
+      27 +  flying: "#A98FF3",                                           
+      28 +  psychic: "#F95587",                                          
+      29 +  bug: "#A6B91A",                                              
+      30 +  rock: "#B6A136",                                             
+      31 +  ghost: "#735797",                                            
+      32 +  dragon: "#6F35FC",                                           
+      33 +  dark: "#705746",                                             
+      34 +  steel: "#B7B7CE",                                            
+      35 +  fairy: "#D685AD",                                            
+      36 +};                                                             
+      37 +                                                               
+      38  export const shadows = {
+      39    soft: "0px 2px 15px rgba(48, 55, 115, 0.15)",
+      40  } as const;
+
+● Update(src\theme\fonts.ts)
+  ⎿  Added 3 lines
+      1  export const fonts = {
+      2    title: "CabinetGrotesk-Extrabold",
+      3 +  titleRegular: "CabinetGrotesk-Regular",                       
+      4    body: "Rubik-Medium",
+      5 +  bodyRegular: "Rubik-Regular",                                 
+      6 +  bodySemibold: "Rubik-SemiBold",                               
+      7    input: "Inter-Regular",
+      8    tabLabel: "Roboto-Medium",
+      9  } as const;
+
+● Update(src\theme\spacing.ts)
+  ⎿  Added 7 lines
+      10    tabPillHeight: 32,
+      11    tabPillRadius: 20,
+      12    iconBox: 24,
+      13 +  detailBarHeight: 56,                                         
+      14 +  detailBarPadding: 16,                                        
+      15 +  detailImage: 200,                                            
+      16 +  detailImageBand: 150,                                        
+      17 +  detailSection: 24,                                           
+      18 +  pillRadius: 99,                                              
+      19 +  evolutionCardHeight: 80,                                     
+      20  } as const;
+
+● Update(src\app\_layout.tsx)
+  ⎿  Added 5 lines, removed 1 line
+       1  import { Inter_400Regular } from "@expo-google-fonts/inter";
+       2  import { Roboto_500Medium } from "@expo-google-fonts/roboto";
+       3 -import { Rubik_500Medium } from "@expo-google-fonts/rubik";    
+       3 +import {                                                       
+       4 +  Rubik_400Regular,                                            
+       5 +  Rubik_500Medium,                                             
+       6 +  Rubik_600SemiBold,                                           
+       7 +} from "@expo-google-fonts/rubik";                             
+       8  import { QueryClientProvider } from "@tanstack/react-query";
+       9  import { useFonts } from "expo-font";
+      10  import { Stack } from "expo-router";
+
+● Update(src\app\_layout.tsx)
+  ⎿  Added 3 lines
+      21  export default function RootLayout() {
+      22    const [loaded, error] = useFonts({
+      23      [fonts.title]: require("@/assets/fonts/CabinetGrotesk-Extra
+          bold.otf"),
+      24 +    [fonts.titleRegular]: require("@/assets/fonts/CabinetGrotes
+         +k-Regular.otf"),                                               
+      25      [fonts.body]: Rubik_500Medium,
+      26 +    [fonts.bodyRegular]: Rubik_400Regular,                     
+      27 +    [fonts.bodySemibold]: Rubik_600SemiBold,                   
+      28      [fonts.input]: Inter_400Regular,
+      29      [fonts.tabLabel]: Roboto_500Medium,
+      30    });
+
+● Update(src\app\_layout.tsx)
+  ⎿  Added 1 line, removed 1 line
+      53          <Stack.Screen name="(tabs)" options={{ headerShown: fal
+          se }} />
+      54          <Stack.Screen
+      55            name="pokemon/[id]"
+      56 -          options={{ title: "", headerBackButtonDisplayMode: "m
+         -inimal" }}                                                     
+      56 +          options={{ headerShown: false, animationTypeForReplac
+         +e: "push" }}                                                   
+      57          />
+      58        </Stack>
+      59      </QueryClientProvider>
+
+● Write(src\components\PokemonImage.tsx)
+  ⎿  Wrote 39 lines to src\components\PokemonImage.tsx
+       1 import { Image } from "expo-image";
+       2 import { useState } from "react";
+       3 import { StyleSheet } from "react-native";
+       4
+       5 import { Icon } from "@/components/Icon";
+       6 import { getImageUrl } from "@/lib/pokemon";
+       7 import { colors } from "@/theme/colors";
+       8
+       9 type PokemonImageProps = {
+      10   id: number;
+     … +29 lines (ctrl+o to expand)
+
+● Update(src\components\PokemonCard.tsx)
+  ⎿  Removed 1 line
+      1 -import { Image } from "expo-image";                             
+      1  import { router } from "expo-router";
+      2  import { useState } from "react";
+      3  import { Pressable, StyleSheet, Text, View } from "react-native"
+         ;
+
+● Update(src\components\PokemonCard.tsx)
+  ⎿  Added 2 lines, removed 2 lines
+      1  import { router } from "expo-router";
+      2 -import { useState } from "react";                               
+      2  import { Pressable, StyleSheet, Text, View } from "react-native"
+         ;
+      3  
+      4  import { Icon } from "@/components/Icon";
+      6 -import { formatBadge, formatName, getImageUrl } from "@/lib/poke
+        -mon";                                                           
+      5 +import { PokemonImage } from "@/components/PokemonImage";       
+      6 +import { formatBadge, formatName } from "@/lib/pokemon";        
+      7  import { colors, shadows } from "@/theme/colors";
+      8  import { fonts } from "@/theme/fonts";
+      9  import { spacing } from "@/theme/spacing";
+
+● Update(src\components\PokemonCard.tsx)
+  ⎿  Removed 2 lines
+      17  };
+      18  
+      19  export function PokemonCard({ id, name, width }: PokemonCardPro
+          ps) {
+      20 -  const [imageFailed, setImageFailed] = useState(false);       
+      21 -                                                               
+      20    return (
+      21      <Pressable style={[styles.card, { width }]} onPress={() => 
+          router.push(`/pokemon/${id}`)}>
+      22        <View style={[styles.imageArea, { height: width }]}>
+
+● Update(src\components\PokemonCard.tsx)
+  ⎿  Added 1 line, removed 11 lines
+      20    return (
+      21      <Pressable style={[styles.card, { width }]} onPress={() => 
+          router.push(`/pokemon/${id}`)}>
+      22        <View style={[styles.imageArea, { height: width }]}>
+      23 -        {imageFailed ? (                                       
+      24 -          <Icon name="pokeball" color={colors.placeholderIcon} 
+         -box={PLACEHOLDER_BOX} />                                       
+      25 -        ) : (                                                  
+      26 -          <Image                                               
+      27 -            source={getImageUrl(id)}                           
+      28 -            recyclingKey={String(id)}                          
+      29 -            contentFit="contain"                               
+      30 -            style={styles.image}                               
+      31 -            onError={() => setImageFailed(true)}               
+      32 -          />                                                   
+      33 -        )}                                                     
+      23 +        <PokemonImage id={id} placeholderBox={PLACEHOLDER_BOX} 
+         +/>                                                             
+      24        </View>
+      25        <View style={styles.badge}>
+      26          <Text style={styles.badgeText}>{formatBadge(id)}</Text>
+
+● Update(src\components\PokemonCard.tsx)
+  ⎿  Removed 4 lines
+      51      borderTopLeftRadius: spacing.radius,
+      52      borderTopRightRadius: spacing.radius,
+      53    },
+      54 -  image: {                                                     
+      55 -    width: "100%",                                             
+      56 -    height: "100%",                                            
+      57 -  },                                                           
+      54    badge: {
+      55      position: "absolute",
+      56      top: 8,
+
+● Write(src\components\DetailBar.tsx)
+  ⎿  Wrote 59 lines to src\components\DetailBar.tsx
+       1 import { router } from "expo-router";
+       2 import { Pressable, StyleSheet, Text, View } from "react-native"
+         ;
+       3 import { useSafeAreaInsets } from "react-native-safe-area-contex
+         t";
+       4
+       5 import { Icon } from "@/components/Icon";
+       6 import { colors } from "@/theme/colors";
+       7 import { fonts } from "@/theme/fonts";
+       8 import { spacing } from "@/theme/spacing";
+     … +51 lines (ctrl+o to expand)
+
+● Write(src\components\DetailHeader.tsx)
+  ⎿  Wrote 123 lines to src\components\DetailHeader.tsx
+      1 import { type LayoutChangeEvent, StyleSheet, Text, View } from "r
+        eact-native";
+      2
+      3 import { PokemonImage } from "@/components/PokemonImage";
+      4 import { formatBadge, formatName, type PokemonDetailData } from "
+        @/lib/pokemon";
+      5 import { colors, typeColors } from "@/theme/colors";
+      6 import { fonts } from "@/theme/fonts";
+      7 import { spacing } from "@/theme/spacing";
+      8
+     … +115 lines (ctrl+o to expand)
+
+● Write(src\components\DetailTabs.tsx)
+  ⎿  Wrote 61 lines to src\components\DetailTabs.tsx
+       1 import { Pressable, StyleSheet, Text, View } from "react-native"
+         ;
+       2
+       3 import { colors } from "@/theme/colors";
+       4 import { fonts } from "@/theme/fonts";
+       5
+       6 const TABS = ["About", "Stats", "Evolution"] as const;
+       7
+       8 export type DetailTab = (typeof TABS)[number];
+       9
+     … +52 lines (ctrl+o to expand)
+
+● Write(src\components\AboutTab.tsx)
+  ⎿  Wrote 47 lines to src\components\AboutTab.tsx
+      1 import { StyleSheet, Text, View } from "react-native";
+      2
+      3 import type { PokemonAboutRow } from "@/lib/pokemon";
+      4 import { colors } from "@/theme/colors";
+      5 import { fonts } from "@/theme/fonts";
+      6
+      7 type AboutTabProps = {
+      8   rows: PokemonAboutRow[];
+      9 };
+     … +38 lines (ctrl+o to expand)
+
+● Write(src\components\StatsTab.tsx)
+  ⎿  Wrote 65 lines to src\components\StatsTab.tsx
+       1 import { StyleSheet, Text, View } from "react-native";
+       2
+       3 import type { PokemonStat } from "@/lib/pokemon";
+       4 import { colors } from "@/theme/colors";
+       5 import { fonts } from "@/theme/fonts";
+       6 import { spacing } from "@/theme/spacing";
+       7
+       8 type StatsTabProps = {
+       9   stats: PokemonStat[];
+      10 };
+     … +55 lines (ctrl+o to expand)
+
+● Write(src\components\EvolutionCard.tsx)
+  ⎿  Wrote 111 lines to src\components\EvolutionCard.tsx
+       1 import { router } from "expo-router";
+       2 import { Pressable, StyleSheet, Text, View } from "react-native"
+         ;
+       3
+       4 import { PokemonImage } from "@/components/PokemonImage";
+       5 import { formatBadge, formatName } from "@/lib/pokemon";
+       6 import { colors, shadows } from "@/theme/colors";
+       7 import { fonts } from "@/theme/fonts";
+       8 import { spacing } from "@/theme/spacing";
+       9
+     … +102 lines (ctrl+o to expand)
+
+● Write(src\components\EvolutionTab.tsx)  ⎿  Wrote 44 lines to src\components\EvolutionTab.tsx
+       1 import { Fragment } from "react";
+       2 import { StyleSheet, View } from "react-native";
+       3
+       4 import { EvolutionCard, EvolutionLine } from "@/components/Evolu
+         tionCard";
+       5 import { CenteredError, CenteredMessage, CenteredSpinner } from
+         "@/components/ListStates";
+       6 import { useEvolutionChain } from "@/hooks/useEvolutionChain";
+       7
+       8 type EvolutionTabProps = {
+     … +36 lines (ctrl+o to expand)
+
+● Write(src\components\PokemonDetail.tsx)
+  ⎿  Wrote 112 lines to src\components\PokemonDetail.tsx
+      1 import { useState } from "react";
+      2 import {
+      3   type NativeScrollEvent,
+      4   type NativeSyntheticEvent,
+      5   ScrollView,
+      6   StyleSheet,
+      7   View,
+      8 } from "react-native";
+      9 import { useSafeAreaInsets } from "react-native-safe-area-context
+        ";
+     … +103 lines (ctrl+o to expand)
+
+● Write(src\app\pokemon\[id].tsx)
+  ⎿  Added 7 lines, removed 2 lines
+       1 -import { View } from "react-native";                           
+       1 +import { useLocalSearchParams } from "expo-router";            
+       2  
+       3 +import { PokemonDetail } from "@/components/PokemonDetail";    
+       4 +                                                               
+       5  export default function PokemonDetailScreen() {
+       4 -  return <View />;                                             
+       6 +  const { id } = useLocalSearchParams<{ id: string }>();       
+       7 +                                                               
+       8 +  // The key gives each Pokémon a fresh page: on the About tab,
+         + scrolled to the top.                                          
+       9 +  return <PokemonDetail key={id} id={id} />;                   
+      10  }
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Lint, typecheck, tests and the Android build are green, but my self-review
+  found that DetailPage stores the raw scroll offset in state, causing a full
+  re-render on every scroll. I'm switching that to a boolean and then testing
+  the real fetch and logic against the live API.
+
+● Update(src\components\PokemonDetail.tsx)
+  ⎿  Added 3 lines, removed 3 lines
+      56    const insets = useSafeAreaInsets();
+      57    const [activeTab, setActiveTab] = useState<DetailTab>("About"
+          );
+      58    const [nameBottom, setNameBottom] = useState(0);
+      59 -  const [scrollOffset, setScrollOffset] = useState(0);         
+      60 -  const isNameOutOfView = nameBottom > 0 && scrollOffset > name
+         -Bottom;                                                        
+      59 +  // A boolean, so scrolling only re-renders the page when the 
+         +name appears or disappears.                                    
+      60 +  const [isNameOutOfView, setIsNameOutOfView] = useState(false)
+         +;                                                              
+      61  
+      62    function handleScroll(event: NativeSyntheticEvent<NativeScrol
+          lEvent>) {
+      63 -    setScrollOffset(event.nativeEvent.contentOffset.y);        
+      63 +    setIsNameOutOfView(event.nativeEvent.contentOffset.y > name
+         +Bottom);                                                       
+      64    }
+      65  
+      66    return (
+
+  Made 1 scratchpad edit +22, ran 1 shell command (ctrl+o to expand)
+
+● Issue #5 is built, but nobody has seen the screen yet: I can't run it on a
+  phone, so all the UI still needs your check. Lint, typecheck and all 54 unit
+  tests pass, and an Android bundle builds. The code is on the new
+  feature/detail-page branch, not committed, and every task on the issue is
+  ticked except "Test on phone". No packages were added, so it still runs in
+  Expo Go.
+
+  What changed
+
+  - UI (new): PokemonDetail, DetailBar, DetailHeader, DetailTabs, AboutTab,
+    StatsTab, EvolutionTab, EvolutionCard and PokemonImage
+  - UI (changed):
+    - pokemon/[id].tsx
+    - _layout.tsx
+    - PokemonCard now uses PokemonImage, with no intended visual change
+  - Data: usePokemonDetail and useEvolutionChain are new, and src/api/pokemon.ts
+    changed
+  - Logic: src/lib/pokemon.ts and its tests
+  - Theme: colors.ts, fonts.ts and spacing.ts
+  - Font: assets/fonts/CabinetGrotesk-Regular.otf, downloaded from Fontshare
+
+  Small additions the plan didn't mention:
+  - Evolution cards use a forward transition, because router.replace animates
+    backwards by default.
+  - The page doesn't bounce at the ends on iOS, so no white shows above the top
+    section.
+  - The back button and tabs have accessibility labels.
+
+  Acceptance criteria
+
+  Checked against the live API: I ran the real code on these, and all of them
+  were correct:
+  - About values, including Pidgey's two abilities, - for clefable-mega and
+    zygarde-mega, and 0.0 kg for Eternamax
+  - Stat values and bar percentages
+  - Chains for Pikachu, Eevee, Wurmple, charizard-mega-x and raichu-alola
+  - Tauros's chain, which has only Tauros in it
+  - The failed request for ID 99999
+
+  Built but not yet seen working: everything visual or interactive, which is the
+  rest of the spec: layout, navigation, the pinned bar, tabs, loading and error
+  states, and fonts.
+
+  What to test on your phone
+
+  1. Compare with Figma: open Bulbasaur and check spacing, fonts, the image
+     overlapping the colour edge, and the evolution cards and dashed lines.
+  2. Back: go from the list to Pikachu, then tap through Pichu and Raichu, and
+     press back once. You should land on the list at the same scroll position.
+     Try the same from a search result, then with Android back or iOS swipe.
+  3. Pinned bar: on Eevee's Evolution tab, scroll down. The name should appear
+     at 20px between the buttons and disappear when you scroll back up.
+  4. Scroll, then switch tabs: scroll down Eevee's Evolution tab, then tap
+     About. This is the case I'm least sure of: the page gets shorter, so check
+     for a blank area or the pinned name staying visible when it shouldn't.
+  5. Long name: squawkabilly-yellow-plumage should wrap with the ID staying top
+     right, and end in an ellipsis in the pinned bar.
+  6. Evolution tab:
+     - Tapping the current Pokémon's card does nothing.
+     - On charizard-mega-x, the Charizard card does open Charizard.
+     - Tauros shows "This Pokémon does not evolve".
+     - Switching tabs and back doesn't show the spinner again.
+  7. Errors:
+     - Open a Pokémon in airplane mode, then turn it off and tap Retry.
+     - Do the same on the Evolution tab. The other tabs should keep working.
+  8. Missing image: ID 10264 shows the Pokéball placeholder at the right size.
+  9. Homepage: check the cards look the same as before, since PokemonCard was
+     changed.
+
+  After that, run /review-issue 5.
+
+> /review-issue 5
+
+● I'll collect the actual evidence first: lint, typecheck and tests, plus
+  numbered source for the file:line references. I also want to check two
+  TanStack behaviours in its source rather than from memory, because some
+  criteria depend on them.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● One more look at the TanStack source: the Retry criteria depend on fetchState,
+  which that output didn't show.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Review of issue #5
+
+  Result: 57 of the 58 acceptance criteria hold up in the code, and one has a
+  confirmed edge-case bug. One more might fail on a phone, and most visual
+  criteria can't be confirmed until you test on one. I didn't change any code.
+
+  ┌──────────────────┬────────────────────────────────┐
+  │      Check       │             Output             │
+  ├──────────────────┼────────────────────────────────┤
+  │ npx expo lint    │ No errors or warnings (exit 0) │
+  ├──────────────────┼────────────────────────────────┤
+  │ npx tsc --noEmit │ No errors (exit 0)             │
+  ├──────────────────┼────────────────────────────────┤
+  │ npx jest         │ 54 of 54 tests pass            │
+  └──────────────────┴────────────────────────────────┘
+
+  Findings
+
+  1. ❌ The chain can reload after 5 minutes. This breaks "Switching tabs and
+     back does not load it again". The Evolution tab unmounts when you leave it,
+     and TanStack deletes unused data after 5 minutes by default. staleTime:
+     Infinity doesn't prevent that, so staying on About for over 5 minutes and
+     coming back shows the spinner again. Adding gcTime: Infinity at
+     useEvolutionChain.ts:12 (src/hooks/useEvolutionChain.ts#L12) fixes it.
+  2. ⚠️ The pinned name may be wrong after switching tabs. It only updates on
+     scroll events (PokemonDetail.tsx:62
+     (src/components/PokemonDetail.tsx#L62)). If you scroll far down Eevee's
+     Evolution tab and tap About, the page gets shorter, and the name may stay
+     visible or a blank area may show. I can't tell without a phone, so it's
+     step 4 in the test script.
+  3. ⚠️ Three small things aren't in the spec: animationTypeForReplace
+     (_layout.tsx:56 (src/app/_layout.tsx#L56)), bounces={false}
+     (PokemonDetail.tsx:74 (src/components/PokemonDetail.tsx#L74)) and the
+     accessibility roles and labels (DetailBar.tsx:25
+     (src/components/DetailBar.tsx#L25), DetailTabs.tsx:17
+     (src/components/DetailTabs.tsx#L17)). AGENTS.md says not to build anything
+     outside a spec. They're harmless, but you should either keep them and add
+     them to the spec, or remove them.
+
+  Acceptance criteria
+
+  ✅ means the code does it. 📱 means only a phone can fully confirm it.
+
+  Opening and leaving
+
+  ✅📱
+  Criterion: Card opens Detail on About, at the top
+  Where: PokemonCard.tsx:21 (src/components/PokemonCard.tsx#L21),
+    PokemonDetail.tsx:57 (src/components/PokemonDetail.tsx#L57)
+  ────────────────────────────────────────
+  ✅📱
+  Criterion: No tab bar
+  Where: Route is outside (tabs): _layout.tsx:55 (src/app/_layout.tsx#L55)
+  ────────────────────────────────────────
+  ✅📱
+  Criterion: Back returns to the list, with scroll and search kept
+  Where: DetailBar.tsx:23 (src/components/DetailBar.tsx#L23)
+  ────────────────────────────────────────
+  ✅📱
+  Criterion: One back after several evolution hops
+  Where: EvolutionCard.tsx:26 (src/components/EvolutionCard.tsx#L26)
+  ────────────────────────────────────────
+  ✅
+  Criterion: From Favorites, back returns to Favorites
+  Where: Same mechanism; can't be tested until Favorites opens Detail
+  ────────────────────────────────────────
+  ✅📱
+  Criterion: Android back and iOS swipe do the same
+  Where: Only one detail page is on the stack
+
+  Top of the page
+
+  ┌──────┬────────────────┬─────────────────────────────────────────────────┐
+  │      │   Criterion    │                      Where                      │
+  ├──────┼────────────────┼─────────────────────────────────────────────────┤
+  │      │ Name, ID,      │                                                 │
+  │ ✅📱 │ pills and      │ DetailHeader.tsx:25                             │
+  │      │ image as in    │ (src/components/DetailHeader.tsx#L25)           │
+  │      │ the Figma      │                                                 │
+  ├──────┼────────────────┼─────────────────────────────────────────────────┤
+  │ ✅   │ Name format    │ DetailHeader.tsx:27                             │
+  │      │                │ (src/components/DetailHeader.tsx#L27)           │
+  ├──────┼────────────────┼─────────────────────────────────────────────────┤
+  │ ✅   │ ID format      │ DetailHeader.tsx:28                             │
+  │      │                │ (src/components/DetailHeader.tsx#L28)           │
+  ├──────┼────────────────┼─────────────────────────────────────────────────┤
+  │      │ One or two     │ DetailHeader.tsx:31                             │
+  │ ✅   │ pills, in API  │ (src/components/DetailHeader.tsx#L31)           │
+  │      │ order          │                                                 │
+  ├──────┼────────────────┼─────────────────────────────────────────────────┤
+  │      │ Dot colours    │ colors.ts:17 (src/theme/colors.ts#L17),         │
+  │ ✅   │ for all 18     │ DetailHeader.tsx:33                             │
+  │      │ types          │ (src/components/DetailHeader.tsx#L33)           │
+  ├──────┼────────────────┼─────────────────────────────────────────────────┤
+  │ ✅   │ HOME image URL │ PokemonImage.tsx:25                             │
+  │      │                │ (src/components/PokemonImage.tsx#L25)           │
+  ├──────┼────────────────┼─────────────────────────────────────────────────┤
+  │      │                │ PokemonImage.tsx:19                             │
+  │ ✅📱 │ Placeholder    │ (src/components/PokemonImage.tsx#L19),          │
+  │      │ keeps its size │ DetailHeader.tsx:42                             │
+  │      │                │ (src/components/DetailHeader.tsx#L42)           │
+  ├──────┼────────────────┼─────────────────────────────────────────────────┤
+  │      │ Long name      │                                                 │
+  │ ✅📱 │ wraps, ID      │ DetailHeader.tsx:26                             │
+  │      │ stays top      │ (src/components/DetailHeader.tsx#L26)           │
+  │      │ right          │                                                 │
+  └──────┴────────────────┴─────────────────────────────────────────────────┘
+
+  Pinned bar and scrolling
+
+  ┌──────┬──────────────────┬───────────────────────────────────────────────┐
+  │      │    Criterion     │                     Where                     │
+  ├──────┼──────────────────┼───────────────────────────────────────────────┤
+  │      │ Whole page       │ PokemonDetail.tsx:68                          │
+  │ ✅📱 │ scrolls, only    │ (src/components/PokemonDetail.tsx#L68)        │
+  │      │ the bar stays    │                                               │
+  ├──────┼──────────────────┼───────────────────────────────────────────────┤
+  │ ✅📱 │ Back, heart and  │ DetailBar.tsx:20                              │
+  │      │ solid background │ (src/components/DetailBar.tsx#L20)            │
+  ├──────┼──────────────────┼───────────────────────────────────────────────┤
+  │      │ Name shows and   │ PokemonDetail.tsx:62                          │
+  │ ⚠️📱 │ hides on scroll  │ (src/components/PokemonDetail.tsx#L62), see   │
+  │      │                  │ finding 2                                     │
+  ├──────┼──────────────────┼───────────────────────────────────────────────┤
+  │ ✅📱 │ 20px, one line,  │ DetailBar.tsx:30                              │
+  │      │ ellipsis         │ (src/components/DetailBar.tsx#L30)            │
+  ├──────┼──────────────────┼───────────────────────────────────────────────┤
+  │      │ Bulbasaur's      │                                               │
+  │ ✅📱 │ About fits       │ Layout follows the Figma measurements         │
+  │      │ without          │                                               │
+  │      │ scrolling        │                                               │
+  └──────┴──────────────────┴───────────────────────────────────────────────┘
+
+  Heart and tabs
+
+  ┌──────┬────────────────┬─────────────────────────────────────────────────┐
+  │      │   Criterion    │                      Where                      │
+  ├──────┼────────────────┼─────────────────────────────────────────────────┤
+  │      │ Heart uses the │ DetailBar.tsx:34                                │
+  │ ✅   │  current icon, │ (src/components/DetailBar.tsx#L34)              │
+  │      │  does nothing  │                                                 │
+  ├──────┼────────────────┼─────────────────────────────────────────────────┤
+  │      │ About, Stats,  │ DetailTabs.tsx:6                                │
+  │ ✅   │ Evolution;     │ (src/components/DetailTabs.tsx#L6),             │
+  │      │ opens on About │ PokemonDetail.tsx:57                            │
+  │      │                │ (src/components/PokemonDetail.tsx#L57)          │
+  ├──────┼────────────────┼─────────────────────────────────────────────────┤
+  │      │ Tap switches   │                                                 │
+  │ ✅📱 │ and moves the  │ DetailTabs.tsx:24                               │
+  │      │ underline, no  │ (src/components/DetailTabs.tsx#L24)             │
+  │      │ swiping        │                                                 │
+  └──────┴────────────────┴─────────────────────────────────────────────────┘
+
+  About tab
+
+  ┌──────┬───────────────────┬──────────────────────────────────────────────┐
+  │      │     Criterion     │                    Where                     │
+  ├──────┼───────────────────┼──────────────────────────────────────────────┤
+  │ ✅   │ Rows in order     │ pokemon.ts:97 (src/lib/pokemon.ts#L97)       │
+  ├──────┼───────────────────┼──────────────────────────────────────────────┤
+  │ ✅   │ Bulbasaur values  │ Live API and unit test                       │
+  ├──────┼───────────────────┼──────────────────────────────────────────────┤
+  │ ✅   │ Weight format,    │ pokemon.ts:63 (src/lib/pokemon.ts#L63), live │
+  │      │ including 0.0 kg  │  API and unit test                           │
+  ├──────┼───────────────────┼──────────────────────────────────────────────┤
+  │ ✅   │ Height format     │ pokemon.ts:68 (src/lib/pokemon.ts#L68), live │
+  │      │                   │  API and unit test                           │
+  ├──────┼───────────────────┼──────────────────────────────────────────────┤
+  │ ✅   │ Types and         │ pokemon.ts:76 (src/lib/pokemon.ts#L76), live │
+  │      │ abilities list    │  API and unit test                           │
+  ├──────┼───────────────────┼──────────────────────────────────────────────┤
+  │ ✅   │ Hidden abilities  │ pokemon.ts:80 (src/lib/pokemon.ts#L80), live │
+  │      │ left out          │  API and unit test                           │
+  ├──────┼───────────────────┼──────────────────────────────────────────────┤
+  │ ✅   │ - for missing     │ pokemon.ts:72 (src/lib/pokemon.ts#L72), live │
+  │      │ values            │  API and unit test                           │
+  ├──────┼───────────────────┼──────────────────────────────────────────────┤
+  │ ✅📱 │ Long values wrap  │ AboutTab.tsx:17                              │
+  │      │                   │ (src/components/AboutTab.tsx#L17)            │
+  └──────┴───────────────────┴──────────────────────────────────────────────┘
+
+  Stats tab
+
+  ┌─────┬────────────────┬───────────────────────────────────────────────────┐
+  │     │   Criterion    │                       Where                       │
+  ├─────┼────────────────┼───────────────────────────────────────────────────┤
+  │ ✅  │ Rows and order │ pokemon.ts:84 (src/lib/pokemon.ts#L84),           │
+  │     │                │ StatsTab.tsx:15 (src/components/StatsTab.tsx#L15) │
+  ├─────┼────────────────┼───────────────────────────────────────────────────┤
+  │ ✅  │ Charmander's   │ Live API                                          │
+  │     │ values         │                                                   │
+  ├─────┼────────────────┼───────────────────────────────────────────────────┤
+  │ ✅  │ Bar is value / │ pokemon.ts:88 (src/lib/pokemon.ts#L88), unit test │
+  │     │  255           │                                                   │
+  └─────┴────────────────┴───────────────────────────────────────────────────┘
+
+  Evolution tab
+
+  ❌
+  Criterion: Loads on first open, not again
+  Where: Correct within 5 minutes, see finding 1
+  ────────────────────────────────────────
+  ✅📱
+  Criterion: Cards with a dashed line between them
+  Where: EvolutionTab.tsx:30 (src/components/EvolutionTab.tsx#L30)
+  ────────────────────────────────────────
+  ✅
+  Criterion: Pikachu's order
+  Where: Live API
+  ────────────────────────────────────────
+  ✅
+  Criterion: Flat list for Eevee and Wurmple
+  Where: pokemon.ts:93 (src/lib/pokemon.ts#L93), live API and unit test
+  ────────────────────────────────────────
+  ✅
+  Criterion: Forms show their species' chain
+  Where: api/pokemon.ts:70 (src/api/pokemon.ts#L70), live API
+  ────────────────────────────────────────
+  ✅📱
+  Criterion: Card image placeholder
+  Where: EvolutionCard.tsx:29 (src/components/EvolutionCard.tsx#L29)
+  ────────────────────────────────────────
+  ✅📱
+  Criterion: Tap opens on About, at the top
+  Where: EvolutionCard.tsx:26 (src/components/EvolutionCard.tsx#L26), [id].tsx:9
+
+    (src/app/pokemon/%5Bid%5D.tsx#L9)
+  ────────────────────────────────────────
+  ✅
+  Criterion: Current card does nothing, Charizard works from the Mega page
+  Where: EvolutionCard.tsx:24 (src/components/EvolutionCard.tsx#L24),
+    EvolutionTab.tsx:33 (src/components/EvolutionTab.tsx#L33)
+
+  States and fonts
+
+  ┌──────┬──────────────────┬───────────────────────────────────────────────┐
+  │      │    Criterion     │                     Where                     │
+  ├──────┼──────────────────┼───────────────────────────────────────────────┤
+  │      │ Page loading:    │                                               │
+  │ ✅📱 │ back button and  │ PokemonDetail.tsx:30                          │
+  │      │ spinner, no      │ (src/components/PokemonDetail.tsx#L30)        │
+  │      │ heart            │                                               │
+  ├──────┼──────────────────┼───────────────────────────────────────────────┤
+  │ ✅📱 │ Page error,      │ PokemonDetail.tsx:39                          │
+  │      │ heart hidden     │ (src/components/PokemonDetail.tsx#L39)        │
+  ├──────┼──────────────────┼───────────────────────────────────────────────┤
+  │ ✅📱 │ Unknown ID shows │ api/pokemon.ts:47 (src/api/pokemon.ts#L47),   │
+  │      │  the same error  │ live API rejects 99999                        │
+  ├──────┼──────────────────┼───────────────────────────────────────────────┤
+  │ ✅   │ Retry shows the  │ Confirmed in TanStack: a refetch with no data │
+  │      │ spinner          │  goes back to pending                         │
+  ├──────┼──────────────────┼───────────────────────────────────────────────┤
+  │      │ Chain spinner,   │ EvolutionTab.tsx:16                           │
+  │ ✅📱 │ page keeps       │ (src/components/EvolutionTab.tsx#L16)         │
+  │      │ working          │                                               │
+  ├──────┼──────────────────┼───────────────────────────────────────────────┤
+  │      │ Chain error,     │ EvolutionTab.tsx:20                           │
+  │ ✅📱 │ page keeps       │ (src/components/EvolutionTab.tsx#L20)         │
+  │      │ working          │                                               │
+  ├──────┼──────────────────┼───────────────────────────────────────────────┤
+  │      │ Chain Retry      │                                               │
+  │ ✅   │ shows the        │ Same TanStack check                           │
+  │      │ spinner          │                                               │
+  ├──────┼──────────────────┼───────────────────────────────────────────────┤
+  │ ✅📱 │ "This Pokémon    │ EvolutionTab.tsx:24                           │
+  │      │ does not evolve" │ (src/components/EvolutionTab.tsx#L24)         │
+  ├──────┼──────────────────┼───────────────────────────────────────────────┤
+  │ ✅📱 │ Fonts loaded and │ _layout.tsx:24 (src/app/_layout.tsx#L24),     │
+  │      │  used            │ fonts.ts:3 (src/theme/fonts.ts#L3)            │
+  └──────┴──────────────────┴───────────────────────────────────────────────┘
+
+  Other checks
+
+  ┌─────┬───────────────┬───────────────────────────────────────────────────┐
+  │     │     Check     │                       Notes                       │
+  ├─────┼───────────────┼───────────────────────────────────────────────────┤
+  │     │ Loading,      │ PokemonDetail.tsx:30                              │
+  │ ✅  │ error and     │ (src/components/PokemonDetail.tsx#L30). There's   │
+  │     │ empty for the │ no empty state: a Pokémon either exists or        │
+  │     │  Pokémon load │ returns an error.                                 │
+  ├─────┼───────────────┼───────────────────────────────────────────────────┤
+  │     │ Loading,      │                                                   │
+  │ ✅  │ error and     │ EvolutionTab.tsx:16                               │
+  │     │ empty for the │ (src/components/EvolutionTab.tsx#L16)             │
+  │     │  chain load   │                                                   │
+  ├─────┼───────────────┼───────────────────────────────────────────────────┤
+  │ ✅  │ Failed images │ PokemonImage.tsx:19                               │
+  │     │               │ (src/components/PokemonImage.tsx#L19)             │
+  ├─────┼───────────────┼───────────────────────────────────────────────────┤
+  │     │ UI, data and  │ Fetching is in src/api, queries in src/hooks,     │
+  │ ✅  │ logic not     │ logic in src/lib, and the route is 10 lines.      │
+  │     │ mixed         │ src/lib imports API types only, which disappear   │
+  │     │               │ at build time.                                    │
+  ├─────┼───────────────┼───────────────────────────────────────────────────┤
+  │     │ No any, as    │                                                   │
+  │ ✅  │ casts,        │ Searched all of src; the only as left is as const │
+  │     │ @ts-ignore or │                                                   │
+  │     │  console.log  │                                                   │
+  ├─────┼───────────────┼───────────────────────────────────────────────────┤
+  │     │ Expo Go, Expo │                                                   │
+  │ ✅  │  Router, code │ No new packages, and ios/ and android/ untouched  │
+  │     │  structure    │                                                   │
+  ├─────┼───────────────┼───────────────────────────────────────────────────┤
+  │     │ Plan approved │                                                   │
+  │ ✅  │  first,       │ On feature/detail-page                            │
+  │     │ nothing       │                                                   │
+  │     │ committed     │                                                   │
+  ├─────┼───────────────┼───────────────────────────────────────────────────┤
+  │     │ "Don't build  │                                                   │
+  │ ⚠️  │ anything not  │ See finding 3                                     │
+  │     │ in a spec"    │                                                   │
+  └─────┴───────────────┴───────────────────────────────────────────────────┘
+
+  Before committing: the spec's checkboxes are still - [ ], its status is still
+  draft, and "Test on phone" is still open on the issue.
+
+  Phone test script
+
+  1. Layout: open Bulbasaur and compare it to the Figma: spacing, fonts, image
+     overlap. Check the homepage cards look unchanged too.
+  2. Back: go from the list to Pikachu, tap Pichu, tap Raichu, then press back
+     once. You should land on the list at the same scroll position. Repeat from
+     a search result, and with Android back or iOS swipe.
+  3. Pinned bar: on Eevee's Evolution tab, scroll down and up. The name should
+     appear and disappear.
+  4. Finding 2: scroll to the bottom of that tab, then tap About. Look for a
+     blank area or a leftover name.
+  5. Long name: check squawkabilly-yellow-plumage in the big title and in the
+     pinned bar.
+  6. Evolution:
+     - Tap the current Pokémon's card: nothing should happen.
+     - On charizard-mega-x, the Charizard card should open Charizard.
+     - Tauros should show the message.
+  7. About edge cases: check clefable-mega, zygarde-mega and
+     eternatus-eternamax.
+  8. Errors: in airplane mode, open a Pokémon you haven't opened yet and wait
+     about 7 seconds for the error. Turn airplane mode off and tap Retry. Then
+     do the same on an Evolution tab you haven't opened, and check About still
+     works.
+  9. Missing image: check that ID 10264 shows the Pokéball.
+
+  How the code works
+
+  - The route: [id].tsx (src/app/pokemon/%5Bid%5D.tsx) reads the ID from the URL
+    and passes it on. key={id} tells React to treat each Pokémon as a brand-new
+    component, so it always starts on About at the top.
+  - Why back always works: a stack is like a pile of screens. The list is at the
+    bottom and Detail sits on top. Tapping an evolution card uses replace,
+    which swaps the top screen instead of adding another, so back always lands
+    on whatever opened Detail.
+  - Three layers:
+    - src/api fetches raw JSON.
+    - src/lib turns it into display-ready values, such as 69 into 6.9 kg. These
+      are plain functions, so they can be tested without a phone.
+    - src/hooks connects them with TanStack Query, which handles caching,
+      loading and errors. The select option runs the conversion, so components
+      only get finished data.
+  - Loading and error: isPending means there's no data yet and a request is
+    running, so the spinner shows. If it's not pending and there's still no
+    data, the request failed, so the error shows. Retry goes back to pending,
+    which brings the spinner back.
+  - Evolution chain: the API returns a tree, where each Pokémon holds a list of
+    its evolutions. flattenEvolutionChain calls itself on each branch to turn
+    the tree into one flat list. The chain needs two requests, because the
+    Pokémon points to its species and the species points to the chain.
+  - Lazy loading: EvolutionTab only exists while its tab is open, and that's
+    when its query starts. So the chain isn't fetched until someone opens the
+    tab, without any extra code.
+  - Pinned name: the header measures where the big name ends, and the scroll
+    handler compares the scroll position to that number. It stores a simple
+    true/false, so the page only re-renders when the answer changes, not on
+    every scroll event.
+  - Image overlap: the page is white, and a blue band sits behind the top 150 of
+    the 200-high image. The bottom 50 of the image therefore sits on white, and
+    the edge moves down with a wrapped name.
+
+  Do you want me to fix finding 1? It's a one-line change. Then tell me what you
+  decide on finding 3, and I'll check finding 2 once you've tried step 4.
+
+> Findings: 1. Fix it. 2. Leave as is. 3. Keep the small things that aren't in
+  the spec
+
+● Update(src\hooks\useEvolutionChain.ts)
+  ⎿  Added 2 lines
+       9      queryFn: () => fetchEvolutionChain(speciesUrl),
+      10      select: flattenEvolutionChain,
+      11      // The Evolution tab unmounts when you leave it, and coming
+           back must not load the chain again.
+      12 +    // staleTime stops a refetch, and gcTime stops the unused d
+         +ata being removed after 5 minutes.                             
+      13      staleTime: Infinity,
+      14 +    gcTime: Infinity,                                          
+      15    });
+      16  }
+
+  Read 1 file (ctrl+o to expand)
+
+● The small additions stay, so I'll record them in the spec, which keeps it
+  matching the code. Then I'll re-run the checks.
+
+● Update(specs\features\detail page.md)
+  ⎿  Added 3 lines
+       98  - Figma frames: Detail Page - About, Detail Page - Stats and D
+           etail Page - Evolution in the [Figma design](https://www.figma
+           .com/design/dsgGXcu5WELIvRW90m5308/Pok%C3%A9mon-Code-Challenge
+           ?node-id=1-2).
+       99  - Top to bottom: pinned bar, name and ID, type pills, image, t
+           abs, tab content.
+      100  - Evolution cards replace the detail page on screen instead of
+            adding a new one on top, so back always returns to the list t
+           he page was opened from.
+      101 +- Opening a Pokémon from an evolution card animates forward, l
+          +ike opening a new page.                                       
+      102 +- The page doesn't bounce at the top and bottom on iOS, so no 
+          +white shows above the top section.                            
+      103 +- A screen reader announces the back button as "Back", and the
+          + tabs as tabs with the active one selected.                   
+      104  
+      105  The Figma frames are a guide for layout and styling only. Valu
+           es follow the API: Charmander is `004` and not `003`, Bulbasau
+           r weighs 6.9 kg and not 7,0 kg, and stat bars follow the 255 s
+           cale. Images follow `product.md` (HOME renders), and type colo
+           urs follow the table below, not the Figma.
+      106  
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● All three findings are dealt with, and lint, typecheck and all 54 tests still
+  pass. Nothing is committed.
+
+  1. Fixed: I added gcTime: Infinity in useEvolutionChain.ts
+     (src/hooks/useEvolutionChain.ts), so a loaded chain stays in memory until
+     the app closes and the 5-minute reload is gone. There's no unit test for
+     this, because it's hook behaviour; to check it on your phone, stay on About
+     for over 5 minutes and go back to Evolution.
+  2. Left as is: the code for the pinned name hasn't changed. You can skip step
+     4 of the test script, or just note what you see.
+  3. Kept: the forward animation, the disabled iOS bounce and the accessibility
+     labels all stay. I also added them to the spec
+     (specs/features/detail%20page.md) under Screens & UI, so it still matches
+     the code. That's the one edit you didn't explicitly ask for, but it's what
+     I'd suggested in the review.
+
+  Once you've run the phone test script, /commit-issue 5 is next. "Test on
+  phone" is still open on the issue, and the spec's checkboxes and draft status
+  still need updating.
+
+> I have tested it on the phone and everything works. Check the unchecked boxes
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● All the updates went through; only my final check command had a typo, so I'll
+  redo that check.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Everything is ticked, with no open boxes left:
+
+  - Spec: all 50 acceptance criteria in specs/features/detail page.md
+    (specs/features/detail%20page.md)
+  - Issue #5: all 50 criteria in the issue body
+  - Plan comment: all 24 tasks, including "Test on phone"
+
+  A correction: my review said "57 of the 58" criteria, but the spec has 50, so
+  I miscounted. The review's findings themselves aren't affected.
+
+  Two things to know:
+  - Favorites criterion: the box for "A detail page opened from Favorites
+    returns to Favorites" is ticked, but that can't be tested yet because
+    Favorites doesn't open Detail. Re-check it when you build Favorites.
+  - Spec status: it still says draft, because you only asked for the boxes. The
+    homepage spec says complete, so you may want to change this one too. I can
+    do that in the same step as the commit.
+
+  The spec edit isn't committed yet. The next step is /commit-issue 5.
+
+> /commit-issue 5
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Lint and typecheck pass, there are no secrets, and every changed file belongs
+  to this issue. I'll stage them by name and commit.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● The work is committed as 293234e on feature/detail-page, with 22 files and
+  nothing left uncommitted. Lint and typecheck passed first, and no .env or
+  secret files were included.
+
+  Add Pokémon detail page with About, Stats and Evolution tabs
+
+  closes #5
+
+  Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+  - Closing the issue: closes #5 only closes it once this reaches main, so it
+    stays open until then, for example when a PR is merged.
+  - Spec status: it still says draft, as I didn't change it without your say.
+
+  Shall I push feature/detail-page to GitHub? If you want the spec set to
+  complete, tell me and I'll do that first, as a small extra commit.
+
+> Change draft to complete, publish branch and create PR
+
+● Bash(cd "C:/Users/Gebruiker/Documents/GitHub/Pokedex";
+      f="specs/features/detail page.md"; sed -i 's/^> Issue: #5 · Status:
+      draft/> Issue: #5 · Status: complete/' "$f…)
+  ⎿  Updated specs\features\detail page.md (+1 -1)
+      1  # Feature: detail page
+      2  
+      3 -> Issue: #5 · Status: draft                                     
+      3 +> Issue: #5 · Status: complete                                  
+      4  
+      5  ## Goal
+      6  
+
+  Made 1 scratchpad edit +29, ran 1 shell command (ctrl+o to expand)
+● The PR is open: https://github.com/Lucas-Light/Pokedex/pull/6
+
+  - Spec: the status is now complete, committed as 524615e.
+  - Branch: feature/detail-page is on GitHub with both commits.
+  - PR: "Add Pokémon detail page" targets main and follows the same format as
+    your search PR. Merging it closes issue #5.
+
+  GitHub hadn't finished its merge check when I created the PR, so it still
+  shows mergeable=UNKNOWN. main hadn't moved locally since this branch started,
+  so I don't expect conflicts, but check the PR page before you merge.
+
+  Your workflow also expects the exported chat in chat-history/, named with the
+  issue number. That one's for you to do, since I can't export this chat.
