@@ -12,7 +12,8 @@ Each one testable on the phone (and, where possible, in a unit test on the hook 
 
 **Starting a search**
 
-- [ ] Tapping the search bar opens the keyboard. The full list, the "All Pokémon" title and the search icon stay as they are.
+- [ ] Tapping anywhere on the search bar, including its padding and icon, opens the keyboard. The full list, the "All Pokémon" title and the search icon stay as they are.
+- [ ] After the Android back button closed the keyboard, tapping the search bar's padding or icon opens it again.
 - [ ] The first tap on the search bar requests the full list (`limit=100000`). Opening the app without tapping the search bar does not request it.
 - [ ] Typing the first letter starts search mode: the title is hidden, the search icon becomes the back icon, and the results replace the grid tiles.
 - [ ] Results update with every letter typed or deleted, without a search button and without a minimum length.
@@ -34,6 +35,7 @@ Each one testable on the phone (and, where possible, in a unit test on the hook 
 - [ ] Results are in API order: for `char`, `charmander` comes first and `charizard-gmax` comes last.
 - [ ] All matches are in one list without paging, and the list only renders what is on screen.
 - [ ] Alternate forms are included: `pika` returns 17 results.
+- [ ] When the text changes, the results jump back to the top.
 - [ ] With the keyboard closed, tapping a result opens the Detail route for that Pokémon's ID.
 - [ ] Tapping a result's ⋮ button does the same as on the homepage.
 
@@ -48,6 +50,7 @@ Each one testable on the phone (and, where possible, in a unit test on the hook 
 - [ ] Scrolling the results closes the keyboard.
 - [ ] Tapping outside the search bar closes the keyboard, and the text and results stay.
 - [ ] While the keyboard is open, tapping a result or its ⋮ button only closes the keyboard: Detail does not open.
+- [ ] While the keyboard is open, the tab bar is hidden. It comes back when the keyboard closes.
 - [ ] While the keyboard is open, the Android back button only closes it, and the text and results stay.
 - [ ] During a search with the keyboard closed, the Android back button keeps its normal behaviour and does not end the search first.
 
@@ -63,6 +66,11 @@ Each one testable on the phone (and, where possible, in a unit test on the hook 
 - [ ] If the request failed before anything was typed, nothing changes on screen until the first letter is typed.
 - [ ] Tapping Retry shows the spinner and requests the full list again. On success, the results for the text in the bar appear.
 - [ ] If nothing matches (e.g. `zzzz`), the grid area shows "No Pokémon found" with no button. The title stays hidden and the back icon stays visible.
+
+**Accessibility**
+
+- [ ] A screen reader announces the back icon as a button labelled "Stop searching".
+- [ ] During a search, a screen reader skips the full list under the results.
 
 ## Screens & UI
 
@@ -101,7 +109,7 @@ The search bar stays fixed at the top, and only the cards scroll. There is no �
 
 ## Code layout
 
-- UI: `src/components/SearchBar.tsx` (text input and back icon), `src/components/PokemonGrid.tsx` (shows either the paged list or the results), `src/components/Icon.tsx` (registers `Back.svg`)
+- UI: `src/components/SearchBar.tsx` (text input and back icon), `src/components/SearchResults.tsx` (spinner, error, empty or results, in a layer over the paged list), `src/components/PokemonCardList.tsx` (the grid shared by the list and results), `src/components/ListStates.tsx` (shared spinner, message and error), `src/components/PokemonGrid.tsx` (the paged list), `src/components/Icon.tsx` (registers `Back.svg`)
 - Data (API + queries): `src/api/pokemon.ts`, `src/hooks/usePokemonSearch.ts`
 - Logic (pure functions): `src/lib/pokemon.ts` — query normalising and name matching
 

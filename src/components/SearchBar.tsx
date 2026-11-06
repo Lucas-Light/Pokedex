@@ -1,18 +1,62 @@
-import { StyleSheet, Text, View } from "react-native";
+import { useRef } from "react";
+import { Keyboard, Pressable, StyleSheet, TextInput, type TextInputInstance } from "react-native";
 
 import { Icon } from "@/components/Icon";
 import { colors, shadows } from "@/theme/colors";
 import { fonts } from "@/theme/fonts";
 import { spacing } from "@/theme/spacing";
 
-export function SearchBar() {
+type SearchBarProps = {
+  value: string;
+  isSearching: boolean;
+  onChangeText: (text: string) => void;
+  onFocus: () => void;
+  onBack: () => void;
+};
+
+export function SearchBar({ value, isSearching, onChangeText, onFocus, onBack }: SearchBarProps) {
+  const input = useRef<TextInputInstance>(null);
+
+  function focusInput() {
+    // Android's back button closes the keyboard but keeps the focus, and focus() skips a focused input.
+    if (input.current?.isFocused() && !Keyboard.isVisible()) {
+      input.current.blur();
+    }
+    input.current?.focus();
+  }
+
+  function handleBack() {
+    Keyboard.dismiss();
+    onBack();
+  }
+
   return (
-    <View style={styles.bar}>
-      <Icon name="search" color={colors.text} />
-      <Text style={styles.placeholder} numberOfLines={1}>
-        Search for Pokémon..
-      </Text>
-    </View>
+    // The whole bar counts as the search bar, so its padding and icon focus the input too.
+    <Pressable style={styles.bar} onPress={focusInput} accessible={false}>
+      {isSearching ? (
+        <Pressable
+          onPress={handleBack}
+          hitSlop={12}
+          accessibilityRole="button"
+          accessibilityLabel="Stop searching"
+        >
+          <Icon name="back" color={colors.text} />
+        </Pressable>
+      ) : (
+        <Icon name="search" color={colors.text} />
+      )}
+      <TextInput
+        ref={input}
+        style={styles.input}
+        value={value}
+        onChangeText={onChangeText}
+        onFocus={onFocus}
+        placeholder="Search for Pokémon.."
+        placeholderTextColor={colors.placeholderText}
+        autoCorrect={false}
+        autoCapitalize="none"
+      />
+    </Pressable>
   );
 }
 
@@ -29,10 +73,11 @@ const styles = StyleSheet.create({
     borderRadius: spacing.radius,
     boxShadow: shadows.soft,
   },
-  placeholder: {
+  input: {
     flex: 1,
+    padding: 0,
     fontFamily: fonts.input,
     fontSize: 16,
-    color: colors.placeholderText,
+    color: colors.text,
   },
 });
