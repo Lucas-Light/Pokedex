@@ -1,6 +1,6 @@
 # Feature: detail page
 
-> Issue: #5 · Status: draft
+> Issue: #5 · Status: complete
 
 ## Goal
 
