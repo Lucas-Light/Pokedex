@@ -21,7 +21,7 @@ Showing a live list of all Pokémon.
   - **List:** `https://pokeapi.co/api/v2/pokemon?limit=20&offset=0`, page by page. The Pokémon ID comes from each result's `url`.
   - **Search:** `https://pokeapi.co/api/v2/pokemon?limit=100000`
   - **Detail:** `https://pokeapi.co/api/v2/pokemon/{id or name}/`
-  - **Evolution chain (Detail):** `https://pokeapi.co/api/v2/pokemon-species/{id}/`, then follow `evolution_chain.url` from that response.
+  - **Evolution chain (Detail):** follow `species.url` from the Detail response, then `evolution_chain.url` from that response. `pokemon-species/{id}` returns 404 for alternate forms.
   - **Favorites:** `https://pokeapi.co/api/v2/pokemon/{id or name}/`
   - **Compare:** `https://pokeapi.co/api/v2/pokemon/{id or name}/`
 - Images, everywhere in the app: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/{id}.png`
@@ -34,7 +34,7 @@ One spec file and one GitHub issue per feature.
 |---|---|---|---|
 | 1 | Homepage list | [specs/features/homepage list.md](features/homepage%20list.md) | #1 |
 | 2 | Search | [specs/features/search.md](features/search.md) | #3 |
-| 3 | Detail | [specs/features/detail.md](features/detail.md) | #? |
+| 3 | Detail page | [specs/features/detail page.md](features/detail%20page.md) | #? |
 | 4 | Favorites | [specs/features/favorites.md](features/favorites.md) | #? |
 | 5 | Compare | [specs/features/compare.md](features/compare.md) | #? |
 | 6 | Options menu | [specs/features/options menu.md](features/options%20menu.md) | #? |
@@ -62,7 +62,7 @@ Decide these **before** building. Each with the alternative and why.
 - Live data through TanStack Query.
 - Every load has a loading state and an error state (list, detail, evolution chain).
 - Font from the Figma design, loaded with Expo Font.
-- Follow the [Figma design](https://www.figma.com/design/dsgGXcu5WELIvRW90m5308/Pok%C3%A9mon-Code-Challenge?node-id=1-2): type colours, font, spacing, icons.
+- Follow the [Figma design](https://www.figma.com/design/dsgGXcu5WELIvRW90m5308/Pok%C3%A9mon-Code-Challenge?node-id=1-2): font, spacing, icons. Type colours are listed in [specs/features/detail page.md](features/detail%20page.md).
 - TypeScript and ESLint without errors.
 - UI, data and logic are not mixed.
 
