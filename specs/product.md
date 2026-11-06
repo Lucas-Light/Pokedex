@@ -32,11 +32,12 @@ One spec file and one GitHub issue per feature.
 
 | # | Feature | Spec | Issue |
 |---|---|---|---|
-| 1 | List | [specs/features/list.md](features/list.md) | #? |
+| 1 | Homepage list | [specs/features/homepage list.md](features/homepage%20list.md) | #1 |
 | 2 | Search | [specs/features/search.md](features/search.md) | #? |
 | 3 | Detail | [specs/features/detail.md](features/detail.md) | #? |
 | 4 | Favorites | [specs/features/favorites.md](features/favorites.md) | #? |
 | 5 | Compare | [specs/features/compare.md](features/compare.md) | #? |
+| 6 | Options menu | [specs/features/options menu.md](features/options%20menu.md) | #? |
 
 ## Technical choices
 
