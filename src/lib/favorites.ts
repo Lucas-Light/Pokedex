@@ -1,4 +1,4 @@
-const UNKNOWN_NAME = "Unknown";
+export const UNKNOWN_NAME = "Unknown";
 
 /** The part of a Pokémon query that decides what its card and the page show. */
 export type FavoriteQuery = {

@@ -8,10 +8,15 @@ import {
 } from "@/components/ListStates";
 import { PokemonCardList } from "@/components/PokemonCardList";
 import { usePokemonList } from "@/hooks/usePokemonList";
+import type { PokemonListItem } from "@/lib/pokemon";
 import { colors } from "@/theme/colors";
 import { spacing } from "@/theme/spacing";
 
-export function PokemonGrid() {
+type PokemonGridProps = {
+  onOptions: (pokemon: PokemonListItem) => void;
+};
+
+export function PokemonGrid({ onOptions }: PokemonGridProps) {
   const {
     data,
     isPending,
@@ -56,7 +61,14 @@ export function PokemonGrid() {
     return undefined;
   }
 
-  return <PokemonCardList data={data} onEndReached={loadNextPage} footer={renderFooter()} />;
+  return (
+    <PokemonCardList
+      data={data}
+      onOptions={onOptions}
+      onEndReached={loadNextPage}
+      footer={renderFooter()}
+    />
+  );
 }
 
 const styles = StyleSheet.create({

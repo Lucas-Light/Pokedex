@@ -10,9 +10,16 @@ type SearchResultsProps = {
   results: PokemonListItem[] | undefined;
   isPending: boolean;
   onRetry: () => void;
+  onOptions: (pokemon: PokemonListItem) => void;
 };
 
-export function SearchResults({ text, results, isPending, onRetry }: SearchResultsProps) {
+export function SearchResults({
+  text,
+  results,
+  isPending,
+  onRetry,
+  onOptions,
+}: SearchResultsProps) {
   const list = useRef<FlatList<PokemonListItem>>(null);
 
   useEffect(() => {
@@ -36,5 +43,5 @@ export function SearchResults({ text, results, isPending, onRetry }: SearchResul
     return <CenteredMessage message="No Pokémon found" />;
   }
 
-  return <PokemonCardList ref={list} data={results} />;
+  return <PokemonCardList ref={list} data={results} onOptions={onOptions} />;
 }

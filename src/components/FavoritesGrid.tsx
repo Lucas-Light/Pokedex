@@ -8,11 +8,16 @@ import {
 } from "@/components/ListStates";
 import { PokemonCardList } from "@/components/PokemonCardList";
 import { useFavoriteIds, useFavoritePokemon } from "@/hooks/useFavorites";
+import type { PokemonListItem } from "@/lib/pokemon";
 import { spacing } from "@/theme/spacing";
 
 const LOAD_ERROR = "Could not load favorites";
 
-export function FavoritesGrid() {
+type FavoritesGridProps = {
+  onOptions: (pokemon: PokemonListItem) => void;
+};
+
+export function FavoritesGrid({ onOptions }: FavoritesGridProps) {
   const { data: ids, isPending, refetch } = useFavoriteIds();
 
   if (isPending) {
@@ -27,10 +32,10 @@ export function FavoritesGrid() {
     return <CenteredMessage message="No favorites" />;
   }
 
-  return <FavoritesList ids={ids} />;
+  return <FavoritesList ids={ids} onOptions={onOptions} />;
 }
 
-function FavoritesList({ ids }: { ids: number[] }) {
+function FavoritesList({ ids, onOptions }: FavoritesGridProps & { ids: number[] }) {
   const { items, status, retryFailed } = useFavoritePokemon(ids);
 
   if (status === "allFailed") {
@@ -44,7 +49,7 @@ function FavoritesList({ ids }: { ids: number[] }) {
       </View>
     ) : undefined;
 
-  return <PokemonCardList data={items} footer={footer} />;
+  return <PokemonCardList data={items} onOptions={onOptions} footer={footer} />;
 }
 
 const styles = StyleSheet.create({

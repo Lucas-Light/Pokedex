@@ -12,6 +12,7 @@ export const colors = {
   typePill: "rgba(14, 9, 64, 0.08)",
   tabBorder: "#DBDAE6",
   statTrack: "#F3F3F7",
+  overlay: "rgba(0, 0, 0, 0.3)",
 } as const;
 
 /** Keyed by the type name in the API. */
