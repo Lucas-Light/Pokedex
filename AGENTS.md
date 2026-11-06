@@ -15,7 +15,7 @@ Use `bunx` instead of `npx` if the project uses bun (`bun.lock` present).
 ```bash
 npx expo install <package>  # ALWAYS use instead of npm/yarn/pnpm/bun add — resolves SDK-compatible versions
 npx expo start              # start the dev server
-npx expo lint               # lint
+npx expo lint --max-warnings 0  # lint, same as CI
 npx tsc --noEmit            # typecheck
 npx expo-doctor             # diagnose dependency and config issues
 npx expo install --fix      # fix incompatible package versions
@@ -51,7 +51,7 @@ Specs are the source of truth. Don't build anything that isn't in a spec; if a s
 - `specs/product.md` — what the app is, plus the technical choices (SQLite, native feature).
 - `specs/features/<name>.md` — one per feature, with testable acceptance criteria. Template: `specs/features/_template.md`.
 - `docs/explanation.md` — the three hand-in questions.
-- `chat-history/` — exported chats, named with the issue number.
+- `chat-history/` — exported chats, named with the issue number. Commit them on the feature branch before merging.
 
 One issue per chat. Steps, each with a slash command:
 

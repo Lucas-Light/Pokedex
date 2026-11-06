@@ -38,6 +38,7 @@ One spec file and one GitHub issue per feature.
 | 4 | Favorites | [specs/features/favorites.md](features/favorites.md) | #7 |
 | 5 | Compare | [specs/features/compare.md](features/compare.md) | #? |
 | 6 | Options menu | [specs/features/options menu.md](features/options%20menu.md) | #? |
+| 7 | GitHub CI | [specs/features/Github CI.md](features/Github%20CI.md) | #9 |
 
 ## Technical choices
 
@@ -70,7 +71,7 @@ Decide these **before** building. Each with the alternative and why.
 
 - [x] Pagination
 - [x] Tests
-- [ ] CI
+- [x] CI
 - [ ] Accessibility
 - [ ] Optimistic update
 - [x] Clean TypeScript

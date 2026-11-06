@@ -9,5 +9,5 @@ Build issue **#$ARGUMENTS** according to the approved plan.
 2. Work through the tasks in order. Only touch files named in the plan; if you need another file, tell me why first.
 3. After each finished task, tick it in the comment (`- [x]`) via `gh issue comment $ARGUMENTS --edit-last --body-file <tmpfile>`.
 4. Use `npx expo install` for any new package. New native module that Expo Go doesn't include? Stop and ask — the app must run in Expo Go.
-5. When done run `npx expo lint` and `npx tsc --noEmit` and fix all errors.
+5. When done run `npx expo lint --max-warnings 0` and `npx tsc --noEmit` and fix all errors.
 6. Report: what changed (files), which acceptance criteria are met, and what I should test on my phone. Do **not** commit.
