@@ -1,0 +1,1200 @@
+
+> /plan-issue 1
+
+  Read 1 file, ran 1 shell command (ctrl+o to expand)
+
+● gh issue view 1 printed nothing, so I'll check that on its own while I read
+  the feature spec and the existing code.
+
+  Read 1 file, ran 2 shell commands (ctrl+o to expand)
+
+● gh issue view returned nothing despite exit 0, so I'm trying its JSON output
+  for the body and comments, and I'll also pull the SDK 58 docs for the APIs
+  this plan touches.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Fetch(https://docs.expo.dev/llms.txt)
+  ⎿  Received 56.3KB (200 OK)
+
+● Fetch(https://docs.expo.dev/versions/v58.0.0/sdk/font/)
+  ⎿  Received 21.7KB (200 OK)
+
+● Fetch(https://docs.expo.dev/versions/v58.0.0/sdk/image/)
+  ⎿  Received 59.9KB (200 OK)
+
+● Fetch(https://docs.expo.dev/router/advanced/tabs/)
+  ⎿  Received 13KB (200 OK)
+
+● Fetch(https://docs.expo.dev/guides/icons/)
+  ⎿  Received 9.4KB (200 OK)
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Two findings change the plan: Tabs is deprecated in the installed expo-router,
+  and @expo/vector-icons isn't installed. Next I'll check the replacements, the
+  test setup, and get a lint and typecheck baseline.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Fetch(https://docs.expo.dev/develop/unit-testing.md)
+  ⎿  Received 12.8KB (200 OK)
+
+● Fetch(https://docs.expo.dev/versions/v58.0.0/sdk/symbols/)
+  ⎿  Received 12KB (200 OK)
+
+● Fetch(https://www.fontshare.com/fonts/cabinet-grotesk)
+  ⎿  Received 1.7KB (200 OK)
+
+● Fetch(https://docs.expo.dev/develop/user-interface/fonts.md)
+  ⎿  Received 27.8KB (200 OK)
+
+● Two checks are left before I write this up: whether tsc fails only because of
+  example/, and whether Cabinet Grotesk's licence allows bundling, which is an
+  open question in the spec.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Fetch(https://www.fontshare.com/terms)
+  ⎿  Received 1.7KB (200 OK)
+
+● The tsc baseline is clean apart from 31 errors in the git-ignored example/
+  folder, and lint passes. Fontshare's pages don't show the licence text, so
+  that stays open for you, and I'm checking whether react-native-svg runs in
+  Expo Go before posting.
+
+● Fetch(https://docs.expo.dev/versions/v58.0.0/sdk/svg/)
+  ⎿  Received 5.5KB (200 OK)
+
+  Made 1 scratchpad edit +163, ran 2 shell commands (ctrl+o to expand)
+
+● The plan for #1 is posted on the issue
+  (https://github.com/Lucas-Light/Pokedex/issues/1#issuecomment-6675069252), and
+  I haven't changed any code. It has the full file list, 22 tasks and how each
+  acceptance criterion will be met. I need your answers to the five decisions
+  below before I start.
+
+  Approach
+
+  - List: a 2-column FlatList fed by one TanStack infinite query. Each page's
+    next URL is used as the next page, so next: null ends paging without a
+    hardcoded total.
+  - Routing: a root Stack holding a (tabs) group and pokemon/[id].
+  - Fonts: loaded at runtime with useFonts, because the config plugin needs a
+    native build and the app must run in Expo Go.
+
+  Decisions for you
+
+  1. Should the search bar and title stay fixed or scroll away? I recommend
+     fixed: search stays reachable, and the spinner, error and empty states get
+     a clear area below them.
+  2. Does Cabinet Grotesk's licence allow bundling? I couldn't confirm this
+     because Fontshare's pages didn't return the licence text, so please check
+     it there. If it's allowed, I'd bundle only the 800 weight file; if not, the
+     spec needs another font.
+  3. Which icon approach? I recommend react-native-svg, which is included in
+     Expo Go, so icons look the same on both platforms and the Pokéball is easy
+     to draw. The installed expo-symbols needs no new package, but its icons
+     differ between iOS and Android.
+  4. Which tab icons? The spec doesn't say and I couldn't open the Figma file.
+     Unless you tell me otherwise, I'll use a Pokéball for Pokémons and a heart
+     for Favorites; exported SVGs would be even better.
+  5. Can I add a test runner? The spec asks for unit tests but none is
+     installed. I recommend jest-expo and jest, testing only src/lib.
+
+  What I found in the code
+
+  - Tabs import: Tabs from expo-router is deprecated in the installed version
+    even though the docs still show it, so the plan uses expo-router/js-tabs.
+  - Typecheck: tsc already fails with 31 errors, all in the git-ignored example/
+    folder, so the plan excludes that folder in tsconfig.json. Lint is clean.
+  - Last card: 1351 is an odd number, so the last row has one card, which would
+    stretch to full width with flex: 1. Card width is calculated from the screen
+    width instead.
+  - Failed pages: scrolling won't fetch again after a page fails, so only the
+    Retry button retries it.
+  - Spec examples: the live API confirms that offset 1025 is deoxys-attack with
+    ID 10001, and that the image for ID 10083 returns 404.
+  - /build-issue: gh issue view 1 --comments printed nothing here, and that
+    command reads the plan in step 1. --json works, so I'll use that when
+    building.
+
+  Reply "go" to accept all the recommendations, or send corrections and I'll
+  update the comment. The licence answer is the only one I can't assume, because
+  it decides whether the font file goes in the repo.
+
+> Searchbar + title are fixed. The Cabinet Grotesk license allows bundling. Use
+  newly added svg icons in assets/icons. Feel free to add the test runner
+  jest-expo and jest
+
+● Thanks. I'll look at the new icons first, because how they get rendered
+  affects the plan.
+  Ran 1 shell command (ctrl+o to expand)
+
+● All three icons are present except the ⋮ icon, and their colours are fixed in
+  the files, so I'll look for a tool that can recolour them.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Fetch(https://docs.expo.dev/versions/v58.0.0/sdk/image/)
+  ⎿  Received 59.9KB (200 OK)
+
+● Fetch(https://docs.expo.dev/versions/v58.0.0/sdk/svg/)
+  ⎿  Received 5.5KB (200 OK)
+
+● The new icons don't need react-native-svg, since Metro treats .svg as an asset
+  and expo-image can recolour them with tintColor. I'll update the plan and the
+  comment to match.
+
+  Made 5 scratchpad edits +27 -17, ran 1 shell command (ctrl+o to expand)
+
+● I've updated the plan comment
+  (https://github.com/Lucas-Light/Pokedex/issues/1#issuecomment-6675069252) with
+  your decisions, and still haven't changed any code. Two small questions are
+  left before I can start.
+
+  What changed
+
+  - Header: the search bar and title stay fixed above the list.
+  - Cabinet Grotesk: it gets bundled, 800 weight only.
+  - Tests: jest-expo and jest are added, testing only src/lib.
+  - Icons: react-native-svg is dropped from the plan. A small Icon component
+    shows your SVGs through expo-image, which is already installed, so icons
+    need no new packages or Metro config.
+  - Icon colours: your SVGs have fixed colours, so tintColor sets the colour for
+    each use: white in the active pill, #0E0940 when inactive, muted for the
+    placeholder.
+  - Tab icons: I assumed Pokeball.svg for Pokémons and Favorites.svg for
+    Favorites, and the image placeholder reuses Pokeball.svg.
+  - Icon size: the files are 18–20 px and the spec says 24, so each icon is
+    drawn at its own size, centred in a 24 box.
+
+  One risk: on iOS, tintColor turns the SVG into a bitmap, so icons could look
+  slightly soft. I added a task to check this on the phone. If they do look
+  soft, react-native-svg is the fallback, and I'd check with you before adding
+  it. None of your icons use the arc commands that iOS's SVG decoder can
+  distort.
+
+  Questions for you
+
+  1. What should the ⋮ icon be? assets/icons/ has no file for it. I recommend
+     exporting a More.svg from Figma so it matches the others; otherwise I can
+     draw three dots with plain Views.
+  2. Who adds the Cabinet Grotesk file? assets/fonts/ doesn't exist yet. You can
+     put the 800 weight file there, or I can try to download it from Fontshare
+     during the build.
+
+  Answer those two and say "go", and I'll start building.
+
+> Added Options.svg. Try to download the Cabinet Grotesk during building
+
+● I'll check the new icon and put both answers in the plan.
+
+  Made 3 scratchpad edits +7 -10, ran 1 shell command (ctrl+o to expand)
+
+● The plan comment
+  (https://github.com/Lucas-Light/Pokedex/issues/1#issuecomment-6675069252) now
+  has both answers, and no open decisions are left.
+
+  - ⋮ icon: it uses assets/icons/Options.svg. The file is fine: it's 3×15 and
+    already #0E0940, so it'll be drawn at that size, centred in the 24 box like
+    the others.
+  - Cabinet Grotesk: I'll download the 800 weight from Fontshare during the
+    build. If the download fails, I'll stop at that task and ask you for the
+    file.
+
+  Say "go" to approve the plan and I'll start building.
+
+> go
+
+● Skill(build-issue)
+  ⎿  Successfully loaded skill
+
+● Plan is approved, so I'm starting setup with the runtime dependencies and then
+  the test runner. I'm reading the plan from the file you posted, since gh
+  issue view --comments returns nothing here.
+
+● Bash(cd "C:/Users/Gebruiker/Documents/GitHub/Pokedex"; gh issue view 1 --json
+      comments --jq '.comments[-1].body' | diff -
+      "C:/Users/Gebruiker/AppData/Local/Temp/clau…)
+  ⎿  Updated package.json (+7 -0)
+       3    "version": "1.0.0",
+       4    "main": "expo-router/entry",
+       5    "dependencies": {
+       6 +    "@expo-google-fonts/inter": "^0.4.2",                      
+       7 +    "@expo-google-fonts/roboto": "^0.4.3",                     
+       8 +    "@expo-google-fonts/rubik": "^0.4.2",                      
+       9      "@expo/ui": "~58.0.27",
+      10 +    "@tanstack/react-query": "^5.106.1",                       
+      11 +    "@types/jest": "30.0.0",                                   
+      12      "expo": "~58.0.23",
+      13      "expo-constants": "~58.0.15",
+      14      "expo-device": "~58.0.5",
+     ...
+      22      "expo-symbols": "~58.0.4",
+      23      "expo-system-ui": "~58.0.7",
+      24      "expo-web-browser": "~58.0.7",
+      25 +    "jest": "~30.5.2",                                         
+      26 +    "jest-expo": "~58.0.14",                                   
+      27      "react": "19.3.0",
+      28      "react-dom": "19.3.0",
+      29      "react-native": "0.88.1",
+  ⎿  … 1 more file changed
+  ⎿  (timeout 6m 40s)
+
+● The installs succeeded and expo-doctor passes, but the test packages landed in
+  dependencies because npm ignored --dev. I'm moving them to devDependencies
+  with --save-dev, then adding the Jest config and tsconfig changes.
+
+● Bash(cd "C:/Users/Gebruiker/Documents/GitHub/Pokedex"; npm uninstall jest
+      jest-expo @types/jest 2>&1 | tail -2; npx expo install jest-expo jest
+      @types/jest -- --save…)
+  ⎿  Updated package.json (+6 -2)
+      47      "ios": "expo start --ios",
+      48      "web": "expo start --web",
+      49      "lint": "expo lint",
+      50 -    "typecheck": "tsc --noEmit"                                
+      50 +    "typecheck": "tsc --noEmit",                               
+      51 +    "test": "jest"                                             
+      52    },
+      52 -  "private": true                                              
+      53 +  "private": true,                                             
+      54 +  "jest": {                                                    
+      55 +    "preset": "jest-expo"                                      
+      56 +  }                                                            
+      57  }
+  ⎿  Updated tsconfig.json (+7 -1)
+       9        "@/assets/*": [
+      10          "./assets/*"
+      11        ]
+      12 -    }                                                          
+      12 +    },                                                         
+      13 +    "types": [                                                 
+      14 +      "jest"                                                   
+      15 +    ]                                                          
+      16    },
+      17    "include": [
+      18      "**/*.ts",
+      19      "**/*.tsx",
+      20      ".expo/types/**/*.ts",
+      21      "expo-env.d.ts"
+      22 +  ],                                                           
+      23 +  "exclude": [                                                 
+      24 +    "example"                                                  
+      25    ]
+      26  }
+  ⎿  (timeout 5m)
+
+● The font download succeeded, but expo install left the test packages under
+  dependencies, so I'm moving them by hand and syncing the lockfile. Next I'll
+  extract only the 800 weight file and check the zip's licence text.
+
+● Bash(cd "C:/Users/Gebruiker/Documents/GitHub/Pokedex"; node -e "
+      const fs=require('fs');const
+      p=JSON.parse(fs.readFileSync('package.json','utf8'));…)
+  ⎿  Updated package.json (+3 -3)
+       8      "@expo-google-fonts/rubik": "^0.4.2",
+       9      "@expo/ui": "~58.0.27",
+      10      "@tanstack/react-query": "^5.106.1",
+      11 -    "@types/jest": "30.0.0",                                   
+      11      "expo": "~58.0.23",
+      12      "expo-constants": "~58.0.15",
+      13      "expo-device": "~58.0.5",
+     ...
+      21      "expo-symbols": "~58.0.4",
+      22      "expo-system-ui": "~58.0.7",
+      23      "expo-web-browser": "~58.0.7",
+      25 -    "jest": "~30.5.2",                                         
+      26 -    "jest-expo": "~58.0.14",                                   
+      24      "react": "19.3.0",
+      25      "react-dom": "19.3.0",
+      26      "react-native": "0.88.1",
+     ...
+      32      "react-native-worklets": "0.13.0"
+      33    },
+      34    "devDependencies": {
+      35 +    "@types/jest": "30.0.0",                                   
+      36      "@types/react": "~19.3.0",
+      37      "eslint": "^9.0.0",
+      38      "eslint-config-expo": "~58.0.4",
+      39 +    "jest": "~30.5.2",                                         
+      40 +    "jest-expo": "~58.0.14",                                   
+      41      "typescript": "~6.0.3"
+      42    },
+      43    "scripts": {
+  ⎿  … 2 more files changed
+  ⎿  (timeout 3m 20s)
+
+● Update(specs\features\homepage list.md)
+  ⎿  Added 4 lines, removed 2 lines
+      114  
+      115  ## Open questions
+      116  
+      117 -- Do the search bar and "All Pokémon" title stay fixed at the 
+          -top, or scroll away with the cards? The Figma frame is static,
+          - so it doesn't show this.                                     
+      118 -- Is Cabinet Grotesk from Fontshare OK to bundle in this proje
+          -ct? Its licence should be checked before the font file is adde
+          -d.                                                            
+      117 +None. Answered while planning #1:                             
+      118 +                                                              
+      119 +- The search bar and "All Pokémon" title stay fixed at the top
+          +, and only the cards scroll.                                  
+      120 +- Cabinet Grotesk from Fontshare may be bundled. Only the 800 
+          +weight file is added.                                         
+
+● Write(src\lib\pokemon.ts)
+  ⎿  Wrote 26 lines to src\lib\pokemon.ts
+       1 const IMAGE_BASE_URL =
+       2   "https://raw.githubusercontent.com/PokeAPI/sprites/master/spri
+         tes/pokemon/other/home";
+       3
+       4 export function getIdFromUrl(url: string): number {
+       5   const match = url.match(/\/(\d+)\/?$/);
+       6   if (!match) {
+       7     throw new Error(`No Pokémon ID in URL: ${url}`);
+       8   }
+       9   return Number(match[1]);
+     … +17 lines (ctrl+o to expand)
+
+● Write(src\lib\__tests__\pokemon-test.ts)
+  ⎿  Wrote 54 lines to src\lib\__tests__\pokemon-test.ts
+       1 import {
+       2   formatBadge,
+       3   formatName,
+       4   getIdFromUrl,
+       5   getImageUrl,
+       6 } from "@/lib/pokemon";
+       7
+       8 describe("getIdFromUrl", () => {
+       9   it("reads the ID from a result URL", () => {
+      10     expect(getIdFromUrl("https://pokeapi.co/api/v2/pokemon/25/")
+     … +45 lines (~1 KB) (ctrl+o to expand)
+
+● Write(src\theme\colors.ts)
+  ⎿  Wrote 14 lines to src\theme\colors.ts
+       1 export const colors = {
+       2   background: "#EDF6FF",
+       3   surface: "#FFFFFF",
+       4   imageBackground: "#F7F7FF",
+       5   text: "#0E0940",
+       6   primary: "#5631E8",
+       7   onPrimary: "#FFFFFF",
+       8   placeholderText: "rgba(0, 0, 0, 0.3)",
+       9   placeholderIcon: "#D5D5E8",
+      10 } as const;
+     … +4 lines (ctrl+o to expand)
+
+● Write(src\theme\fonts.ts)
+  ⎿  Wrote 6 lines to src\theme\fonts.ts
+      1 export const fonts = {
+      2   title: "CabinetGrotesk-Extrabold",
+      3   body: "Rubik-Medium",
+      4   input: "Inter-Regular",
+      5   tabLabel: "Roboto-Medium",
+      6 } as const;
+
+● Write(src\theme\spacing.ts)
+  ⎿  Wrote 10 lines to src\theme\spacing.ts
+       1 export const spacing = {
+       2   searchMargin: 16,
+       3   gridMargin: 24,
+       4   gridGap: 16,
+       5   nameRowHeight: 48,
+       6   radius: 8,
+       7   badgeRadius: 4,
+       8   tabBarHeight: 80,
+       9   iconBox: 24,
+      10 } as const;
+
+● Write(src\api\pokemon.ts)
+  ⎿  Wrote 19 lines to src\api\pokemon.ts
+       1 export const FIRST_PAGE_URL = "https://pokeapi.co/api/v2/pokemon
+         ?limit=20&offset=0";
+       2
+       3 export type PokemonListResult = {
+       4   name: string;
+       5   url: string;
+       6 };
+       7
+       8 export type PokemonListResponse = {
+       9   next: string | null;
+     … +10 lines (ctrl+o to expand)
+● Write(src\api\queryClient.ts)
+  ⎿  Wrote 3 lines to src\api\queryClient.ts
+      1 import { QueryClient } from "@tanstack/react-query";
+      2
+      3 export const queryClient = new QueryClient();
+
+● Write(src\hooks\usePokemonList.ts)
+  ⎿  Wrote 25 lines to src\hooks\usePokemonList.ts
+      1 import { useInfiniteQuery } from "@tanstack/react-query";
+      2
+      3 import { FIRST_PAGE_URL, fetchPokemonPage } from "@/api/pokemon";
+      4 import { getIdFromUrl } from "@/lib/pokemon";
+      5
+      6 export type PokemonListItem = {
+      7   id: number;
+      8   name: string;
+      9 };
+     … +16 lines (ctrl+o to expand)
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Logic and data are finished, with all 13 unit tests passing and tsc clean. I'm
+  checking the tab bar's icon wrapper, TanStack's retry reporting, and the
+  licence text from the zip before building the UI.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● The tab bar's icon wrapper is too narrow for the 64×32 pill, and the footer
+  must check fetching before the error flag, or the error message stays up
+  during a retry. Licence: the embedding is allowed, but a public-repo clause
+  may apply, so I'll check that at the end.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Update(src\hooks\usePokemonList.ts)
+  ⎿  Added 10 lines, removed 7 lines
+       8    name: string;
+       9  };
+      10  
+      11 +function toListItems(data: InfiniteData<PokemonListResponse>): 
+         +PokemonListItem[] {                                            
+      12 +  return data.pages.flatMap((page) =>                          
+      13 +    page.results.map((result) => ({                            
+      14 +      id: getIdFromUrl(result.url),                            
+      15 +      name: result.name,                                       
+      16 +    })),                                                       
+      17 +  );                                                           
+      18 +}                                                              
+      19 +                                                               
+      20  export function usePokemonList() {
+      21    return useInfiniteQuery({
+      22      queryKey: ["pokemon", "list"],
+      23      queryFn: ({ pageParam }) => fetchPokemonPage(pageParam),
+      24      initialPageParam: FIRST_PAGE_URL,
+      25      getNextPageParam: (lastPage) => lastPage.next ?? undefined,
+      17 -    select: (data): PokemonListItem[] =>                       
+      18 -      data.pages.flatMap((page) =>                             
+      19 -        page.results.map((result) => ({                        
+      20 -          id: getIdFromUrl(result.url),                        
+      21 -          name: result.name,                                   
+      22 -        })),                                                   
+      23 -      ),                                                       
+      26 +    select: toListItems,                                       
+      27    });
+      28  }
+
+● Update(src\hooks\usePokemonList.ts)
+  ⎿  Added 6 lines, removed 2 lines
+       1 -import { useInfiniteQuery } from "@tanstack/react-query";      
+       1 +import { type InfiniteData, useInfiniteQuery } from "@tanstack/
+         +react-query";                                                  
+       2  
+       3 -import { FIRST_PAGE_URL, fetchPokemonPage } from "@/api/pokemon
+         -";                                                             
+       3 +import {                                                       
+       4 +  FIRST_PAGE_URL,                                              
+       5 +  fetchPokemonPage,                                            
+       6 +  type PokemonListResponse,                                    
+       7 +} from "@/api/pokemon";                                        
+       8  import { getIdFromUrl } from "@/lib/pokemon";
+       9  
+      10  export type PokemonListItem = {
+
+● Write(src\components\Icon.tsx)
+  ⎿  Wrote 70 lines to src\components\Icon.tsx
+       1 import { Image } from "expo-image";
+       2 import { StyleSheet, View } from "react-native";
+       3
+       4 import { colors } from "@/theme/colors";
+       5 import { spacing } from "@/theme/spacing";
+       6
+       7 const icons = {
+       8   search: { source: require("@/assets/icons/Search.svg"), width:
+          18, height: 18 },
+       9   pokeball: { source: require("@/assets/icons/Pokeball.svg"), wi
+     … +62 lines (~2 KB) (ctrl+o to expand)
+
+● Update(src\theme\spacing.ts)
+  ⎿  Added 3 lines
+       6    radius: 8,
+       7    badgeRadius: 4,
+       8    tabBarHeight: 80,
+       9 +  tabPillWidth: 64,                                            
+      10 +  tabPillHeight: 32,                                           
+      11 +  tabPillRadius: 20,                                           
+      12    iconBox: 24,
+      13  } as const;
+
+● Update(src\theme\colors.ts)
+  ⎿  Added 1 line
+      3    surface: "#FFFFFF",
+      4    imageBackground: "#F7F7FF",
+      5    text: "#0E0940",
+      6 +  textInactive: "rgba(14, 9, 64, 0.6)",                         
+      7    primary: "#5631E8",
+      8    onPrimary: "#FFFFFF",
+      9    placeholderText: "rgba(0, 0, 0, 0.3)",
+
+● Write(src\components\SearchBar.tsx)
+  ⎿  Wrote 38 lines to src\components\SearchBar.tsx
+       1 import { StyleSheet, Text, View } from "react-native";
+       2
+       3 import { Icon } from "@/components/Icon";
+       4 import { colors, shadows } from "@/theme/colors";
+       5 import { fonts } from "@/theme/fonts";
+       6 import { spacing } from "@/theme/spacing";
+       7
+       8 export function SearchBar() {
+       9   return (
+      10     <View style={styles.bar}>
+     … +28 lines (ctrl+o to expand)
+
+● Write(src\components\PokemonCard.tsx)
+  ⎿  Wrote 100 lines to src\components\PokemonCard.tsx
+       1 import { Image } from "expo-image";
+       2 import { router } from "expo-router";
+       3 import { useState } from "react";
+       4 import { Pressable, StyleSheet, Text, View } from "react-native"
+         ;
+       5
+       6 import { Icon } from "@/components/Icon";
+       7 import { formatBadge, formatName, getImageUrl } from "@/lib/poke
+         mon";
+       8 import { colors, shadows } from "@/theme/colors";
+     … +92 lines (ctrl+o to expand)
+
+● Write(src\components\PokemonGrid.tsx)
+  ⎿  Wrote 149 lines to src\components\PokemonGrid.tsx
+      1 import {
+      2   ActivityIndicator,
+      3   FlatList,
+      4   Pressable,
+      5   StyleSheet,
+      6   Text,
+      7   useWindowDimensions,
+      8   View,
+      9 } from "react-native";
+     … +140 lines (ctrl+o to expand)
+
+● Write(src\app\_layout.tsx)
+  ⎿  Added 47 lines, removed 1 line
+       1 +import { Inter_400Regular } from "@expo-google-fonts/inter";   
+       2 +import { Roboto_500Medium } from "@expo-google-fonts/roboto";  
+       3 +import { Rubik_500Medium } from "@expo-google-fonts/rubik";    
+       4 +import { QueryClientProvider } from "@tanstack/react-query";   
+       5 +import { useFonts } from "expo-font";                          
+       6  import { Stack } from "expo-router";
+       7 +import * as SplashScreen from "expo-splash-screen";            
+       8 +import { StatusBar } from "expo-status-bar";                   
+       9 +import { useEffect } from "react";                             
+      10  
+      11 +import { queryClient } from "@/api/queryClient";               
+      12 +import { colors } from "@/theme/colors";                       
+      13 +import { fonts } from "@/theme/fonts";                         
+      14 +                                                               
+      15 +SplashScreen.preventAutoHideAsync();                           
+      16 +                                                               
+      17  export default function RootLayout() {
+       4 -  return <Stack />;                                            
+      18 +  const [loaded, error] = useFonts({                           
+      19 +    [fonts.title]: require("@/assets/fonts/CabinetGrotesk-Extra
+         +bold.otf"),                                                    
+      20 +    [fonts.body]: Rubik_500Medium,                             
+      21 +    [fonts.input]: Inter_400Regular,                           
+      22 +    [fonts.tabLabel]: Roboto_500Medium,                        
+      23 +  });                                                          
+      24 +                                                               
+      25 +  useEffect(() => {                                            
+      26 +    if (loaded || error) {                                     
+      27 +      SplashScreen.hideAsync();                                
+      28 +    }                                                          
+      29 +  }, [loaded, error]);                                         
+      30 +                                                               
+      31 +  if (!loaded && !error) {                                     
+      32 +    return null;                                               
+      33 +  }                                                            
+      34 +                                                               
+      35 +  return (                                                     
+      36 +    <QueryClientProvider client={queryClient}>                 
+      37 +      <StatusBar style="dark" />                               
+      38 +      <Stack                                                   
+      39 +        screenOptions={{                                       
+      40 +          contentStyle: { backgroundColor: colors.background },
+      41 +          headerStyle: { backgroundColor: colors.background }, 
+      42 +          headerTintColor: colors.text,                        
+      43 +          headerShadowVisible: false,                          
+      44 +        }}                                                     
+      45 +      >                                                        
+      46 +        <Stack.Screen name="(tabs)" options={{ headerShown: fal
+         +se }} />                                                       
+      47 +        <Stack.Screen name="pokemon/[id]" options={{ title: "" 
+         +}} />                                                          
+      48 +      </Stack>                                                 
+      49 +    </QueryClientProvider>                                     
+      50 +  );                                                           
+      51  }
+
+● Write(src\app\(tabs)\index.tsx)
+  ⎿  Wrote 36 lines to src\app\(tabs)\index.tsx
+       1 import { StyleSheet, Text, View } from "react-native";
+       2 import { useSafeAreaInsets } from "react-native-safe-area-contex
+         t";
+       3
+       4 import { PokemonGrid } from "@/components/PokemonGrid";
+       5 import { SearchBar } from "@/components/SearchBar";
+       6 import { colors } from "@/theme/colors";
+       7 import { fonts } from "@/theme/fonts";
+       8 import { spacing } from "@/theme/spacing";
+       9
+     … +27 lines (ctrl+o to expand)
+
+● Write(src\app\(tabs)\favorites.tsx)
+  ⎿  Wrote 5 lines to src\app\(tabs)\favorites.tsx
+      1 import { View } from "react-native";
+      2
+      3 export default function FavoritesScreen() {
+      4   return <View />;
+      5 }
+
+● Write(src\app\pokemon\[id].tsx)
+  ⎿  Wrote 5 lines to src\app\pokemon\[id].tsx
+      1 import { View } from "react-native";
+      2
+      3 export default function PokemonDetailScreen() {
+      4   return <View />;
+      5 }
+
+● The repo is private, so the licence clause matters less, though I'll flag it
+  at the end. Next I'm changing the tab layout and removing the old route, then
+  running typecheck, lint, tests and a Metro bundle for both platforms.
+
+● Write(src\app\(tabs)\_layout.tsx)
+  ⎿  Wrote 45 lines to src\app\(tabs)\_layout.tsx
+       1 import { Tabs } from "expo-router/js-tabs";
+       2 import { useSafeAreaInsets } from "react-native-safe-area-contex
+         t";
+       3
+       4 import { TabIcon } from "@/components/Icon";
+       5 import { colors } from "@/theme/colors";
+       6 import { fonts } from "@/theme/fonts";
+       7 import { spacing } from "@/theme/spacing";
+       8
+       9 export default function TabsLayout() {
+     … +36 lines (ctrl+o to expand)
+
+● Bash(cd "C:/Users/Gebruiker/Documents/GitHub/Pokedex"; git rm -q --cached
+      src/app/index.tsx 2>/dev/null; git reset -q src/app/index.tsx 2>/dev/null;
+      rm src/app/index…)
+  ⎿  Deleted src\app\index.tsx (+0 -17)
+  ⎿  (a git step in this command can move the working tree, so these may be
+     its changes, not edits) (ctrl+o to expand)
+  ⎿  (timeout 7m)
+
+● Both bundles build, and tsc found two real errors: ListFooterComponent rejects
+  null under these types, and the generated route types are stale. I'm checking
+  why assets/icons/ dropped out of git status.
+
+● Update(src\components\PokemonGrid.tsx)  ⎿  Added 1 line, removed 1 line
+      87          </View>
+      88        );
+      89      }
+      90 -    return null;                                               
+      90 +    return undefined;                                          
+      91    }
+      92  
+      93    return (
+
+  Made 1 scratchpad edit +91, ran 2 shell commands (ctrl+o to expand)
+
+● All automated checks pass, and assets/icons/ dropped out of status because you
+  committed it in f5355b9. I'm ticking the finished tasks and rerunning the
+  tests; the icon check and phone test stay open since I can't run them from
+  here.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● The homepage list for #1 is built, but it hasn't run on a device yet, so
+  nothing visual is confirmed. Nothing is committed. 21 of the 23 tasks are
+  ticked on the issue; the two left are the icon check and the phone test.
+
+  Checks
+
+  ┌─────────────────────┬───────────────────────────────────────────────────┐
+  │        Check        │                      Result                       │
+  ├─────────────────────┼───────────────────────────────────────────────────┤
+  │ npx tsc --noEmit    │ Passes                                            │
+  ├─────────────────────┼───────────────────────────────────────────────────┤
+  │ npx expo lint       │ Passes                                            │
+  ├─────────────────────┼───────────────────────────────────────────────────┤
+  │ npm test            │ 13 of 13 pass                                     │
+  ├─────────────────────┼───────────────────────────────────────────────────┤
+  │ npx expo-doctor     │ 20 of 20 passed (run after installing the         │
+  │                     │ packages)                                         │
+  ├─────────────────────┼───────────────────────────────────────────────────┤
+  │ expo export for iOS │ Both bundle, and the SVG and font files are       │
+  │  and Android        │ included                                          │
+  ├─────────────────────┼───────────────────────────────────────────────────┤
+  │ All live API pages  │ 68 pages, 1351 entries, all unique; ID 10001      │
+  │                     │ follows 1025                                      │
+  ├─────────────────────┼───────────────────────────────────────────────────┤
+  │ Paging and error    │ 12 of 12 pass, using a throwaway script with      │
+  │ states              │ TanStack's real observer and a fake API (not in   │
+  │                     │ the repo)                                         │
+  └─────────────────────┴───────────────────────────────────────────────────┘
+
+  What changed
+
+  - UI: (tabs)/_layout.tsx, (tabs)/index.tsx, (tabs)/favorites.tsx,
+    pokemon/[id].tsx, the updated root _layout.tsx, and PokemonGrid,
+    PokemonCard, SearchBar and Icon. src/app/index.tsx is deleted.
+  - Data: src/api/pokemon.ts, src/api/queryClient.ts,
+    src/hooks/usePokemonList.ts.
+  - Logic and theme: src/lib/pokemon.ts with its tests, and the three src/theme/
+    files.
+  - Config and docs: package.json, the lockfile, tsconfig.json, the spec's open
+    questions, and assets/fonts/CabinetGrotesk-Extrabold.otf.
+
+  Acceptance criteria
+
+  - Confirmed by the checks: badge and name formatting, the image URL, all 1351
+    entries being reachable with no duplicates, paging stopping at next: null,
+    and the query states behind Retry and the empty message.
+  - Implemented, needs the phone: everything visual or touch-based, meaning
+    layout, fonts, icons, the image placeholder, navigation, and the search bar
+    and ⋮ doing nothing.
+
+  Test on your phone
+
+  Run npx expo start and scan the QR code in Expo Go.
+  1. Layout: compare the homepage with Figma. The spec doesn't give the spacing
+     around the title or above the search bar, so I picked values: 16 above the
+     search bar, 24 above the title, 12 below it.
+  2. Icons: check they're sharp and correctly coloured, especially on iOS. Also
+     check that the pill sits nicely in the tab bar.
+  3. Scrolling: the footer spinner shows while the next page loads, and the
+     search bar and title stay fixed.
+  4. End of the list: the last card stays half width. You can reach it by
+     scrolling through all 68 pages.
+  5. Missing image: ID 10083 shows the muted Pokéball. It's far down the list,
+     so you can temporarily change the URL for one card to test it sooner.
+  6. Card taps: a card opens the empty Detail page and back returns to the list.
+     ⋮ does nothing.
+  7. Tabs: Favorites opens an empty page and Pokémons returns to the list.
+  8. Errors: turn on airplane mode, then scroll or reopen the app. The error
+     only appears after about 7 seconds, because TanStack retries three times
+     first; the spinner shows until then. Tapping Retry after reconnecting
+     should recover.
+
+  Worth knowing
+
+  - Font licence: embedding in apps is allowed, but the licence bars making the
+    font file available through a repository or public server. Your repo is
+    private, so this is fine for now. If it goes public or gets shared for
+    hand-in, re-read section 02 of the licence first, since assets/fonts/ will
+    be in it once committed.
+  - Route types: tsc needs the dev server to have run once after adding a route.
+    On a fresh clone, run npx expo start once or router.push will show a type
+    error.
+  - Test packages: expo install put jest, jest-expo and @types/jest in
+    dependencies even with the dev flag, so I moved them to devDependencies by
+    hand.
+  - Unplanned additions: <StatusBar style="dark" /> and header colours in the
+    root layout, because app.json follows the phone's dark mode and the status
+    bar would otherwise be unreadable on the light background. They're in a file
+    the plan already named.
+
+  Once the phone test looks good, run /review-issue 1 and then /commit-issue 1.
+
+> /review-issue 1
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Lint and tsc are clean and the banned-pattern scan found only import * as, so
+  I'm now reading the code for the iOS back-button label, implicit any, offline
+  behaviour, and whether the lockfile diff changed existing versions.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Review of #1
+
+  Verdict: the code meets every acceptance criterion on paper, with one partial
+  (the ⋮ tap area). It's not ready to commit yet: I'd fix two small problems
+  first, and the phone test is still open. I changed no code in this review.
+
+  ✅ below means the code meets the point, not that it has been seen working on
+  a device. Only the items marked (verified) were actually run.
+
+  Lint and typecheck
+
+  - npx expo lint: exit 0, no output.
+  - npx tsc --noEmit: exit 0, no output.
+
+  Fix before committing
+
+  1. The iOS back button will probably read "(tabs)". The native stack uses the
+     previous screen's title as the back label, and the (tabs) screen has no
+     title, so it falls back to the route name. I confirmed this in the library
+     source but haven't seen it on a device. Setting
+     headerBackButtonDisplayMode: "minimal" on _layout.tsx:47
+     (src/app/_layout.tsx#L47) would fix it.
+  2. The ⋮ tap area is only 24×24. A tap just beside the icon lands on the card
+     and opens Detail, which works against "Detail does not open". Adding
+     hitSlop at PokemonCard.tsx:46 (src/components/PokemonCard.tsx#L46) would
+     fix it.
+
+  Acceptance criteria
+
+  List and paging
+  - ✅ First 20 in API order, 2 columns: pokemon.ts:1 (src/api/pokemon.ts#L1),
+    PokemonGrid.tsx:96 (src/components/PokemonGrid.tsx#L96)
+  - ✅ Next 20 load automatically: PokemonGrid.tsx:101
+    (src/components/PokemonGrid.tsx#L101)
+  - ✅ Footer spinner, cards stay visible: PokemonGrid.tsx:80
+    (src/components/PokemonGrid.tsx#L80)
+  - ✅ No duplicates: PokemonGrid.tsx:73 (src/components/PokemonGrid.tsx#L73)
+    (verified on the live API: 1351 entries, all unique)
+  - ✅ All 1351 reachable, 10001 follows 1025: usePokemonList.ts:29
+    (src/hooks/usePokemonList.ts#L29) (verified on the live API)
+  - ✅ next: null stops paging: usePokemonList.ts:29
+    (src/hooks/usePokemonList.ts#L29) (verified with a fake API)
+
+  Card
+  - ✅ Image, badge, name, ⋮: PokemonCard.tsx:24
+    (src/components/PokemonCard.tsx#L24)
+  - ✅ Image URL from the ID: pokemon.ts:12 (src/lib/pokemon.ts#L12) (unit test)
+  - ✅ Placeholder keeps the card's size: PokemonCard.tsx:26
+    (src/components/PokemonCard.tsx#L26)
+  - ✅ Badge padding: pokemon.ts:24 (src/lib/pokemon.ts#L24) (unit test)
+  - ✅ Name formatting: pokemon.ts:16 (src/lib/pokemon.ts#L16) (unit test)
+  - ✅ One line with ellipsis: PokemonCard.tsx:42
+    (src/components/PokemonCard.tsx#L42)
+
+  Navigation
+  - ✅ Card opens Detail: PokemonCard.tsx:24
+    (src/components/PokemonCard.tsx#L24)
+  - ✅ Back returns to the list: _layout.tsx:47 (src/app/_layout.tsx#L47), but
+    see fix 1 for the label
+  - ✅ Tab bar with Pokémons active: (tabs)/_layout.tsx:29
+    (src/app/%28tabs%29/_layout.tsx#L29)
+  - ✅ Favorites tab and back: (tabs)/_layout.tsx:36
+    (src/app/%28tabs%29/_layout.tsx#L36)
+
+  Visual-only elements
+  - ✅ Search bar does nothing, because it's a View with Text: SearchBar.tsx:10
+    (src/components/SearchBar.tsx#L10)
+  - ⚠️ ⋮ does nothing, but only on the icon itself: PokemonCard.tsx:46
+    (src/components/PokemonCard.tsx#L46), see fix 2
+
+  States and fonts
+  - ✅ First load spinner: PokemonGrid.tsx:45
+    (src/components/PokemonGrid.tsx#L45)
+  - ✅ First page error and Retry: PokemonGrid.tsx:53
+    (src/components/PokemonGrid.tsx#L53) (verified with a fake API)
+  - ✅ Later page error and Retry: PokemonGrid.tsx:83
+    (src/components/PokemonGrid.tsx#L83) (verified with a fake API)
+  - ✅ "No Pokémon found": PokemonGrid.tsx:61
+    (src/components/PokemonGrid.tsx#L61)
+  - ✅ Four fonts loaded: _layout.tsx:18 (src/app/_layout.tsx#L18) (files are in
+    the bundle; how they look is unchecked)
+
+  Loading, error and empty states
+
+  - ✅ List: has all three.
+  - ⚠️ Images: the failed state exists, but there's no loading state, so the
+    area stays blank until the image arrives. The spec doesn't ask for one.
+  - ⚠️ Image failure is sticky: a card that fails while offline keeps its
+    placeholder until it's re-rendered from scratch, for example after scrolling
+    far away (PokemonCard.tsx:34 (src/components/PokemonCard.tsx#L34)).
+  - ⚠️ Fonts: the splash screen covers loading, but if loading fails the app
+    silently uses system fonts (_layout.tsx:26 (src/app/_layout.tsx#L26)).
+    That's better than a blank screen, and the spec doesn't cover it.
+
+  UI, data and logic separation
+
+  - ✅ Components don't call fetch or query functions directly; PokemonGrid goes
+    through usePokemonList.
+  - ✅ The pure functions live in src/lib/pokemon.ts, and fetching in src/api/.
+  - ⚠️ Minor: toListItems is pure logic sitting in the hook
+    (usePokemonList.ts:15 (src/hooks/usePokemonList.ts#L15)). It could move to
+    src/lib/ and get a unit test.
+
+  Banned patterns
+
+  - ✅ No written any, no as casts apart from as const, no @ts-ignore, no
+    console.log. The only scan match was import * as SplashScreen, which isn't a
+    cast.
+  - ⚠️ Implicit any: these are allowed by the compiler, but a strict reader
+    could question them.
+    - response.json() returns any, so the response type is trusted without a
+      runtime check (api/pokemon.ts:18 (src/api/pokemon.ts#L18)).
+    - require() also returns any (Icon.tsx:8 (src/components/Icon.tsx#L8),
+      _layout.tsx:19 (src/app/_layout.tsx#L19)).
+
+  AGENTS.md rules
+
+  - ✅ Routes are only in src/app/, and tests sit outside it.
+  - ✅ Navigation uses Expo Router; Tabs comes from expo-router/js-tabs because
+    the old import is deprecated.
+  - ✅ No ios/ or android/ folders, no native modules beyond Expo Go, nothing
+    committed.
+  - ✅ Packages were installed with npx expo install, though the three test
+    packages had to be moved to devDependencies by hand.
+  - ✅ The large lockfile diff is harmless: 546 packages added, none changed or
+    removed.
+  - ❌ Housekeeping, yours to do: the spec still says Status: draft (homepage
+    list.md:3 (specs/features/homepage%20list.md#L3)) with its boxes unticked,
+    and chat-history/ has no export for #1 yet.
+
+  Phone test script
+
+  Run npx expo start and open the app in Expo Go.
+  1. Launch: splash, then 20 cards in two columns starting at Bulbasaur 001.
+     Compare fonts, colours and spacing with Figma.
+  2. Scroll down: a spinner shows at the bottom, more cards load, and the search
+     bar and title stay fixed.
+  3. Long names: find squawkabilly-green-plumage, which should end in "…" on one
+     line.
+  4. Tap the search bar: no keyboard opens.
+  5. Tap ⋮, then just beside it: ⋮ does nothing, and the near-miss shows whether
+     fix 2 is needed.
+  6. Tap a card: an empty page opens. Check the back label on iOS, then go back
+     to the list.
+  7. Tap Favorites, then Pokémons: the pill moves and your scroll position is
+     kept.
+  8. Icons: check they look sharp, especially on iOS.
+  9. Later page error: turn on airplane mode and scroll to the bottom. After
+     about 7 seconds you get a message and Retry; turn the network back on and
+     tap Retry.
+  10. First page error: close the app, turn on airplane mode, and reopen it. The
+      spinner shows, then the error; reconnect and tap Retry to see the
+      spinner, then the list.
+  11. End of the list: ID 10083 shows a muted Pokéball, and the last card stays
+      half width with no spinner below it.
+
+  How the code works
+
+  The route of the data. fetchPokemonPage gets one page from the API.
+  usePokemonList wraps that in TanStack Query and turns the pages into one flat
+  list of { id, name }. PokemonGrid shows that list, and PokemonCard draws one
+  Pokémon. Each layer only knows the one below it, which is what "UI, data and
+  logic not mixed" means here.
+
+  Paging. useInfiniteQuery stores pages in a list. After each page,
+  getNextPageParam says what comes next, and we simply return the API's own next
+  URL. When next is null we return undefined, which tells TanStack there are no
+  more pages. This is why we don't need to know the total of 1351, and why the
+  jump from ID 1025 to 10001 causes no problems.
+
+  Why the ID comes from the URL. The list position isn't the ID: entry 1026 has
+  ID 10001. So getIdFromUrl reads the number at the end of the URL, and the
+  image, badge and Detail link all use that real ID.
+
+  The guard in loadNextPage. FlatList can fire onEndReached many times. Only
+  fetching when there is a next page, nothing is loading and the last attempt
+  didn't fail prevents double requests, and it stops a failed page from retrying
+  itself while you scroll.
+
+  The order of the states. PokemonGrid checks them top to bottom: loading, then
+  no data (error), then an empty list, then the grid. A later-page failure keeps
+  the old data, so it never reaches the error screen and shows in the footer
+  instead. The footer checks "fetching" before "error", because the error flag
+  stays on during a retry.
+
+  Card size. FlatList with flex: 1 would stretch the single card in the last
+  row, because 1351 is odd. So the width is calculated: screen width minus the
+  margins and gap, divided by two. The image area is square, so its height
+  equals that width, and the name row adds 48. At a width of 390 that gives the
+  Figma size of 163×211.
+
+  Fonts and the splash screen. Fonts must be ready before text is drawn, so the
+  root layout keeps the splash screen up and renders nothing until useFonts
+  reports they loaded or failed. They load at runtime because the config plugin
+  needs a native build, and Expo Go doesn't allow that.
+
+  Icons. expo-image draws the SVG files directly, and tintColor recolours them.
+  That's how one Pokeball.svg can be white in the active pill, dark when
+  inactive, and muted as the placeholder.
+
+  Do you want me to make the two fixes? They're one line each. After that, the
+  phone test is all that stands between this and /commit-issue 1.
+
+> <ide_opened_file>The user opened the file
+  c:\Users\Gebruiker\Documents\GitHub\Pokedex\specs\features\homepage list.md
+  in the IDE. This may or may not be related to the current
+  task.</ide_opened_file>
+
+> Make the two open fixes. And update all the checkboxes in homepage list.md
+
+● I'll make both fixes. The spec changed on disk, so I'll read it again before
+  touching the checkboxes.
+
+● Update(src\app\_layout.tsx)
+  ⎿  Added 4 lines, removed 1 line
+      44          }}
+      45        >
+      46          <Stack.Screen name="(tabs)" options={{ headerShown: fal
+          se }} />
+      47 -        <Stack.Screen name="pokemon/[id]" options={{ title: "" 
+         -}} />                                                          
+      47 +        <Stack.Screen                                          
+      48 +          name="pokemon/[id]"                                  
+      49 +          options={{ title: "", headerBackButtonDisplayMode: "m
+         +inimal" }}                                                     
+      50 +        />                                                     
+      51        </Stack>
+      52      </QueryClientProvider>
+      53    );
+
+● Update(src\components\PokemonCard.tsx)
+  ⎿  Added 1 line, removed 1 line
+      43            {formatName(name)}
+      44          </Text>
+      45          {/* Takes the touch so Detail doesn't open. The menu co
+          mes with the Options menu feature. */}
+      46 -        <Pressable onPress={() => {}}>                         
+      46 +        <Pressable onPress={() => {}} hitSlop={12}>            
+      47            <Icon name="options" color={colors.text} />
+      48          </Pressable>
+      49        </View>
+
+● Bash(cd "C:/Users/Gebruiker/Documents/GitHub/Pokedex";
+      F="specs/features/homepage list.md"; git diff --stat -- "$F" 2>/dev/null;
+      sed -n 1,4p "$F"; echo "unticked bef…)
+  ⎿  Updated specs\features\homepage list.md (+5 -5)
+      24  - [x] Each card shows the Pokémon's image, ID badge, name and ⋮
+           button, as in the Figma design.
+      25  - [x] The image is loaded from `https://raw.githubusercontent.c
+          om/PokeAPI/sprites/master/sprites/pokemon/other/home/{id}.png`,
+           with the ID taken from the result's `url`.
+      26  - [x] If an image can't load (e.g. ID 10083 returns 404), the c
+          ard shows a muted Pokéball-style placeholder icon in the image 
+          area and keeps its size, badge and name.
+      27 -- [ ] The badge shows the real API ID padded to at least 3 digi
+         -ts and widens to fit: `1` → `001`, `25` → `025`, `1025` → `1025
+         -`, `10001` → `10001`. *(unit test)*                            
+      27 +- [x] The badge shows the real API ID padded to at least 3 digi
+         +ts and widens to fit: `1` → `001`, `25` → `025`, `1025` → `1025
+         +`, `10001` → `10001`. *(unit test)*                            
+      28  - [x] Names are shown with each word capitalized and hyphens re
+          placed by spaces: `bulbasaur` → `Bulbasaur`, `mr-mime` → `Mr Mi
+          me`, `squawkabilly-green-plumage` → `Squawkabilly Green Plumage
+          `. *(unit test)*
+      29  - [x] A name that doesn't fit stays on one line and is cut off 
+          with an ellipsis.
+      30  
+     ...
+      42  
+      43  **States**
+      44  
+      45 -- [ ] While the first page loads, one centered spinner shows in
+         - the list area.                                                
+      46 -- [ ] If the first page fails, the list area shows an error mes
+         -sage and a Retry button. Tapping Retry shows the spinner and re
+         -quests the page again.                                         
+      47 -- [ ] If a later page fails, the loaded cards stay visible and 
+         -the bottom of the list shows a small error message and a Retry 
+         -button. Tapping Retry requests that page again.                
+      48 -- [ ] If a successful first response has no results, the list a
+         -rea shows "No Pokémon found" with no button.                   
+      45 +- [x] While the first page loads, one centered spinner shows in
+         + the list area.                                                
+      46 +- [x] If the first page fails, the list area shows an error mes
+         +sage and a Retry button. Tapping Retry shows the spinner and re
+         +quests the page again.                                         
+      47 +- [x] If a later page fails, the loaded cards stay visible and 
+         +the bottom of the list shows a small error message and a Retry 
+         +button. Tapping Retry requests that page again.                
+      48 +- [x] If a successful first response has no results, the list a
+         +rea shows "No Pokémon found" with no button.                   
+      49  
+      50  **Fonts**
+      51  
+  ⎿  (timeout 3m 20s)
+
+● Both fixes are in, and all 23 checkboxes in homepage list.md
+  (specs/features/homepage%20list.md) are ticked. tsc and lint pass, and all 13
+  unit tests still pass. Nothing is committed.
+
+  - iOS back button: the Detail page now uses headerBackButtonDisplayMode:
+    "minimal", so only the arrow shows and "(tabs)" can't appear (_layout.tsx:47
+    (src/app/_layout.tsx#L47)).
+  - ⋮ tap area: hitSlop={12} extends the tap area 12 on every side, so it fills
+    the height of the name row and no longer opens Detail on a near-miss
+    (PokemonCard.tsx:46 (src/components/PokemonCard.tsx#L46)).
+
+  Check the checkboxes: you'd already ticked 18, so I ticked the remaining 5,
+  but I didn't note which ones they were before changing them. If you left those
+  open because you hadn't tested them yet, they're now ticked without a test,
+  so test them before you commit.
+
+  Neither fix has been tried on a device, so please repeat these on your phone:
+  - Step 5 of the test script: tap ⋮ and just beside it.
+  - Step 6 on iOS: check the back arrow on the Detail page.
+
+  The spec status still says review, which you set, so I left it. Once that's
+  done, you can run /commit-issue 1. The chat-history/ export for #1 is also
+  still open.
+
+> /commit-issue 1
+
+● Bash(cd "C:/Users/Gebruiker/Documents/GitHub/Pokedex"; npx expo lint 2>&1 |
+      tail -5; echo "lint exit=${PIPESTATUS[0]}"; npx tsc --noEmit; echo "tsc
+      exit=$?"; git bra…)
+  ⎿  Updated specs\features\homepage list.md (+1 -1)
+      1  # Feature: homepage list
+      2  
+      3 -> Issue: #1 · Status: review                                    
+      3 +> Issue: #1 · Status: complete                                  
+      4  
+      5  ## Goal
+      6  
+  ⎿  (timeout 3m 20s)
+
+● Lint and tsc pass, no secrets turned up, and every changed file belongs to #1.
+  You're on main, so I'll make a feature branch first and commit there, then
+  stage those paths by name.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● The work for #1 is committed as 5276caa ("Add homepage list with paging, tabs
+  and fonts", ending with closes #1). Lint and tsc passed first, and no .env or
+  secrets were included. All 23 files belong to this issue, and the working tree
+  is clean. Nothing is pushed.
+
+  New branch: the commit is on feature/homepage-list, not main, because I branch
+  rather than commit directly to the default branch. Your earlier commits went
+  straight to main, so this differs from your usual flow. closes #1 only closes
+  the issue once the commit reaches main.
+
+  Should I push? Two ways to do it:
+  1. Push the branch and open a PR (my recommendation): merging the PR closes
+     #1, and you get a reviewable record for the project.
+  2. Merge into main and push: this matches your earlier commits and closes #1
+     straight away.
+
+  Before you push, keep these in mind:
+  - Phone test: the plan's last two tasks (icon check and phone test) are still
+    unticked on the issue, and neither fix has been tried on a device.
+  - Chat export: chat-history/ still has no export for #1.
+  - Font file: it's now in git history, which is fine while the repo stays
+    private. Check the licence before making the repo public.
+
+> Branch is already pushed. Open PR
+
+● I'll confirm the pushed branch matches the local commit, then open the PR.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Written for: whoever reviews the PR.
+
+  PR #2 (https://github.com/Lucas-Light/Pokedex/pull/2) is open from
+  feature/homepage-list into main. The pushed branch has the one commit,
+  5276caa, and merging the PR will close #1.
+
+  The PR's testing list leaves two boxes unticked: the icon check and the full
+  phone test. If you've done those, tick them in the PR before you merge. The
+  description also notes that the expo export bundle ran before the last two
+  small fixes. And chat-history/ still needs its export for #1.
